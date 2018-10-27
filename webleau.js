@@ -3,9 +3,19 @@ $(document).ready(function() {
 	var layout = {
 		nodes: [
 			{
+				id: 'f',
+				x: 800,
+				y: 500,
+				width: 200,
+				height: 200,
+				title: 'Lonely',
+				content: 'I\'m not connected to anything.',
+				edit: true
+			},
+			{
 				id: 'a',
-				x: 100,
-				y: 200,
+				x: 300,
+				y: 500,
 				width: 200,
 				height: 200,
 				title: 'Box A',
@@ -24,8 +34,8 @@ $(document).ready(function() {
 			},
 			{
 				id: 'd',
-				x: 10,
-				y: 10,
+				x: 410,
+				y: 410,
 				width: 100,
 				height: 100,
 				title: 'Box D',
@@ -34,7 +44,7 @@ $(document).ready(function() {
 			{
 				id: 'b',
 				x: 500,
-				y: 100,
+				y: 150,
 				width: 200,
 				height: 200,
 				title: 'Box B',
@@ -74,6 +84,14 @@ $(document).ready(function() {
 	var linksLayer;
 	var nodes = {};
 	var links = {};
+	var winScale = 1;
+	var layoutScale = 1;
+	var mouseX=0;
+	var mouseY=0;
+	$( document).on( "mousemove", function( event ) {
+		mouseX = event.pageX / layoutScale;
+		mouseY = event.pageY / layoutScale;
+	});
 
 	initPage( layout );
 
@@ -131,16 +149,30 @@ $(document).ready(function() {
 		this.dom.titleRight = $('<div class="webleau_node_title_right"></div>');
 		this.dom.titleText = $('<div class="webleau_node_title_text"></div>');
 		this.dom.content = $('<div class="webleau_node_content"></div>');
+
 		if( nodeData.edit ) {
 			this.dom.toolEdit = $('<div class="webleau_tool"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></div>');
 			this.dom.titleLeft.append( this.dom.toolEdit );
 		}
+
+		this.dom.toolexpand = $('<div class="webleau_tool"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></div>');
+		this.dom.titleLeft.append( this.dom.toolexpand );
+		this.dom.toolexpand.click( function() {
+			this.expandHeight();
+		}.bind(this));
+
 		this.dom.toolinfo = $('<div class="webleau_tool"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></div>');
 		this.dom.titleLeft.append( this.dom.toolinfo );
 		this.dom.toolinfo.click( function() {
 			console.log( this.data );
 		}.bind(this));
+
 		this.dom.toolRemove = $('<div class="webleau_tool"><span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span></div>');
+		this.dom.toolRemove.click( function() {
+			if( confirm( "Really?" ) ) {
+			}
+		}); 
+		
 		this.dom.titleRight.append( this.dom.toolRemove );
 		//this.dom.toolResize = $('<div class="webleau_node_resize webleau_tool"><span class="glyphicon glyphicon-resize-small" aria-hidden="true"></span></div>');
 		//this.dom.outer.append( this.dom.toolResize );
@@ -161,8 +193,17 @@ $(document).ready(function() {
 		// methods
 
 		this.resized = function(event, ui) { 
-			this.data.width = this.dom.outer.width();
-			this.data.height = this.dom.outer.height();
+			var wDelta  = ui.size.width  - ui.originalSize.width;
+			var hDelta  = ui.size.height - ui.originalSize.height;
+			ui.size.width  = Math.max(50, ui.originalSize.width  + 2*wDelta);
+			ui.size.height = Math.max(50, ui.originalSize.height + 2*hDelta);
+			wDelta  = ui.size.width  - ui.originalSize.width;
+			hDelta  = ui.size.height - ui.originalSize.height;
+			ui.position.top  = ui.originalPosition.top - hDelta/2;
+			ui.position.left = ui.originalPosition.left - wDelta/2;
+			this.data.width  = ui.size.width/winScale;
+			this.data.height = ui.size.height/winScale;
+			this.updatePosition();
 			var  linkIds = Object.keys(links);
 			for( var i=0; i<linkIds.length; ++i ) {
 				links[linkIds[i]].updatePosition();
@@ -170,10 +211,10 @@ $(document).ready(function() {
 		}
 
 		this.dragged = function(event, ui) { 
-			ui.position.left = Math.max( 10, ui.position.left );
+			ui.position.left = Math.max(10, ui.position.left );
 			ui.position.top = Math.max( 10, ui.position.top );
-			this.data.x = Math.max(10,this.dom.outer.position().left);
-			this.data.y = Math.max(10,this.dom.outer.position().top);
+			this.data.x = Math.max(10,ui.position.left/layoutScale)+this.realWidth() /layoutScale/2;
+			this.data.y = Math.max(10,ui.position.top /layoutScale)+this.realHeight()/layoutScale/2;
 			this.updatePosition();
 			var  linkIds = Object.keys(links);
 			for( var i=0; i<linkIds.length; ++i ) {
@@ -182,34 +223,54 @@ $(document).ready(function() {
 		}
 	
 		this.updatePosition = function() {
-			this.dom.outer.css('top',this.data.y);
-			this.dom.outer.css('left',this.data.x);
-			this.dom.outer.css('width',this.data.width);
-			this.dom.outer.css('height',this.data.height);
+			this.dom.outer.css('top',this.realY()-this.realHeight()/2);
+			this.dom.outer.css('left',this.realX()-this.realWidth()/2);
+			this.dom.outer.css('width', this.data.width*winScale);
+			this.dom.outer.css('height',this.data.height*winScale);
+		}
+
+		this.expandHeight = function() {
+			//this.dom.outer.css('width','auto');
+			this.dom.outer.css('height','auto');
+			this.dom.outer.find( '.webleau_tool' ).addClass('noTools');
+			this.data.width = this.dom.outer.width()/winScale;
+			this.data.height = this.dom.outer.height()/winScale;
+			this.updatePosition();
+			this.dom.outer.find( '.webleau_tool' ).removeClass('noTools');
 		}
 
 		this.centrePoint = function() {
-			return new Point( 
-				this.data.x + this.realWidth()/2,
-				this.data.y + this.realHeight()/2
-			);
+			return new Point( this.realX(), this.realY() );
 		}
 
 		this.borderSize = 2;
+		// real means actual pixels not the place on the conceptual layout
+		this.realX = function() {
+			return this.data.x*layoutScale;
+		}
+		this.realY = function() {
+			return this.data.y*layoutScale;
+		}
 		this.realWidth = function() {
-			return this.data.width+this.borderSize*2;
+			return this.data.width*winScale;
 		}
 		this.realHeight = function() {
-			return this.data.height+this.borderSize*2;
+			return this.data.height*winScale;
+		}
+		this.realWidthFull = function() {
+			return this.data.width*winScale+this.borderSize*2;
+		}
+		this.realHeightFull = function() {
+			return this.data.height*winScale+this.borderSize*2;
 		}
 
 		// find the point in a block nearest to the given point
 		this.nearestPointTo = function( pt ) {
 			// find the intersection with each edge
-			var tl = new Point( this.data.x,                    this.data.y );
-			var tr = new Point( this.data.x+this.realWidth()-1, this.data.y );
-			var bl = new Point( this.data.x,                    this.data.y+this.realHeight()-1 );
-			var br = new Point( this.data.x+this.realWidth()-1, this.data.y+this.realHeight()-1 );
+			var tl = new Point( this.realX()-this.realWidthFull()/2,   this.realY()-this.realHeightFull()/2 );
+			var tr = new Point( this.realX()+this.realWidthFull()/2-1, this.realY()-this.realHeightFull()/2 );
+			var bl = new Point( this.realX()-this.realWidthFull()/2,   this.realY()+this.realHeightFull()/2-1 );
+			var br = new Point( this.realX()+this.realWidthFull()/2-1, this.realY()+this.realHeightFull()/2-1 );
 			var lines = [
 				new Line( tl, tr ),
 				new Line( tr, br ),
@@ -236,15 +297,14 @@ $(document).ready(function() {
 		// register UI hooks
 		this.dom.outer.resizable({
 			resize: this.resized.bind(this),
-			stop: this.resized.bind(this),
+			//stop: this.resizeStopped.bind(this),
 			minHeight: 50,
 			minWidth: 50
 		});
 		this.dom.outer.draggable( { 
 			handle: ".webleau_node_title",
 			opacity: 0.8,
-			drag: this.dragged.bind(this),
-			stop: this.dragged.bind(this),
+			drag: this.dragged.bind(this)
 		});
 	}
 
@@ -276,7 +336,7 @@ $(document).ready(function() {
 	function initPage( layout) {
 		nodesLayer = $('<div class="webleau_nodes"></div>');
 		$('body').append(nodesLayer);
-		linksLayer = $('<svg class="webleau_svg"><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#f00" /></marker></defs></svg>');
+		linksLayer = $('<svg class="webleau_svg"><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs></svg>');
 		$('body').append(linksLayer);
 
 		for( var i=0; i<layout.nodes.length; ++i ) {
@@ -288,7 +348,62 @@ $(document).ready(function() {
 
 		// reset SVG layer 
 		linksLayer.html( linksLayer.html() );
+
+		var controls = $('<div class="controls"></div>');
+		var winScaleSlider = $('<div></div>').css( 'margin-bottom', '8px' );
+		var layoutScaleSlider = $('<div></div>').css( 'margin-bottom', '8px' );
+;
+		//var contentToggle = $('<label>Show node contents: </label>');
+		//var input = $('<input type="checkbox" value="1" checked></input>');
+		//contentToggle.append(input);
+		controls.append( $('<div>Node scale</div>' ));
+		controls.append( winScaleSlider );
+		controls.append( $('<div>Layout scale</div>' ));
+		controls.append( layoutScaleSlider );
+		//controls.append( contentToggle );
+		$('body').append(controls);
+		winScaleSlider.slider({
+			value:winScale,
+			min: 0,
+			max: 4,	
+			step: 0.00001,
+			slide: function( event, ui ) {
+				winScale = ui.value;
+				updateAllPositions();
+			}
+		});
+		layoutScaleSlider.slider({
+			value:layoutScale,
+			min: 0,
+			max: 4,	
+			step: 0.0001,
+			slide: function( event, ui ) {
+				//var oldEffectiveWidth  = $(window).width()/layoutScale;
+				//var oldEffectiveHeight = $(window).height()/layoutScale;
+				layoutScale = ui.value;
+				//var newEffectiveWidth  = $(window).width()/layoutScale;
+				//var newEffectiveHeight = $(window).height()/layoutScale;
+
+				//$(window).scrollLeft($(window).scrollLeft()-(newEffectiveWidth -oldEffectiveWidth )/2);
+				//$(window).scrollTop( $(window).scrollTop() -(newEffectiveHeight-oldEffectiveHeight)/2);
+
+				updateAllPositions();
+			}
+		});
 	}
+
+
+	function updateAllPositions() {
+		nodeKeys = Object.keys(nodes);
+		for( var i=0; i<nodeKeys.length; ++i ) {
+			nodes[nodeKeys[i]].updatePosition();
+		}
+		linkKeys = Object.keys(links);
+		for( var i=0; i<linkKeys.length; ++i ) {
+			links[linkKeys[i]].updatePosition();
+		}
+	}
+
 
 	function addLink( linkData ) {
 		// validate link TODO
@@ -296,6 +411,7 @@ $(document).ready(function() {
 		// create link
 		links[linkData.id] = new Link( linkData );
 		links[linkData.id].updatePosition();
+		return links[linkData.id];
 	}
 
 	function addNode( nodeData ) {
@@ -304,28 +420,49 @@ $(document).ready(function() {
 		// create node
 		nodes[nodeData.id] = new Node( nodeData );
 		nodes[nodeData.id].updatePosition();
+		return nodes[nodeData.id];
 	}
 
 	// from http://forums.devshed.com/javascript-development-115/regexp-match-url-pattern-493764.html	
-	function ValidURL(str) {
-		var pattern = new RegExp('^(https?:\/\/)?'+ // protocol
-			'((([a-z\d]([a-z\d-]*[a-z\d])*)\.)+[a-z]{2,}|'+ // domain name
-			'((\d{1,3}\.){3}\d{1,3}))'+ // OR ip (v4) address
-			'(\:\d+)?(\/[-a-z\d%_.~+]*)*'+ // port and path
-			'(\?[;&a-z\d%_.~+=-]*)?'+ // query string
-			'(\#[-a-z\d_]*)?$','i'); // fragment locater
+	function validURL(str) {
+		var pattern = /^(https?:\/\/)?((([a-z\d]([a-z\d-]*[a-z\d])*)\.)+[a-z]{2,}|((\d{1,3}\.){3}\d{1,3}))(\:\d+)?(\/[-a-z\d%_.~+]*)*(\?[-;&a-z\d%_.~+=]*)?(\#[-a-z\d_]*)?$/i;
 		if(!pattern.test(str)) {
-			alert("Please enter a valid URL.");
 			return false;
 		} else {
 			return true;
 		}
 	}
+	function uuid() {
+		function randomDigit() {
+			if (crypto && crypto.getRandomValues) {
+				var rands = new Uint8Array(1);
+				crypto.getRandomValues(rands);
+				return (rands[0] % 16).toString(16);
+			} else {
+				return ((Math.random() * 16) | 0).toString(16);
+			}
+		}
+		var crypto = window.crypto || window.msCrypto;
+		return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, randomDigit);
+	}
+
 
 	$(document).on('paste', function(event) {
 		// nb need to stop this applying to textarea and input
 		var clipboardData = event.clipboardData || window.clipboardData || event.originalEvent.clipboardData;
 		var text = clipboardData.getData('text/plain' );
-		alert(text);
+
+		var newNode = addNode({
+				id: uuid(),
+				x: mouseX,
+				y: mouseY,
+				width:  $(window).width() /2/layoutScale,
+				height: $(window).height()/2/layoutScale/4,
+				title: 'Pasted text',
+				content: text,
+				edit: true
+		})
+		console.log( $(window).height(), $(window).width() );
+		newNode.expandHeight();
 	});	
 });

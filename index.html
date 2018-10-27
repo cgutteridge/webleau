@@ -3,7 +3,6 @@
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.8.18/themes/base/jquery-ui.css" type="text/css" media="all" />
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-
 <script src="webleau.js"></script>
 <style>
 .webleau_nodes {
@@ -11,25 +10,43 @@
 	top: 0px;
 	left: 0px;
 }
+.controls {
+	width:30%;
+	position: fixed;
+	top:0%;
+	right:0%;
+	text-align: right;
+	background-color: #ccc;
+	padding: 10px;
+	opacity: 0.3;
+}
+.controls:hover {
+	opacity: 0.8;
+}
+.ui-resizable-handle {
+	opacity: 0;
+}
 .webleau_node {
 	position: absolute;
 	top: 0px;
 	left: 0px;
 	background-color: #ccc;
-	border: solid 1px blue;
-	border-radius: 5px;
+//	border: solid 1px blue;
+//	border-radius: 5px;
 	margin: 0;
 	padding: 1px;
 	overflow: hidden;
+  	box-shadow:         2px 2px 2px 2px rgba(0,0,0,0.3);
 }
 .webleau_node_title {
-	background-color: white;
-	color: blue;
-	border-bottom: solid 1px black;
+	background-color: #999;
+	color: black;
+	font-weight: bold;;
+//	border-bottom: solid 1px black;
 	cursor: move;
 }
-.webleau_title_text {
-	padding: 3px;
+.webleau_node_title_text {
+	padding: 0px 3px;
 }
 .webleau_node_title_left {
 	float: left;
@@ -52,15 +69,21 @@
 	display: none;
 }
 .webleau_node:hover .webleau_tool {
-	color: blue;
+	color: white;
 	cursor: pointer;
 	font-size: 100%;
 	padding: 3px;
 	display: inline-block;
 }
-.webleau_tool:hover {
-	background-color: blue;
-	color: white !important;
+.weblau_node .ui-icon {
+	display: none !important;
+}
+.weblau_node:hover .ui-icon {
+	display: block;
+}
+.webleau_node .webleau_tool:hover {
+	background-color: white;
+	color: black;
 }
 .webleau_node_content {
 	padding: 3px;
@@ -79,8 +102,9 @@ body {
 	height: 400%;
 }
 .webleau_link {
-	stroke:rgb(255,0,0);
+	stroke:#666;
 	stroke-width:2;
+	opacity: 0.6;
 }
 </style>
 <body>
