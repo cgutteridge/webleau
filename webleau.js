@@ -86,12 +86,35 @@ $(document).ready(function() {
 	var links = {};
 	var winScale = 1;
 	var layoutScale = 1;
-	var mouseX=0;
-	var mouseY=0;
+	var mouseX=winWidth()/2/layoutScale;
+	var mouseY=winHeight()/2/layoutScale;
 	$( document).on( "mousemove", function( event ) {
 		mouseX = event.pageX / layoutScale;
 		mouseY = event.pageY / layoutScale;
 	});
+
+	function winHeight() {
+		var w = window;
+    		var d = document;
+    		var e = d.documentElement;
+    		var g = d.getElementsByTagName('body')[0];
+    		return w.innerWidth || e.clientWidth || g.clientWidth;
+	}
+	function winWidth() {
+		var w = window;
+    		var d = document;
+    		var e = d.documentElement;
+    		var g = d.getElementsByTagName('body')[0];
+    		return w.innerWidth || e.clientWidth || g.clientWidth;
+	}
+	function winLeft() {
+		var d = document.documentElement;
+		return (window.pageXOffset || d.scrollLeft) - (d.clientLeft || 0);
+	}
+	function winTop() {
+		var d = document.documentElement;
+		return (window.pageYOffset || d.scrollTop)  - (d.clientTop || 0);
+	}
 
 	initPage( layout );
 
@@ -350,45 +373,36 @@ $(document).ready(function() {
 		linksLayer.html( linksLayer.html() );
 
 		var controls = $('<div class="controls"></div>');
-		var winScaleSlider = $('<div></div>').css( 'margin-bottom', '8px' );
-		var layoutScaleSlider = $('<div></div>').css( 'margin-bottom', '8px' );
+		var winScaleSlider = $('<input type="range" value="1" min="0.001" max="8" step="0.001" />');
+		var layoutScaleSlider = $('<input type="range" value="1" min="0.001" max="8" step="0.001" />');
 ;
 		//var contentToggle = $('<label>Show node contents: </label>');
 		//var input = $('<input type="checkbox" value="1" checked></input>');
 		//contentToggle.append(input);
-		controls.append( $('<div>Node scale</div>' ));
-		controls.append( winScaleSlider );
-		controls.append( $('<div>Layout scale</div>' ));
+		var nodeScaleDisplay = $('<span>100%</span>');
+		controls.append( $('<div>Node scale: </div>' ).append(nodeScaleDisplay));
+		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(winScaleSlider) );
+		var layoutScaleDisplay = $('<span>100%</span>');
+		controls.append( $('<div>Layout scale: </div>' ).append(layoutScaleDisplay));
+		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(layoutScaleSlider) );
 		controls.append( layoutScaleSlider );
 		//controls.append( contentToggle );
 		$('body').append(controls);
-		winScaleSlider.slider({
-			value:winScale,
-			min: 0,
-			max: 4,	
-			step: 0.00001,
-			slide: function( event, ui ) {
-				winScale = ui.value;
-				updateAllPositions();
-			}
+		winScaleSlider.on('propertychange input', function( event ) {
+			winScale = winScaleSlider.val();
+			nodeScaleDisplay.text( ""+(Math.round( winScale*100000 ) / 1000)+"%" );
+			updateAllPositions();
 		});
-		layoutScaleSlider.slider({
-			value:layoutScale,
-			min: 0,
-			max: 4,	
-			step: 0.0001,
-			slide: function( event, ui ) {
-				//var oldEffectiveWidth  = $(window).width()/layoutScale;
-				//var oldEffectiveHeight = $(window).height()/layoutScale;
-				layoutScale = ui.value;
-				//var newEffectiveWidth  = $(window).width()/layoutScale;
-				//var newEffectiveHeight = $(window).height()/layoutScale;
-
-				//$(window).scrollLeft($(window).scrollLeft()-(newEffectiveWidth -oldEffectiveWidth )/2);
-				//$(window).scrollTop( $(window).scrollTop() -(newEffectiveHeight-oldEffectiveHeight)/2);
-
-				updateAllPositions();
-			}
+		layoutScaleSlider.on('propertychange input', function(event) {
+			// find coords of screen centre
+			var layoutx = (winLeft()+winWidth()/2)/layoutScale;
+			var layouty = (winTop()+winHeight()/2)/layoutScale;
+			layoutScale = layoutScaleSlider.val();
+			layoutScaleDisplay.text( ""+(Math.round( layoutScale*100000 ) / 1000)+"%" );
+			var realx = layoutx*layoutScale;
+			var realy = layouty*layoutScale;
+			window.scrollTo( realx-winWidth()/2, realy-winHeight()/2 );
+			updateAllPositions();
 		});
 	}
 
@@ -450,19 +464,27 @@ $(document).ready(function() {
 	$(document).on('paste', function(event) {
 		// nb need to stop this applying to textarea and input
 		var clipboardData = event.clipboardData || window.clipboardData || event.originalEvent.clipboardData;
-		var text = clipboardData.getData('text/plain' );
+		var json = clipboardData.getData('application/json');
+		if( json ) {
+			//nb this can throw a syntax error, it really should be handled
+			var jsonData = JSON.parse( json );
+			// assume object
+			// detect JRNL0.1
+			if( jsonData.jrnlCitation ) {
+			}
+		}
 
+		var text = clipboardData.getData( 'text/plain' );
 		var newNode = addNode({
 				id: uuid(),
 				x: mouseX,
 				y: mouseY,
-				width:  $(window).width() /2/layoutScale,
-				height: $(window).height()/2/layoutScale/4,
+				width:  winWidth() /2/layoutScale,
+				height: winHeight()/2/layoutScale,
 				title: 'Pasted text',
 				content: text,
 				edit: true
 		})
-		console.log( $(window).height(), $(window).width() );
 		newNode.expandHeight();
 	});	
 });
