@@ -167,6 +167,7 @@ $(document).ready(function() {
 
 		// functions we need to define early
 		this.showFullContent = function() {
+			this.dom.titleText.text( this.data.title );
 			if( this.data.html ) {
 				this.dom.content.html( this.data.html );
 			} else if( this.data.text ) {
@@ -239,7 +240,6 @@ $(document).ready(function() {
 		this.dom.title.append( this.dom.titleText );
 		this.dom.outer.append( this.dom.content );
 		nodesLayer.append( this.dom.outer );
-		this.dom.titleText.text( nodeData.title );
 		this.links = {};
 
 		// state
@@ -256,8 +256,8 @@ $(document).ready(function() {
 			hDelta  = ui.size.height - ui.originalSize.height;
 			ui.position.top  = ui.originalPosition.top - hDelta/2;
 			ui.position.left = ui.originalPosition.left - wDelta/2;
-			this.data.width  = ui.size.width/winScale;
-			this.data.height = ui.size.height/winScale;
+			this.data.width  = ui.size.width/winScale/layoutScale;
+			this.data.height = ui.size.height/winScale/layoutScale;
 			this.updatePosition();
 			var  linkIds = Object.keys(links);
 			for( var i=0; i<linkIds.length; ++i ) {
@@ -280,21 +280,22 @@ $(document).ready(function() {
 		this.updatePosition = function() {
 			this.dom.outer.css('top',this.realY()-this.realHeight()/2);
 			this.dom.outer.css('left',this.realX()-this.realWidth()/2);
-			this.dom.outer.css('width', this.data.width*winScale);
-			this.dom.outer.css('height',this.data.height*winScale);
-			this.dom.content.css('height',this.data.height*winScale-20 ); // height of box minus borders and title
+			this.dom.outer.css('width', this.data.width*winScale*layoutScale);
+			this.dom.outer.css('height',this.data.height*winScale*layoutScale);
+			this.dom.content.css('height',this.data.height*winScale*layoutScale-20 ); // height of box minus borders and title
 		}
 
 		this.expandHeight = function() {
-			//this.dom.outer.css('width','auto');
+			this.dom.outer.css('width','auto');
 			this.dom.outer.css('height','auto');
-			this.dom.outer.css('width',this.dom.outer.width()-20); // compensate for scrollbar TODO (needs work)
 			this.dom.content.css('height','auto');
+			this.dom.outer.css('max-width',this.dom.outer.width()/2); 
 			this.dom.outer.find( '.webleau_tool' ).addClass('noTools');
-			this.data.width = this.dom.outer.width()/winScale;
-			this.data.height = this.dom.outer.height()/winScale;
+			this.data.width = this.dom.outer.width()/winScale/layoutScale+10;
+			this.data.height = this.dom.outer.height()/winScale/layoutScale+10;
 			this.updatePosition();
 			this.dom.outer.find( '.webleau_tool' ).removeClass('noTools');
+			this.dom.outer.css('max-width','auto');
 		}
 
 		this.centrePoint = function() {
@@ -310,16 +311,16 @@ $(document).ready(function() {
 			return this.data.y*layoutScale;
 		}
 		this.realWidth = function() {
-			return this.data.width*winScale;
+			return this.data.width*winScale*layoutScale;
 		}
 		this.realHeight = function() {
-			return this.data.height*winScale;
+			return this.data.height*winScale*layoutScale;
 		}
 		this.realWidthFull = function() {
-			return this.data.width*winScale+this.borderSize*2;
+			return this.data.width*winScale*layoutScale+this.borderSize*2;
 		}
 		this.realHeightFull = function() {
-			return this.data.height*winScale+this.borderSize*2;
+			return this.data.height*winScale*layoutScale+this.borderSize*2;
 		}
 
 		// find the point in a block nearest to the given point
@@ -540,8 +541,8 @@ $(document).ready(function() {
 			id: uuid(),
 			x: mouseX,
  			y: mouseY,
-			width:  winWidth() /2/winScale,
-			height: winHeight()/2/winScale,
+			width:  winWidth() /2/winScale/layoutScale,
+			height: winHeight()/2/winScale/layoutScale,
 			meta: {}
 		};
 		if( json ) {
@@ -575,6 +576,29 @@ $(document).ready(function() {
 			nodeData.edit = false;
 			var newNode = addNode(nodeData);
 			newNode.expandHeight();
+			$.ajax({
+				method: "GET",
+				data: { url: text },
+				url: "oembed.php"
+			}).done(function(data){
+				// TOOO any kind of security
+				var keys = Object.keys(data);	
+				for( var i=0;i<keys.length; ++i) {
+					nodeData[keys[i]] = data[keys[i]];
+				}
+				if( data.source && data.source.width ) { 
+					newNode.data.width = data.source.width;
+				}
+				if( data.source && data.source.height ) { 
+					newNode.data.height = data.source.height;
+				}
+				newNode.showFullContent();
+				newNode.expandHeight();
+			}).fail(function(){
+				nodeData.text = text+"\n(loopup failed)";
+				newNode.showFullContent();
+				newNode.expandHeight();
+			})
 			return;
 		}
 
