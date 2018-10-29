@@ -9,7 +9,7 @@ $(document).ready(function() {
 				width: 200,
 				height: 200,
 				title: 'Lonely',
-				content: 'I\'m not connected to anything.',
+				text: 'I\'m not connected to anything.',
 				edit: true
 			},
 			{
@@ -19,7 +19,7 @@ $(document).ready(function() {
 				width: 200,
 				height: 200,
 				title: 'Box A',
-				content: 'This is a comment',
+				text: 'This is a comment',
 				edit: true
 			},
 			{
@@ -29,7 +29,7 @@ $(document).ready(function() {
 				width: 100,
 				height: 100,
 				title: 'Box C',
-				content: 'This is also a comment',
+				text: 'This is also a comment',
 				edit: true
 			},
 			{
@@ -39,7 +39,7 @@ $(document).ready(function() {
 				width: 100,
 				height: 100,
 				title: 'Box D',
-				content: 'This is also a comment'
+				text: 'This is also a comment'
 			},
 			{
 				id: 'b',
@@ -48,7 +48,7 @@ $(document).ready(function() {
 				width: 200,
 				height: 200,
 				title: 'Box B',
-				content: 'This is also a comment'
+				text: 'This is also a comment'
 			}
 		],
 		links: [
@@ -98,7 +98,7 @@ $(document).ready(function() {
     		var d = document;
     		var e = d.documentElement;
     		var g = d.getElementsByTagName('body')[0];
-    		return w.innerWidth || e.clientWidth || g.clientWidth;
+    		return w.innerHeight || e.clientHeight || g.clientHeight;
 	}
 	function winWidth() {
 		var w = window;
@@ -164,6 +164,33 @@ $(document).ready(function() {
 	}
 
 	function Node( nodeData ) {
+
+		// functions we need to define early
+		this.showFullContent = function() {
+			if( this.data.html ) {
+				this.dom.content.html( this.data.html );
+			} else if( this.data.text ) {
+				this.dom.content.text( this.data.text );
+			} else {
+				this.dom.content.text( "<no content>" );
+			}
+			this.showing = "full-content";
+		}
+
+		this.showMeta = function() {
+			this.dom.content.html( dataToHTML( this.data ) );
+			this.showing = "meta";
+		}
+
+		//init
+		
+		// data
+		this.data = nodeData;
+
+		// links
+		// TODO should this distinguish incoming and outgoing?
+		this.links = {};
+
 		// dom
 		this.dom = {};
 		this.dom.outer = $('<div class="webleau_node"></div>');
@@ -187,14 +214,20 @@ $(document).ready(function() {
 		this.dom.toolinfo = $('<div class="webleau_tool"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></div>');
 		this.dom.titleLeft.append( this.dom.toolinfo );
 		this.dom.toolinfo.click( function() {
-			console.log( this.data );
+			if( this.showing == 'meta' ) {
+				this.showFullContent();
+			} else {
+				this.showMeta();
+			}
 		}.bind(this));
 
 		this.dom.toolRemove = $('<div class="webleau_tool"><span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span></div>');
 		this.dom.toolRemove.click( function() {
 			if( confirm( "Really?" ) ) {
+				this.remove();
+				updateAllPositions();
 			}
-		}); 
+		}.bind(this)); 
 		
 		this.dom.titleRight.append( this.dom.toolRemove );
 		//this.dom.toolResize = $('<div class="webleau_node_resize webleau_tool"><span class="glyphicon glyphicon-resize-small" aria-hidden="true"></span></div>');
@@ -207,11 +240,10 @@ $(document).ready(function() {
 		this.dom.outer.append( this.dom.content );
 		nodesLayer.append( this.dom.outer );
 		this.dom.titleText.text( nodeData.title );
-		this.dom.content.text( nodeData.content );
 		this.links = {};
 
-		// data
-		this.data = nodeData;
+		// state
+		this.showFullContent();
 
 		// methods
 
@@ -250,11 +282,14 @@ $(document).ready(function() {
 			this.dom.outer.css('left',this.realX()-this.realWidth()/2);
 			this.dom.outer.css('width', this.data.width*winScale);
 			this.dom.outer.css('height',this.data.height*winScale);
+			this.dom.content.css('height',this.data.height*winScale-20 ); // height of box minus borders and title
 		}
 
 		this.expandHeight = function() {
 			//this.dom.outer.css('width','auto');
 			this.dom.outer.css('height','auto');
+			this.dom.outer.css('width',this.dom.outer.width()-20); // compensate for scrollbar TODO (needs work)
+			this.dom.content.css('height','auto');
 			this.dom.outer.find( '.webleau_tool' ).addClass('noTools');
 			this.data.width = this.dom.outer.width()/winScale;
 			this.data.height = this.dom.outer.height()/winScale;
@@ -317,6 +352,24 @@ $(document).ready(function() {
 			}
 			return rPt;
 		}
+
+		this.registerLink = function( link ) {
+			this.links[link.data.id] = link;
+		}
+
+		this.deRegisterLink = function( link ) {
+			delete this.links[link.data.id];
+		}
+
+		this.remove = function() {
+			var link_ids = Object.keys(this.links);
+			for( var i=0;i<link_ids.length;++i ) {
+				this.links[link_ids[i]].remove();
+			}
+			delete nodes[this.data.id];
+			this.dom.outer.remove();
+		}
+
 		// register UI hooks
 		this.dom.outer.resizable({
 			resize: this.resized.bind(this),
@@ -325,19 +378,29 @@ $(document).ready(function() {
 			minWidth: 50
 		});
 		this.dom.outer.draggable( { 
+			containment: $('.webleau_nodes'),
 			handle: ".webleau_node_title",
 			opacity: 0.8,
+			scroll: true,
+			scrollSensitivity: 100,
 			drag: this.dragged.bind(this)
 		});
 	}
 
 	function Link( linkData ) {
-		// <polyline points="0,0 0,50 20,70 40,10 42,8 44,10, 46,14 50,50" />
+
+ 		this.data = linkData;
+		if( !this.data.id  ) { this.data.id=uuid(); }
+		var subjectNode = nodes[this.data.subject.node];
+		var objectNode = nodes[this.data.object.node];
+		// TODO check if these exist and handle exceptions	
+		subjectNode.registerLink(this);
+		objectNode.registerLink(this);
+
 		this.dom = {};
 		this.dom.id = "link_"+linkData.id;
- 		this.dom.outer = $('<line id="'+this.dom.id+'" class="webleau_link" marker-end="url(#arrow)" />');
- 		this.data = linkData;
-		linksLayer.append( this.dom.outer );
+ 		var line = $('<line id="'+this.dom.id+'" class="webleau_link" marker-end="url(#arrow)" />');
+		linksLayer.append( line );
 
 		// methods 
 
@@ -354,6 +417,14 @@ $(document).ready(function() {
 			}
 		}
 
+		this.remove = function() {
+			var subjectNode = nodes[this.data.subject.node];
+			var objectNode = nodes[this.data.object.node];
+			subjectNode.deRegisterLink(this);
+			objectNode.deRegisterLink(this);
+			delete links[this.data.id];
+			$("#"+this.dom.id).remove();
+		}
 	}
 
 	function initPage( layout) {
@@ -465,26 +536,89 @@ $(document).ready(function() {
 		// nb need to stop this applying to textarea and input
 		var clipboardData = event.clipboardData || window.clipboardData || event.originalEvent.clipboardData;
 		var json = clipboardData.getData('application/json');
+		var nodeData = {
+			id: uuid(),
+			x: mouseX,
+ 			y: mouseY,
+			width:  winWidth() /2/winScale,
+			height: winHeight()/2/winScale,
+			meta: {}
+		};
 		if( json ) {
 			//nb this can throw a syntax error, it really should be handled
 			var jsonData = JSON.parse( json );
 			// assume object
 			// detect JRNL0.1
 			if( jsonData.jrnlCitation ) {
+				nodeData.title = jsonData.citation.title;
+				nodeData.html = jsonData.citation.html; // or text
+				nodeData.edit = false;
+				nodeData.meta.source = {};
+				nodeData.meta.source.URL = jsonData.citation.url;
+				nodeData.meta.source.copiedTime = jsonData.citation.timestamp;
+				nodeData.meta.source.creators = [ 
+					{
+						name: jsonData.citation.author,
+						page: jsonData.citation.authorURL
+					}
+				]
+				var newNode = addNode(nodeData);
+				newNode.expandHeight();
+				return;
 			}
 		}
 
 		var text = clipboardData.getData( 'text/plain' );
-		var newNode = addNode({
-				id: uuid(),
-				x: mouseX,
-				y: mouseY,
-				width:  winWidth() /2/layoutScale,
-				height: winHeight()/2/layoutScale,
-				title: 'Pasted text',
-				content: text,
-				edit: true
-		})
+		if( validURL(text) ) {
+			nodeData.title = "Pasted URL";
+			nodeData.text = text+"\n(will lookup metadata in a mo...)";
+			nodeData.edit = false;
+			var newNode = addNode(nodeData);
+			newNode.expandHeight();
+			return;
+		}
+
+		var html = clipboardData.getData( 'text/html' );
+		if( html ) {
+			nodeData.title = "Pasted HTML";
+			nodeData.html = text;
+			nodeData.edit = true;
+			var newNode = addNode(nodeData);
+			newNode.expandHeight();
+			return;
+		}
+
+		nodeData.title = "Pasted text";
+		nodeData.text = text;
+		nodeData.edit = true;
+		var newNode = addNode(nodeData);
 		newNode.expandHeight();
 	});	
+
+	function dataToHTML(value) {
+		if( value && typeof value === 'object' && value.constructor === Array ) {
+			// array
+			var table = $('<table class="meta_array"></table');
+			for( var i=0; i<value.length; ++i ) {
+				var tr = $('<tr></tr>');
+				tr.append( $('<th></th>').text(i) );
+				tr.append( $('<td></td>').append( dataToHTML( value[i] ) ) );
+				table.append(tr);
+			}
+			return table;
+		} else if( value && typeof value === 'object' && value.constructor === Object ) {
+			// object
+			var keys = Object.keys(value);
+			var table = $('<table class="meta_object"></table');
+			for( var i=0; i<keys.length; ++i ) {
+				var tr = $('<tr></tr>');
+				tr.append( $('<th></th>').text(keys[i]) );
+				tr.append( $('<td></td>').append( dataToHTML( value[keys[i]] ) ) );
+				table.append(tr);
+			}
+			return table;
+		} else {
+			return $('<span class="meta_value"></span>').text(value);
+		}
+	}
 });
