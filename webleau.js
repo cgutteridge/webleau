@@ -309,6 +309,7 @@ $(document).ready(function() {
 				width:  winWidth() /2/winScale/layoutScale,
 				height: winHeight()/2/winScale/layoutScale,
 				text: "",
+				edit: true,
 				meta: {}
 			};
 			var comment = addNode(nodeData);
@@ -610,6 +611,7 @@ $(document).ready(function() {
 				width:  winWidth() /2/winScale/layoutScale,
 				height: winHeight()/2/winScale/layoutScale,
 				text: "",
+				edit: true,
 				meta: {}
 			};
 			var comment = addNode(nodeData);
