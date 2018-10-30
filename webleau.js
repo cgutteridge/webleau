@@ -646,8 +646,10 @@ $(document).ready(function() {
 
 		/* CONTROLS */
 
+		var controlsWrapper = $('<div class="controls_wrapper"><div class="controls_icon"><span class="glyphicon glyphicon-wrench" aria-hidden="true"></span></div></div>');
 		var controls = $('<div class="controls"></div>');
-		$('body').append(controls);
+		$(controlsWrapper).append(controls);
+		$('body').append(controlsWrapper);
 
 		/* CONTROLS: sliders */
 

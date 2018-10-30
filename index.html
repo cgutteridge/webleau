@@ -28,6 +28,18 @@ body {
 }
 
 /* controls */
+.controls_icon {
+	position: fixed;
+	top:0%;
+	right:0%;
+	opacity: 0.3;
+	padding: 10px;
+	font-size: 200%;
+	color: #000;
+	background-color: #999;
+}
+.controls_wrapper {
+}
 .controls {
 	width:30%;
 	position: fixed;
@@ -36,10 +48,13 @@ body {
 	text-align: left;
 	background-color: #ccc;
 	padding: 10px;
-	opacity: 0.3;
+	display: none;
 }
-.controls:hover {
-	opacity: 0.8;
+.controls_wrapper:hover .controls_icon {
+	display: none;
+}
+.controls_wrapper:hover .controls {
+	display: block;
 }
 .controls .webleau_controls_tools {
 	text-align: left;
