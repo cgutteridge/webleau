@@ -26,6 +26,17 @@ body {
 	left: 0;
 	pointer-events: none; 
 }
+.ident {
+	position:fixed;
+	pointer-events: none; 
+	left:1%;
+	top:1%;
+	font-family: fantasy;
+	font-style: italic;
+	font-weight: bold;
+	opacity: 0.1;
+	font-size: 300%;
+}
 
 /* controls */
 .controls_icon {
@@ -168,14 +179,18 @@ body {
 .webleau_link {
 	stroke:#666;
 	stroke-width:2;
-	opacity: 0.3;
+	opacity: 0.2;
 }
 .webleau_link_from_text {
         opacity: 0.6;
 	font-size: 8pt;
 	text-anchor: middle;
 }
-
+.crosshair line {
+	stroke:#666;
+	stroke-width:2;
+	opacity: 0.2;
+}
 
 /*meta data table*/
 .meta_object, .meta_array {

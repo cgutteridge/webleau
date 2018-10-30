@@ -3,84 +3,32 @@ $(document).ready(function() {
 	var layout = {
 		nodes: [
 			{
-				id: 'f',
-				x: 400,
-				y: 100,
+				id: 'welcome',
+				x: 0,
+				y: 0,
 				width: 200,
 				height: 200,
-				title: 'Lonely',
-				text: 'I\'m not connected to anything.',
+				title: 'Welcome',
+				html: '<p>Welcome to Webleau.</p><p><a href="https://jrnl.global/2018/10/30/webleau-progress/">Introduction blog post</a></p>',
 				edit: true
 			},
 			{
 				id: 'a',
-				x: -100,
-				y: 100,
+				x: 300,
+				y: 200,
 				width: 200,
 				height: 200,
-				title: 'Box A',
-				text: 'This is a comment',
+				title: 'Comment',
+				text: 'Try pasting URLs from media sites. Try double clicking on the background. Use the spanner to save state (to a text string for now). Drag nodes to touch to make a link.',
 				edit: true
-			},
-			{
-				id: 'c',
-				x: -100,
-				y: -100,
-				width: 100,
-				height: 100,
-				title: 'Box C',
-				text: 'This is also a comment',
-				edit: true
-			},
-			{
-				id: 'd',
-				x: 10,
-				y: 10,
-				width: 100,
-				height: 100,
-				title: 'Box D',
-				text: 'This is also a comment'
-			},
-			{
-				id: 'b',
-				x: 100,
-				y: -250,
-				width: 200,
-				height: 200,
-				title: 'Box B',
-				text: 'This is also a comment'
 			}
 		],
 		links: [
 			{
-				label: "see also",
-				id: 'l1',
+				label: "comments",
+				id: 'welcomelink',
 				subject: { node: 'a' },
-				object: { node: 'b' }
-			},
-			{
-				label: "see also",
-				id: 'l2',
-				subject: { node: 'a' },
-				object: { node: 'c' }
-			},
-			{
-				label: "creator",
-				id: 'l3',
-				subject: { node: 'a' },
-				object: { node: 'd' }
-			},
-			{
-				label: "topic",
-				id: 'l4',
-				subject: { node: 'd' },
-				object: { node: 'b' }
-			},
-			{
-				label: "topic",
-				id: 'l5',
-				subject: { node: 'd' },
-				object: { node: 'c' }
+				object: { node: 'welcome' }
 			}
 		]
 	};
@@ -183,30 +131,29 @@ $(document).ready(function() {
 			var hasContent = false;
 			if( this.data.html ) {
 				this.dom.content.html( this.data.html );
-				return;
-			} 
-			if( this.data.text ) {
+			} else if( this.data.text ) {
 				this.dom.content.text( this.data.text );	
-				return;
-			}
-			this.dom.content.text("");
-			if( this.data.source ) {
-				if( this.data.source.URL ) {
-					this.dom.content.append( $('<div></div>').append( $('<a></a>').attr('href',this.data.source.URL).text(this.data.source.URL)));
+			} else {
+				this.dom.content.text("");
+				if( this.data.source ) {
+					if( this.data.source.URL ) {
+						this.dom.content.append( $('<div></div>').append( $('<a></a>').attr('href',this.data.source.URL).text(this.data.source.URL)));
+						hasContent = true;
+					}
+					if( this.data.source.image && this.data.source.image.URL ) {
+						this.dom.content.append( $('<img style="float:right; padding: 0 0 5px 5px;width:50%" />').attr('src',this.data.source.image.URL));;
+						hasContent = true;
+					}
+				}
+				if( this.data.description ) {
+					this.dom.content.append( $('<div></div>').text( this.data.description ));
 					hasContent = true;
 				}
-				if( this.data.source.image && this.data.source.image.URL ) {
-					this.dom.content.append( $('<img style="float:right; padding: 0 0 5px 5px;width:50%" />').attr('src',this.data.source.image.URL));;
-					hasContent = true;
+				if( !hasContent ) {	
+		 			this.dom.content.text( "<no content>" );
 				}
 			}
-			if( this.data.description ) {
-				this.dom.content.append( $('<div></div>').text( this.data.description ));
-				hasContent = true;
-			}
-			if( !hasContent ) {	
-		 		this.dom.content.text( "<no content>" );
-			}
+			this.dom.content.find( 'a' ).attr("target","_blank");
 		}
 
 		this.showMeta = function() {
@@ -274,7 +221,7 @@ $(document).ready(function() {
 			}.bind(this));
 		}
 
-		this.dom.toolfit = $('<div class="webleau_tool"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></div>');
+		this.dom.toolfit = $('<div class="webleau_tool"><span class="glyphicon glyphicon-leaf" aria-hidden="true"></span></div>');
 		this.dom.titleLeft.append( this.dom.toolfit );
 		this.dom.toolfit.click( function() {
 			this.fitSize();
@@ -616,17 +563,20 @@ $(document).ready(function() {
 		}
 	}
 
-
+	function centrePage() {
+		window.scrollTo( offsetX-winWidth()/2, offsetY-winHeight()/2 );
+	}
 		
 	function initPage() {
 		nodesLayer = $('<div class="webleau_nodes"></div>');
 		$('body').append(nodesLayer);
-		var svg = $('<svg class="webleau_svg"><defs><marker id="arrow" markerWidth="11" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs><g id="svg_arrows"></g><g id="svg_labels"></g></svg>');
+		var svg = $('<svg class="webleau_svg"><defs><marker id="arrow" markerWidth="11" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs><g id="svg_arrows"></g><g id="svg_labels"></g><g class="crosshair"><line x1="0" y1="-20" x2="0" y2="20" /><line x1="-20" y1="0" x2="20" y2="0" /></g></svg>');
 		$('body').append(svg);
+		$('.crosshair').attr("transform","translate("+offsetX+","+offsetY+")");
 		// reset SVG layer 
 		svg.html( svg.html() );
-
-		window.scrollTo( offsetX-winWidth()/2, offsetY-winHeight()/2 );
+	
+		centrePage();
 
 		nodesLayer.dblclick(function() {
 			var nodeData = {
@@ -644,6 +594,7 @@ $(document).ready(function() {
 			comment.showEdit();
 		});
 
+		$('body').append( $('<div class="ident">Webleau</div>'));
 		/* CONTROLS */
 
 		var controlsWrapper = $('<div class="controls_wrapper"><div class="controls_icon"><span class="glyphicon glyphicon-wrench" aria-hidden="true"></span></div></div>');
@@ -688,6 +639,8 @@ $(document).ready(function() {
 		var controlTools = $('<div class="webleau_controls_tools"></div>');
 		controls.append( $("<div style='margin-top:1em'>Tools</div>"));
 		controls.append(controlTools);
+	
+		// rightsize
 		var rightsizeTool = $('<div title="rightsize" class="webleau_tool"><span class="glyphicon glyphicon-leaf" aria-hidden="true"></span></div>');
 		controlTools.append( rightsizeTool );
 		rightsizeTool.click( function() {
@@ -695,6 +648,15 @@ $(document).ready(function() {
 			for( var i=0; i<nodeKeys.length; ++i ) {
 				nodes[nodeKeys[i]].fitSize();
 			}
+		});
+
+		// reset
+		var resetTool = $('<div title="reset" class="webleau_tool"><span class="glyphicon glyphicon-move" aria-hidden="true"></span></div>');
+		controlTools.append( resetTool );
+		resetTool.click( function() {
+			winScaleSlider.val(1).trigger('input');
+			layoutScaleSlider.val(1).trigger('input');
+			centrePage();
 		});
 
 		/* CONTROLS: load/save */
