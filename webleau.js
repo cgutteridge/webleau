@@ -665,7 +665,8 @@ $(document).ready(function() {
 		//controls.append( contentToggle );
 		winScaleSlider.on('propertychange input', function( event ) {
 			winScale = winScaleSlider.val();
-			nodeScaleDisplay.text( ""+(Math.round( winScale*100000 ) / 1000)+"%" );
+			var perc = Math.round( winScale*100000 ) / 1000;
+			nodeScaleDisplay.text( ""+perc+"%" );
 			updateAllPositions();
 		});
 		layoutScaleSlider.on('propertychange input', function(event) {
@@ -673,7 +674,9 @@ $(document).ready(function() {
 			var layoutx = (winLeft()+winWidth()/2-offsetX)/layoutScale;
 			var layouty = (winTop()+winHeight()/2-offsetY)/layoutScale;
 			layoutScale = layoutScaleSlider.val();
-			layoutScaleDisplay.text( ""+(Math.round( layoutScale*100000 ) / 1000)+"%" );
+			var perc = Math.round( layoutScale*100000 ) / 1000;
+			layoutScaleDisplay.text( ""+perc+"%" );
+			nodesLayer.css( 'font-size',perc+"%" );
 			var realx = layoutx*layoutScale+offsetX;
 			var realy = layouty*layoutScale+offsetY;
 			window.scrollTo( realx-winWidth()/2, realy-winHeight()/2 );
