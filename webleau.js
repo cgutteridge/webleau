@@ -86,7 +86,8 @@ $(document).ready(function() {
 	};
 	
 	var nodesLayer;
-	var linksLayer;
+	var arrowsLayer;
+	var labelsLayer;
 	var nodes = {};
 	var links = {};
 	var winScale = 1;
@@ -231,10 +232,10 @@ $(document).ready(function() {
 			this.dom.titleLeft.append( this.dom.toolEdit );
 		}
 
-		this.dom.toolexpand = $('<div class="webleau_tool"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></div>');
-		this.dom.titleLeft.append( this.dom.toolexpand );
-		this.dom.toolexpand.click( function() {
-			this.expandHeight();
+		this.dom.toolfit = $('<div class="webleau_tool"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></div>');
+		this.dom.titleLeft.append( this.dom.toolfit );
+		this.dom.toolfit.click( function() {
+			this.fitSize();
 		}.bind(this));
 
 		this.dom.toolinfo = $('<div class="webleau_tool"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></div>');
@@ -284,10 +285,7 @@ $(document).ready(function() {
 			this.data.width  = ui.size.width/winScale/layoutScale;
 			this.data.height = ui.size.height/winScale/layoutScale;
 			this.updatePosition();
-			var  linkIds = Object.keys(links);
-			for( var i=0; i<linkIds.length; ++i ) {
-				links[linkIds[i]].updatePosition();
-			}
+			this.updateLinksPosition();
 		}
 
 		this.dragged = function(event, ui) { 
@@ -296,10 +294,7 @@ $(document).ready(function() {
 			this.data.x = Math.max(10,ui.position.left/layoutScale)+this.realWidth() /layoutScale/2;
 			this.data.y = Math.max(10,ui.position.top /layoutScale)+this.realHeight()/layoutScale/2;
 			this.updatePosition();
-			var  linkIds = Object.keys(links);
-			for( var i=0; i<linkIds.length; ++i ) {
-				links[linkIds[i]].updatePosition();
-			}
+			this.updateLinksPosition();
 		}
 	
 		this.updatePosition = function() {
@@ -309,8 +304,14 @@ $(document).ready(function() {
 			this.dom.outer.css('height',this.data.height*winScale*layoutScale);
 			this.dom.content.css('height',this.data.height*winScale*layoutScale-20 ); // height of box minus borders and title
 		}
+		this.updateLinksPosition = function() {
+			var  linkIds = Object.keys(links);
+			for( var i=0; i<linkIds.length; ++i ) {
+				links[linkIds[i]].updatePosition();
+			}
+		}
 
-		this.expandHeight = function() {
+		this.fitSize = function() {
 			this.dom.outer.css('width','auto');
 			this.dom.outer.css('height','auto');
 			this.dom.content.css('height','auto');
@@ -323,6 +324,7 @@ $(document).ready(function() {
 			this.dom.outer.css('max-width','none');
 			this.dom.outer.css('max-height','none');
 			this.updatePosition();
+			this.updateLinksPosition();
 		}
 
 		this.centrePoint = function() {
@@ -425,13 +427,14 @@ $(document).ready(function() {
 				var linkData = {
 					subject: { node: ui.draggable.attr('data-node') },
 					object: { node: this.data.id },
+					label: "link",
 					id: uuid() 
 				};
 				var newLink = addLink( linkData );
 				subjectNode.data.x = subjectNode.dragStartX;
 				subjectNode.data.y = subjectNode.dragStartY;
 				subjectNode.updatePosition();
-				updateAllPositions();
+				subjectNode.updateLinksPosition();
 			}.bind(this)
 		});
 	}
@@ -446,26 +449,54 @@ $(document).ready(function() {
 		subjectNode.registerLink(this);
 		objectNode.registerLink(this);
 
+		var arrowsG = document.getElementById('svg_arrows');
+		var labelsG = document.getElementById('svg_labels');
+
 		this.dom = {};
+
 		this.dom.id = "link_"+linkData.id;
  		var line = document.createElementNS("http://www.w3.org/2000/svg","line");
 		line.id = this.dom.id;
 		line.setAttribute( "class", "webleau_link" );
 		line.setAttribute( "marker-end", "url(#arrow)" );
-		linksLayer[0].appendChild( line );
+		arrowsG.appendChild( line );
+		this.dom.from_id = "link_from_"+linkData.id;
+
+		this.dom.from_id = "link_from_"+linkData.id;
+ 		var fromText = document.createElementNS("http://www.w3.org/2000/svg","text");
+		fromText.setAttribute( "class", "webleau_link_from_text" );
+		fromText.id = this.dom.from_id;
+		fromText.appendChild( document.createTextNode( linkData.label ));
+		labelsG.appendChild( fromText );
+/*
+		this.dom.to_id = "link_to_"+linkData.id;
+ 		var toText = document.createElementNS("http://www.w3.org/2000/svg","text");
+		toText.setAttribute( "class", "webleau_link_to_text" );
+		toText.id = this.dom.to_id;
+		toText.appendChild( document.createTextNode( "is "+linkData.label+" of" ));
+		labelsG.appendChild( toText );
+*/
 
 		// methods 
 
 		this.updatePosition = function() {
 			var subjectNode = nodes[this.data.subject.node];
 			var objectNode = nodes[this.data.object.node];
-			var pt1 = subjectNode.nearestPointTo( objectNode.centrePoint() );
-			var pt2 = objectNode.nearestPointTo( subjectNode.centrePoint() );
+			var c1 = objectNode.centrePoint();
+			var c2 = subjectNode.centrePoint();
+			var pt1 = subjectNode.nearestPointTo( c1 );
+			var pt2 = objectNode.nearestPointTo( c2 );
 			if( pt1 && pt2 ) {
 				$("#"+this.dom.id).attr('x1',pt1.x);	
 				$("#"+this.dom.id).attr('y1',pt1.y);	
 				$("#"+this.dom.id).attr('x2',pt2.x);	
 				$("#"+this.dom.id).attr('y2',pt2.y);	
+				$("#"+this.dom.from_id).attr('x',(pt1.x+(pt2.x-pt1.x)/2));
+				$("#"+this.dom.from_id).attr('y',(pt1.y+(pt2.y-pt1.y)/2));
+/*
+				$("#"+this.dom.to_id).attr('x',pt2.x);
+				$("#"+this.dom.to_id).attr('y',pt2.y);
+*/
 			}
 		}
 
@@ -482,10 +513,10 @@ $(document).ready(function() {
 	function initPage( layout) {
 		nodesLayer = $('<div class="webleau_nodes"></div>');
 		$('body').append(nodesLayer);
-		linksLayer = $('<svg class="webleau_svg"><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs></svg>');
-		$('body').append(linksLayer);
+		var svg = $('<svg class="webleau_svg"><defs><marker id="arrow" markerWidth="11" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs><g id="svg_arrows"></g><g id="svg_labels"></g></svg>');
+		$('body').append(svg);
 		// reset SVG layer 
-		linksLayer.html( linksLayer.html() );
+		svg.html( svg.html() );
 
 
 		for( var i=0; i<layout.nodes.length; ++i ) {
@@ -615,7 +646,7 @@ $(document).ready(function() {
 					}
 				]
 				var newNode = addNode(nodeData);
-				newNode.expandHeight();
+				newNode.fitSize();
 				return;
 			}
 		}
@@ -626,7 +657,7 @@ $(document).ready(function() {
 			nodeData.text = text+"\n(will lookup metadata in a mo...)";
 			nodeData.edit = false;
 			var newNode = addNode(nodeData);
-			newNode.expandHeight();
+			newNode.fitSize();
 			$.ajax({
 				method: "GET",
 				data: { url: text },
@@ -646,11 +677,11 @@ $(document).ready(function() {
 					newNode.data.height = data.source.height;
 				}
 				newNode.showFullContent();
-				newNode.expandHeight();
+				newNode.fitSize();
 			}).fail(function(){
 				nodeData.text = text+"\n(metadata query failed)";
 				newNode.showFullContent();
-				newNode.expandHeight();
+				newNode.fitSize();
 			})
 			return;
 		}
@@ -661,7 +692,7 @@ $(document).ready(function() {
 			nodeData.html = text;
 			nodeData.edit = true;
 			var newNode = addNode(nodeData);
-			newNode.expandHeight();
+			newNode.fitSize();
 			return;
 		}
 
@@ -669,7 +700,7 @@ $(document).ready(function() {
 		nodeData.text = text;
 		nodeData.edit = true;
 		var newNode = addNode(nodeData);
-		newNode.expandHeight();
+		newNode.fitSize();
 	});	
 
 	function dataToHTML(value) {
