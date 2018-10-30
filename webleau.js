@@ -209,6 +209,37 @@ $(document).ready(function() {
 			this.showing = "meta";
 		}
 
+		this.showEdit = function() {
+			this.dom.content.html( '' );
+			this.dom.edit = {};
+			this.dom.edit.div = $('<div class="webleau_node_edit"></div>');
+			this.dom.content.append( this.dom.edit.div );
+			this.dom.edit.textarea = $('<textarea style="width:99%; height: 80%;"></textarea>');
+			this.dom.edit.cancel = $('<button style="float:right; max-height:15%">cancel</button>');	
+			this.dom.edit.save = $('<button style="max-height:15%">save</button>');	
+			this.dom.edit.div.append( this.dom.edit.textarea  );	
+			this.dom.edit.div.append( this.dom.edit.cancel  );	
+			this.dom.edit.div.append( this.dom.edit.save  );	
+			this.dom.edit.textarea.focus();
+			if( this.data.html ) {
+				this.dom.edit.textarea.text( this.data.html );
+				this.dom.edit.save.click( function() {
+					this.data.html = this.dom.edit.textarea.val();
+					this.showFullContent();
+				}.bind(this));
+			} else {
+				this.dom.edit.textarea.text( this.data.text );
+				this.dom.edit.save.click( function() {
+					this.data.text = this.dom.edit.textarea.val();
+					this.showFullContent();
+					this.fitSize();
+				}.bind(this));
+			} 
+			this.dom.edit.cancel.click( function() {
+				this.showFullContent();
+			}.bind(this));
+		}
+
 		//init
 		
 		// data
@@ -230,6 +261,9 @@ $(document).ready(function() {
 		if( nodeData.edit ) {
 			this.dom.toolEdit = $('<div class="webleau_tool"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></div>');
 			this.dom.titleLeft.append( this.dom.toolEdit );
+			this.dom.toolEdit.click( function() {
+				this.showEdit();
+			}.bind(this));
 		}
 
 		this.dom.toolfit = $('<div class="webleau_tool"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></div>');
@@ -266,6 +300,29 @@ $(document).ready(function() {
 		this.dom.title.append( this.dom.titleText );
 		this.dom.outer.append( this.dom.content );
 		nodesLayer.append( this.dom.outer );
+		this.dom.outer.dblclick(function() {
+			var nodeData = {
+				id: uuid(),
+				x: mouseX,
+ 				y: mouseY,	
+				title: "Comment",
+				width:  winWidth() /2/winScale/layoutScale,
+				height: winHeight()/2/winScale/layoutScale,
+				text: "",
+				meta: {}
+			};
+			var comment = addNode(nodeData);
+			var linkData = {
+				subject: { node: comment.data.id },
+				object: { node: this.data.id },
+				label: "comments",
+				id: uuid() 
+			};
+			var newLink = addLink( linkData );
+			//subjectNode.updateLinksPosition();
+			comment.showEdit();
+			return false; // don't also run on background
+		}.bind(this));
 		this.links = {};
 
 		// state
@@ -491,8 +548,8 @@ $(document).ready(function() {
 				$("#"+this.dom.id).attr('y1',pt1.y);	
 				$("#"+this.dom.id).attr('x2',pt2.x);	
 				$("#"+this.dom.id).attr('y2',pt2.y);	
-				$("#"+this.dom.from_id).attr('x',(pt1.x+(pt2.x-pt1.x)/2));
-				$("#"+this.dom.from_id).attr('y',(pt1.y+(pt2.y-pt1.y)/2));
+				$("#"+this.dom.from_id).attr('x',(pt1.x+(pt2.x-pt1.x)/4));
+				$("#"+this.dom.from_id).attr('y',(pt1.y+(pt2.y-pt1.y)/4));
 /*
 				$("#"+this.dom.to_id).attr('x',pt2.x);
 				$("#"+this.dom.to_id).attr('y',pt2.y);
@@ -507,6 +564,8 @@ $(document).ready(function() {
 			objectNode.deRegisterLink(this);
 			delete links[this.data.id];
 			$("#"+this.dom.id).remove();
+			$("#"+this.dom.from_id).remove();
+			$("#"+this.dom.to_id).remove();
 		}
 	}
 
@@ -542,6 +601,26 @@ $(document).ready(function() {
 		controls.append( layoutScaleSlider );
 		//controls.append( contentToggle );
 		$('body').append(controls);
+		nodesLayer.dblclick(function() {
+			var nodeData = {
+				id: uuid(),
+				x: mouseX,
+ 				y: mouseY,	
+				title: "Comment",
+				width:  winWidth() /2/winScale/layoutScale,
+				height: winHeight()/2/winScale/layoutScale,
+				text: "",
+				meta: {}
+			};
+			var comment = addNode(nodeData);
+			comment.showEdit();
+		});
+
+		var controlTools = $('<div></div>');
+		var loadTool = $('<div class="webleau_tool"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></div>');
+		$('body').append(controlTools);
+
+
 		winScaleSlider.on('propertychange input', function( event ) {
 			winScale = winScaleSlider.val();
 			nodeScaleDisplay.text( ""+(Math.round( winScale*100000 ) / 1000)+"%" );
