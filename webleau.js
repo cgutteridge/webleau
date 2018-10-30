@@ -53,26 +53,31 @@ $(document).ready(function() {
 		],
 		links: [
 			{
+				label: "see also",
 				id: 'l1',
 				subject: { node: 'a' },
 				object: { node: 'b' }
 			},
 			{
+				label: "see also",
 				id: 'l2',
 				subject: { node: 'a' },
 				object: { node: 'c' }
 			},
 			{
+				label: "creator",
 				id: 'l3',
 				subject: { node: 'a' },
 				object: { node: 'd' }
 			},
 			{
+				label: "topic",
 				id: 'l4',
 				subject: { node: 'd' },
 				object: { node: 'b' }
 			},
 			{
+				label: "topic",
 				id: 'l5',
 				subject: { node: 'd' },
 				object: { node: 'c' }
