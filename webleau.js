@@ -4,8 +4,8 @@ $(document).ready(function() {
 		nodes: [
 			{
 				id: 'f',
-				x: 800,
-				y: 500,
+				x: 400,
+				y: 100,
 				width: 200,
 				height: 200,
 				title: 'Lonely',
@@ -14,8 +14,8 @@ $(document).ready(function() {
 			},
 			{
 				id: 'a',
-				x: 300,
-				y: 500,
+				x: -100,
+				y: 100,
 				width: 200,
 				height: 200,
 				title: 'Box A',
@@ -24,8 +24,8 @@ $(document).ready(function() {
 			},
 			{
 				id: 'c',
-				x: 300,
-				y: 300,
+				x: -100,
+				y: -100,
 				width: 100,
 				height: 100,
 				title: 'Box C',
@@ -34,8 +34,8 @@ $(document).ready(function() {
 			},
 			{
 				id: 'd',
-				x: 410,
-				y: 410,
+				x: 10,
+				y: 10,
 				width: 100,
 				height: 100,
 				title: 'Box D',
@@ -43,8 +43,8 @@ $(document).ready(function() {
 			},
 			{
 				id: 'b',
-				x: 500,
-				y: 150,
+				x: 100,
+				y: -250,
 				width: 200,
 				height: 200,
 				title: 'Box B',
@@ -92,11 +92,15 @@ $(document).ready(function() {
 	var links = {};
 	var winScale = 1;
 	var layoutScale = 1;
-	var mouseX=winWidth()/2/layoutScale;
-	var mouseY=winHeight()/2/layoutScale;
+	var mouseX=0;
+	var mouseY=0;
+	var offsetX = 5000;
+	var offsetY = 5000;
+
+	// location of mouse on tablau
 	$( document).on( "mousemove", function( event ) {
-		mouseX = event.pageX / layoutScale;
-		mouseY = event.pageY / layoutScale;
+		mouseX = (event.pageX-offsetX) / layoutScale;
+		mouseY = (event.pageY-offsetY) / layoutScale;
 	});
 
 	function winHeight() {
@@ -122,7 +126,8 @@ $(document).ready(function() {
 		return (window.pageYOffset || d.scrollTop)  - (d.clientTop || 0);
 	}
 
-	initPage( layout );
+	initPage();
+	setLayout( layout );
 
 	function Point( x,y ) {
 		this.x = x;
@@ -309,8 +314,8 @@ $(document).ready(function() {
 				x: mouseX,
  				y: mouseY,	
 				title: "Comment",
-				width:  winWidth() /2/winScale/layoutScale,
-				height: winHeight()/2/winScale/layoutScale,
+				width:  ((winWidth() /2/winScale))/layoutScale,
+				height: ((winHeight()/2/winScale))/layoutScale,
 				text: "",
 				edit: true,
 				meta: {}
@@ -343,8 +348,8 @@ $(document).ready(function() {
 			hDelta  = ui.size.height - ui.originalSize.height;
 			ui.position.top  = ui.originalPosition.top - hDelta/2;
 			ui.position.left = ui.originalPosition.left - wDelta/2;
-			this.data.width  = ui.size.width/winScale/layoutScale;
-			this.data.height = ui.size.height/winScale/layoutScale;
+			this.data.width  = (ui.size.width/winScale)/layoutScale;
+			this.data.height = (ui.size.height/winScale)/layoutScale;
 			this.updatePosition();
 			this.updateLinksPosition();
 		}
@@ -352,8 +357,8 @@ $(document).ready(function() {
 		this.dragged = function(event, ui) { 
 			ui.position.left = Math.max(10, ui.position.left );
 			ui.position.top = Math.max( 10, ui.position.top );
-			this.data.x = Math.max(10,ui.position.left/layoutScale)+this.realWidth() /layoutScale/2;
-			this.data.y = Math.max(10,ui.position.top /layoutScale)+this.realHeight()/layoutScale/2;
+			this.data.x = (ui.position.left+this.realWidth()/2 -offsetX) /layoutScale;
+			this.data.y = (ui.position.top +this.realHeight()/2-offsetY) /layoutScale;
 			this.updatePosition();
 			this.updateLinksPosition();
 		}
@@ -379,8 +384,8 @@ $(document).ready(function() {
 			this.dom.outer.css('max-width',(winWidth()/2)+"px");
 			this.dom.outer.css('max-height',(winHeight()*3/4)+"px");
 			this.dom.outer.find( '.webleau_tool' ).addClass('noTools');
-			this.data.width = this.dom.outer.width()/winScale/layoutScale+10;
-			this.data.height = this.dom.outer.height()/winScale/layoutScale+10;
+			this.data.width =  (this.dom.outer.width() /winScale)/layoutScale+10;
+			this.data.height = (this.dom.outer.height()/winScale)/layoutScale+10;
 			this.dom.outer.find( '.webleau_tool' ).removeClass('noTools');
 			this.dom.outer.css('max-width','none');
 			this.dom.outer.css('max-height','none');
@@ -395,14 +400,16 @@ $(document).ready(function() {
 		this.borderSize = 2;
 		// real means actual pixels not the place on the conceptual layout
 		this.realX = function() {
-			return this.data.x*layoutScale;
+			return this.data.x*layoutScale+offsetX;
 		}
 		this.realY = function() {
-			return this.data.y*layoutScale;
+			return this.data.y*layoutScale+offsetY;
 		}
+		// the width of the node in pixels in the current scale
 		this.realWidth = function() {
 			return this.data.width*winScale*layoutScale;
 		}
+		// the hight of the node in pixels in the current scale
 		this.realHeight = function() {
 			return this.data.height*winScale*layoutScale;
 		}
@@ -589,15 +596,17 @@ $(document).ready(function() {
 
 		return layout;
 	}
-		
-	function initPage( layout) {
-		nodesLayer = $('<div class="webleau_nodes"></div>');
-		$('body').append(nodesLayer);
-		var svg = $('<svg class="webleau_svg"><defs><marker id="arrow" markerWidth="11" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs><g id="svg_arrows"></g><g id="svg_labels"></g></svg>');
-		$('body').append(svg);
-		// reset SVG layer 
-		svg.html( svg.html() );
 
+	function setLayout(layout) {
+		// erase all stuff
+		linkKeys = Object.keys(links);
+		for( var i=0; i<linkKeys.length; ++i ) {
+			links[linkKeys[i]].remove();
+		}
+		nodeKeys = Object.keys(nodes);
+		for( var i=0; i<nodeKeys.length; ++i ) {
+			nodes[nodeKeys[i]].remove();
+		}
 
 		for( var i=0; i<layout.nodes.length; ++i ) {
 			addNode( layout.nodes[i] );
@@ -605,7 +614,19 @@ $(document).ready(function() {
 		for( var i=0; i<layout.links.length; ++i ) {
 			addLink( layout.links[i] );
 		}
+	}
 
+
+		
+	function initPage() {
+		nodesLayer = $('<div class="webleau_nodes"></div>');
+		$('body').append(nodesLayer);
+		var svg = $('<svg class="webleau_svg"><defs><marker id="arrow" markerWidth="11" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs><g id="svg_arrows"></g><g id="svg_labels"></g></svg>');
+		$('body').append(svg);
+		// reset SVG layer 
+		svg.html( svg.html() );
+
+		window.scrollTo( offsetX-winWidth()/2, offsetY-winHeight()/2 );
 
 		nodesLayer.dblclick(function() {
 			var nodeData = {
@@ -647,12 +668,12 @@ $(document).ready(function() {
 		});
 		layoutScaleSlider.on('propertychange input', function(event) {
 			// find coords of screen centre
-			var layoutx = (winLeft()+winWidth()/2)/layoutScale;
-			var layouty = (winTop()+winHeight()/2)/layoutScale;
+			var layoutx = (winLeft()+winWidth()/2-offsetX)/layoutScale;
+			var layouty = (winTop()+winHeight()/2-offsetY)/layoutScale;
 			layoutScale = layoutScaleSlider.val();
 			layoutScaleDisplay.text( ""+(Math.round( layoutScale*100000 ) / 1000)+"%" );
-			var realx = layoutx*layoutScale;
-			var realy = layouty*layoutScale;
+			var realx = layoutx*layoutScale+offsetX;
+			var realy = layouty*layoutScale+offsetY;
 			window.scrollTo( realx-winWidth()/2, realy-winHeight()/2 );
 			updateAllPositions();
 		});
@@ -693,16 +714,7 @@ $(document).ready(function() {
 				return;
 			}
 	
-			// erase all stuff
-			linkKeys = Object.keys(links);
-			for( var i=0; i<linkKeys.length; ++i ) {
-				links[linkKeys[i]].remove();
-			}
-			nodeKeys = Object.keys(nodes);
-			for( var i=0; i<nodeKeys.length; ++i ) {
-				nodes[nodeKeys[i]].remove();
-			}
-			initPage(layout);
+			setLayout(layout);
 		});
 		
 
