@@ -167,15 +167,35 @@ $(document).ready(function() {
 
 		// functions we need to define early
 		this.showFullContent = function() {
+			this.showing = "full-content";
 			this.dom.titleText.text( this.data.title );
+			var hasContent = false;
 			if( this.data.html ) {
 				this.dom.content.html( this.data.html );
-			} else if( this.data.text ) {
-				this.dom.content.text( this.data.text );
-			} else {
-				this.dom.content.text( "<no content>" );
+				return;
+			} 
+			if( this.data.text ) {
+				this.dom.content.text( this.data.text );	
+				return;
 			}
-			this.showing = "full-content";
+			this.dom.content.text("");
+			if( this.data.source ) {
+				if( this.data.source.URL ) {
+					this.dom.content.append( $('<div></div>').append( $('<a></a>').attr('href',this.data.source.URL).text(this.data.source.URL)));
+					hasContent = true;
+				}
+				if( this.data.source.image && this.data.source.image.URL ) {
+					this.dom.content.append( $('<img style="float:right; padding: 0 0 5px 5px;width:50%" />').attr('src',this.data.source.image.URL));;
+					hasContent = true;
+				}
+			}
+			if( this.data.description ) {
+				this.dom.content.append( $('<div></div>').text( this.data.description ));
+				hasContent = true;
+			}
+			if( !hasContent ) {	
+		 		this.dom.content.text( "<no content>" );
+			}
 		}
 
 		this.showMeta = function() {
@@ -194,7 +214,7 @@ $(document).ready(function() {
 
 		// dom
 		this.dom = {};
-		this.dom.outer = $('<div class="webleau_node"></div>');
+		this.dom.outer = $('<div class="webleau_node"></div>').attr("data-node",this.data.id);
 		this.dom.title = $('<div class="webleau_node_title"></div>');
 		this.dom.titleLeft = $('<div class="webleau_node_title_left"></div>');
 		this.dom.titleRight = $('<div class="webleau_node_title_right"></div>');
@@ -215,10 +235,10 @@ $(document).ready(function() {
 		this.dom.toolinfo = $('<div class="webleau_tool"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></div>');
 		this.dom.titleLeft.append( this.dom.toolinfo );
 		this.dom.toolinfo.click( function() {
-			if( this.showing == 'meta' ) {
-				this.showFullContent();
-			} else {
+			if( this.showing != 'meta' ) {
 				this.showMeta();
+			} else {
+				this.showFullContent();
 			}
 		}.bind(this));
 
@@ -289,13 +309,15 @@ $(document).ready(function() {
 			this.dom.outer.css('width','auto');
 			this.dom.outer.css('height','auto');
 			this.dom.content.css('height','auto');
-			this.dom.outer.css('max-width',this.dom.outer.width()/2); 
+			this.dom.outer.css('max-width',(winWidth()/2)+"px");
+			this.dom.outer.css('max-height',(winHeight()*3/4)+"px");
 			this.dom.outer.find( '.webleau_tool' ).addClass('noTools');
 			this.data.width = this.dom.outer.width()/winScale/layoutScale+10;
 			this.data.height = this.dom.outer.height()/winScale/layoutScale+10;
-			this.updatePosition();
 			this.dom.outer.find( '.webleau_tool' ).removeClass('noTools');
-			this.dom.outer.css('max-width','auto');
+			this.dom.outer.css('max-width','none');
+			this.dom.outer.css('max-height','none');
+			this.updatePosition();
 		}
 
 		this.centrePoint = function() {
@@ -384,7 +406,28 @@ $(document).ready(function() {
 			opacity: 0.8,
 			scroll: true,
 			scrollSensitivity: 100,
-			drag: this.dragged.bind(this)
+			drag: this.dragged.bind(this),
+			start: function() {
+				this.dragStartX = this.data.x;
+				this.dragStartY = this.data.y;
+			}.bind(this)
+		});
+		this.dom.outer.droppable( {
+			hoverClass: "drop-hover",
+			tolerance: "pointer",
+			drop: function( event , ui ) {
+				var subjectNode = nodes[ui.draggable.attr('data-node')];
+				var linkData = {
+					subject: { node: ui.draggable.attr('data-node') },
+					object: { node: this.data.id },
+					id: uuid() 
+				};
+				var newLink = addLink( linkData );
+				subjectNode.data.x = subjectNode.dragStartX;
+				subjectNode.data.y = subjectNode.dragStartY;
+				subjectNode.updatePosition();
+				updateAllPositions();
+			}.bind(this)
 		});
 	}
 
@@ -400,8 +443,11 @@ $(document).ready(function() {
 
 		this.dom = {};
 		this.dom.id = "link_"+linkData.id;
- 		var line = $('<line id="'+this.dom.id+'" class="webleau_link" marker-end="url(#arrow)" />');
-		linksLayer.append( line );
+ 		var line = document.createElementNS("http://www.w3.org/2000/svg","line");
+		line.id = this.dom.id;
+		line.setAttribute( "class", "webleau_link" );
+		line.setAttribute( "marker-end", "url(#arrow)" );
+		linksLayer[0].appendChild( line );
 
 		// methods 
 
@@ -433,6 +479,9 @@ $(document).ready(function() {
 		$('body').append(nodesLayer);
 		linksLayer = $('<svg class="webleau_svg"><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs></svg>');
 		$('body').append(linksLayer);
+		// reset SVG layer 
+		linksLayer.html( linksLayer.html() );
+
 
 		for( var i=0; i<layout.nodes.length; ++i ) {
 			addNode( layout.nodes[i] );
@@ -440,9 +489,6 @@ $(document).ready(function() {
 		for( var i=0; i<layout.links.length; ++i ) {
 			addLink( layout.links[i] );
 		}
-
-		// reset SVG layer 
-		linksLayer.html( linksLayer.html() );
 
 		var controls = $('<div class="controls"></div>');
 		var winScaleSlider = $('<input type="range" value="1" min="0.001" max="8" step="0.001" />');
@@ -581,6 +627,8 @@ $(document).ready(function() {
 				data: { url: text },
 				url: "oembed.php"
 			}).done(function(data){
+				nodeData.text=null;
+				nodeData.html=null;
 				// TOOO any kind of security
 				var keys = Object.keys(data);	
 				for( var i=0;i<keys.length; ++i) {
@@ -595,7 +643,7 @@ $(document).ready(function() {
 				newNode.showFullContent();
 				newNode.expandHeight();
 			}).fail(function(){
-				nodeData.text = text+"\n(loopup failed)";
+				nodeData.text = text+"\n(metadata query failed)";
 				newNode.showFullContent();
 				newNode.expandHeight();
 			})
