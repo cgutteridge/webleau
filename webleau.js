@@ -154,6 +154,8 @@ $(document).ready(function() {
 				}
 			}
 			this.dom.content.find( 'a' ).attr("target","_blank");
+			this.dom.content.find( 'img,iframe' ).css("max-width","100%");
+			this.dom.content.find( 'img,iframe' ).css("max-height","100%");
 		}
 
 		this.showMeta = function() {
@@ -721,7 +723,8 @@ $(document).ready(function() {
 
 	// from http://forums.devshed.com/javascript-development-115/regexp-match-url-pattern-493764.html	
 	function validURL(str) {
-		var pattern = /^(https?:\/\/)?((([a-z\d]([a-z\d-]*[a-z\d])*)\.)+[a-z]{2,}|((\d{1,3}\.){3}\d{1,3}))(\:\d+)?(\/[-a-z\d%_.~+]*)*(\?[-;&a-z\d%_.~+=]*)?(\#[-a-z\d_]*)?$/i;
+		//var pattern = /^(https?:\/\/)?((([a-z\d]([a-z\d-]*[a-z\d])*)\.)+[a-z]{2,}|((\d{1,3}\.){3}\d{1,3}))(\:\d+)?(\/[-a-z\d%_.~+]*)*(\?[-;&a-z\d%_.~+=]*)?(\#[-a-z\d_]*)?$/i;
+		var pattern = /^(https?:\/\/)?((([a-z\d]([a-z\d-]*[a-z\d])*)\.)+[a-z]{2,}|((\d{1,3}\.){3}\d{1,3}))(\:\d+)?[^ ]*/;
 		if(!pattern.test(str)) {
 			return false;
 		} else {
@@ -819,7 +822,7 @@ $(document).ready(function() {
 		var html = clipboardData.getData( 'text/html' );
 		if( html ) {
 			nodeData.title = "Pasted HTML";
-			nodeData.html = text;
+			nodeData.html = html;
 			nodeData.edit = true;
 			var newNode = addNode(nodeData);
 			newNode.fitSize();
