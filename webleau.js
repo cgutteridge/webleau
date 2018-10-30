@@ -214,12 +214,14 @@ $(document).ready(function() {
 			this.dom.edit = {};
 			this.dom.edit.div = $('<div class="webleau_node_edit"></div>');
 			this.dom.content.append( this.dom.edit.div );
-			this.dom.edit.textarea = $('<textarea style="width:99%; height: 80%;"></textarea>');
-			this.dom.edit.cancel = $('<button style="float:right; max-height:15%">cancel</button>');	
-			this.dom.edit.save = $('<button style="max-height:15%">save</button>');	
+			this.dom.edit.textarea = $('<textarea class="normal-paste" style="width:99%; height: 80%;"></textarea>');
+			var buttons = $('<div style="margin-top:3%;text-align:right"></div>');
+			this.dom.edit.save = $('<button style="max-height:10%">OK</button>');	
+			this.dom.edit.cancel = $('<button style="float:right; max-height:10%">Cancel</button>');	
 			this.dom.edit.div.append( this.dom.edit.textarea  );	
-			this.dom.edit.div.append( this.dom.edit.cancel  );	
-			this.dom.edit.div.append( this.dom.edit.save  );	
+			this.dom.edit.div.append( buttons );
+			buttons.append( this.dom.edit.save  );	
+			buttons.append( this.dom.edit.cancel  );	
 			this.dom.edit.textarea.focus();
 			if( this.data.html ) {
 				this.dom.edit.textarea.text( this.data.html );
@@ -238,6 +240,7 @@ $(document).ready(function() {
 			this.dom.edit.cancel.click( function() {
 				this.showFullContent();
 			}.bind(this));
+			this.fitSize();
 		}
 
 		//init
@@ -496,6 +499,7 @@ $(document).ready(function() {
 			}.bind(this)
 		});
 	}
+	// End Node
 
 	function Link( linkData ) {
 
@@ -569,7 +573,23 @@ $(document).ready(function() {
 			$("#"+this.dom.to_id).remove();
 		}
 	}
+	// End Link
 
+	function getLayout() {
+		var layout = { nodes: [], links: [] };
+		var linkKeys = Object.keys( links );
+		for( var i=0;i<linkKeys.length;++i ) {
+			layout.links.push( links[linkKeys[i]].data );
+		}
+
+		var nodeKeys = Object.keys( nodes );
+		for( var i=0;i<nodeKeys.length;++i ) {
+			layout.nodes.push( nodes[nodeKeys[i]].data );
+		}
+
+		return layout;
+	}
+		
 	function initPage( layout) {
 		nodesLayer = $('<div class="webleau_nodes"></div>');
 		$('body').append(nodesLayer);
@@ -586,22 +606,7 @@ $(document).ready(function() {
 			addLink( layout.links[i] );
 		}
 
-		var controls = $('<div class="controls"></div>');
-		var winScaleSlider = $('<input type="range" value="1" min="0.001" max="8" step="0.001" />');
-		var layoutScaleSlider = $('<input type="range" value="1" min="0.001" max="8" step="0.001" />');
-;
-		//var contentToggle = $('<label>Show node contents: </label>');
-		//var input = $('<input type="checkbox" value="1" checked></input>');
-		//contentToggle.append(input);
-		var nodeScaleDisplay = $('<span>100%</span>');
-		controls.append( $('<div>Node scale: </div>' ).append(nodeScaleDisplay));
-		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(winScaleSlider) );
-		var layoutScaleDisplay = $('<span>100%</span>');
-		controls.append( $('<div>Layout scale: </div>' ).append(layoutScaleDisplay));
-		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(layoutScaleSlider) );
-		controls.append( layoutScaleSlider );
-		//controls.append( contentToggle );
-		$('body').append(controls);
+
 		nodesLayer.dblclick(function() {
 			var nodeData = {
 				id: uuid(),
@@ -618,11 +623,23 @@ $(document).ready(function() {
 			comment.showEdit();
 		});
 
-		var controlTools = $('<div></div>');
-		var loadTool = $('<div class="webleau_tool"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></div>');
-		$('body').append(controlTools);
+		/* CONTROLS */
 
+		var controls = $('<div class="controls"></div>');
+		$('body').append(controls);
 
+		/* CONTROLS: sliders */
+
+		var winScaleSlider = $('<input type="range" value="1" min="0.001" max="8" step="0.001" />');
+		var layoutScaleSlider = $('<input type="range" value="1" min="0.001" max="8" step="0.001" />');
+		var nodeScaleDisplay = $('<span>100%</span>');
+		controls.append( $('<div>Node scale: </div>' ).append(nodeScaleDisplay));
+		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(winScaleSlider) );
+		var layoutScaleDisplay = $('<span>100%</span>');
+		controls.append( $('<div>Layout scale: </div>' ).append(layoutScaleDisplay));
+		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(layoutScaleSlider) );
+		controls.append( layoutScaleSlider );
+		//controls.append( contentToggle );
 		winScaleSlider.on('propertychange input', function( event ) {
 			winScale = winScaleSlider.val();
 			nodeScaleDisplay.text( ""+(Math.round( winScale*100000 ) / 1000)+"%" );
@@ -639,6 +656,57 @@ $(document).ready(function() {
 			window.scrollTo( realx-winWidth()/2, realy-winHeight()/2 );
 			updateAllPositions();
 		});
+
+
+		/* CONTROLS: tools */
+		var controlTools = $('<div class="webleau_controls_tools"></div>');
+		controls.append( $("<div style='margin-top:1em'>Tools</div>"));
+		controls.append(controlTools);
+		var rightsizeTool = $('<div title="rightsize" class="webleau_tool"><span class="glyphicon glyphicon-leaf" aria-hidden="true"></span></div>');
+		controlTools.append( rightsizeTool );
+		rightsizeTool.click( function() {
+			nodeKeys = Object.keys(nodes);
+			for( var i=0; i<nodeKeys.length; ++i ) {
+				nodes[nodeKeys[i]].fitSize();
+			}
+		});
+
+		/* CONTROLS: load/save */
+		var controlIO = $('<div class="webleau_controls_tools"></div>');
+		var ioTextarea = $('<textarea class="normal-paste" placeholder="save/load: hit save and copy this, or paste in here and hit load" style="width: 100%; height: 10%;" id="webleau_io"></textarea>');
+		controls.append( $("<div style='margin-top:1em'>Upload/Download</div>"));
+		controls.append( ioTextarea );
+		var downloadTool = $('<div title="download" class="webleau_tool"><span class="glyphicon glyphicon-download" aria-hidden="true"></span></div>');
+		controlIO.append( downloadTool );
+		var uploadTool = $('<div title="upload" class="webleau_tool"><span class="glyphicon glyphicon-upload" aria-hidden="true"></span></div>');
+		controlIO.append( uploadTool );
+		controls.append(controlIO);
+		downloadTool.click( function() {
+			var layout = getLayout();
+			ioTextarea.val( JSON.stringify( layout ) );
+			ioTextarea.select();
+		});
+		uploadTool.click( function() {
+			var layout = JSON.parse( ioTextarea.val() );
+			if( !layout ) {
+				alert( "LOADING ERROR. Rewind tape and try again.");
+				return;
+			}
+	
+			// erase all stuff
+			linkKeys = Object.keys(links);
+			for( var i=0; i<linkKeys.length; ++i ) {
+				links[linkKeys[i]].remove();
+			}
+			nodeKeys = Object.keys(nodes);
+			for( var i=0; i<nodeKeys.length; ++i ) {
+				nodes[nodeKeys[i]].remove();
+			}
+			initPage(layout);
+		});
+		
+
+		/* end controls */
 	}
 
 
@@ -695,8 +763,10 @@ $(document).ready(function() {
 		return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, randomDigit);
 	}
 
-
-	$(document).on('paste', function(event) {
+	nodesLayer.focus();
+	nodesLayer.on('paste', function(event) {
+		// if we are focused on a normal-paste element just skip this handler
+		if( $('.normal-paste:focus').length ) { return; }
 		// nb need to stop this applying to textarea and input
 		var clipboardData = event.clipboardData || window.clipboardData || event.originalEvent.clipboardData;
 		var json = clipboardData.getData('application/json');

@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 <script src="webleau.js"></script>
 <style>
+
 body {
 	font-size:10pt;
 	width: 100%;
@@ -25,18 +26,49 @@ body {
 	left: 0;
 	pointer-events: none; 
 }
+
+/* controls */
 .controls {
 	width:30%;
 	position: fixed;
 	top:0%;
 	right:0%;
-	text-align: right;
+	text-align: left;
 	background-color: #ccc;
 	padding: 10px;
 	opacity: 0.3;
 }
 .controls:hover {
 	opacity: 0.8;
+}
+.controls .webleau_controls_tools {
+	text-align: left;
+}
+.controls .webleau_tool {
+	background-color: #999;
+	color: white;
+	cursor: pointer;
+	font-size: 200%;
+	padding: 3px;
+	margin: 3px;
+	display: inline-block;
+}
+.controls .webleau_tool:hover {
+	background-color: #666;
+}
+/* end controls */
+
+
+/* nodes */
+.webleau_node:hover .webleau_tool {
+	color: white;
+	cursor: pointer;
+	font-size: 100%;
+	padding: 3px;
+	display: inline-block;
+}
+.weblau_node .ui-icon {
+	display: none !important;
 }
 .ui-resizable-handle {
 	opacity: 0;
@@ -108,13 +140,13 @@ body {
 	color: black;
 	overflow: auto;
 }
-
 .drop-hover {
 	background-color: #999;
 }
 .drop-hover .webleau_node_title{
 	background-color: #666;
 }
+/* end nodes */
 
 
 /* SVG */
