@@ -40,16 +40,32 @@ $(document).ready(function() {
 	var links = {};
 	var winScale = 1;
 	var layoutScale = 1;
-	var mouseX=0;
-	var mouseY=0;
+	var mouse = toVirtual(screenMiddle());
 	var offsetX = 5000;
 	var offsetY = 5000;
 
 	// location of mouse on tablau
 	$( document).on( "mousemove", function( event ) {
-		mouseX = (event.pageX-offsetX) / layoutScale;
-		mouseY = (event.pageY-offsetY) / layoutScale;
+		return toVirtual( new Point( event.pageX, event.pageY ) );
 	});
+
+	function screenMiddle() {
+		return new Point( winLeft()+winWidth()/2, winTop()+winHeight()/2 );
+	}
+
+	function toVirtual(realpt) {
+		return new Point( 
+			(realpt.x-offsetX)/layoutScale,
+			(realpt.y-offsetY)/layoutScale
+		);
+	}
+
+	function toReal(virtpt) {
+		return new Point( 
+			virtpt.x*layoutScale+offsetX,
+			virtpt.y*layoutScale+offsetY
+		);
+	}
 
 	function winHeight() {
 		var w = window;
@@ -125,8 +141,19 @@ $(document).ready(function() {
 	function Node( nodeData ) {
 
 		// functions we need to define early
+		this.showGraphBase = function() {
+			this.dom.titleText.text( this.data.title );
+			this.dom.content.html("Loading...");
+		}
 		this.showFullContent = function() {
 			this.showing = "full-content";
+			// this should be plugin based eventually
+			if( this.data.type == 'graph-base' ) {
+				this.showGraphBase();
+				return;
+			}
+
+			// html, text, or using metadata
 			this.dom.titleText.text( this.data.title );
 			var hasContent = false;
 			if( this.data.html ) {
@@ -246,7 +273,7 @@ $(document).ready(function() {
 
 		this.dom.toolRemove = $('<div class="webleau_tool"><span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span></div>');
 		this.dom.toolRemove.click( function() {
-			if( confirm( "Really?" ) ) {
+			if( confirm( "Really delete?" ) ) {
 				this.remove();
 				updateAllPositions();
 			}
@@ -629,15 +656,13 @@ $(document).ready(function() {
 		});
 		layoutScaleSlider.on('propertychange input', function(event) {
 			// find coords of screen centre
-			var layoutx = (winLeft()+winWidth()/2-offsetX)/layoutScale;
-			var layouty = (winTop()+winHeight()/2-offsetY)/layoutScale;
+			var screenMiddleVirt = toVirtual(screenMiddle());
 			layoutScale = layoutScaleSlider.val();
 			var perc = Math.round( layoutScale*100000 ) / 1000;
 			layoutScaleDisplay.text( ""+perc+"%" );
 			nodesLayer.css( 'font-size',perc+"%" );
-			var realx = layoutx*layoutScale+offsetX;
-			var realy = layouty*layoutScale+offsetY;
-			window.scrollTo( realx-winWidth()/2, realy-winHeight()/2 );
+			var screenMiddleReal = toReal(screenMiddleVirt);
+			window.scrollTo( screenMiddleReal.x-winWidth()/2, screenMiddleReal.y-winHeight()/2 );
 			updateAllPositions();
 		});
 
@@ -664,6 +689,29 @@ $(document).ready(function() {
 			winScaleSlider.val(1).trigger('input');
 			layoutScaleSlider.val(1).trigger('input');
 			centrePage();
+		});
+
+		// graph
+		var graphTool = $('<div title="graph" class="webleau_tool"><span class="glyphicon glyphicon-fire" aria-hidden="true"></span></div>');
+		controlTools.append( graphTool );
+		graphTool.click( function() {
+			var endpoint = "graph-api.php";
+			var id = "graph/".endpoint;
+			if( nodes[id] ) {
+				nodes[id].reveal();
+			} else {
+				addNode({
+					id: uuid(),
+					x: mouseX,
+ 					y: mouseY,	
+					title: "Graph API",
+					width:  ((winWidth() /2/winScale))/layoutScale,
+					height: ((winHeight()/2/winScale))/layoutScale,
+					type: "graph-base",
+					endpoint: endpoint,
+					meta: {}
+				});
+			}
 		});
 
 		/* CONTROLS: load/save */
