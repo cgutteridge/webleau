@@ -213,7 +213,7 @@ $(document).ready(function() {
 					row.prepend(view);
 					this.dom.content.append(row);
 					view.click( function() {
-						var id = "graph/"+this.node.data.endpoint+"/type/"+type;
+						var id = "graph/"+this.node.data.endpoint+"/type/"+this.type;
 						if( nodes[id] ) {
 							nodes[id].reveal();
 							return;
