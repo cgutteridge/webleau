@@ -343,10 +343,16 @@ $(document).ready(function() {
 				if( !hasContent ) {	
 		 			this.dom.content.text( "<no content>" );
 				}
+				console.log( this.data.meta );
+			}
+			if( this.data.meta && this.data.meta.source && this.data.meta.source.URL ) {
+				var span = $('<div style="text-align:right">- </div>');
+				this.dom.content.append( span );
+				span.append( $('<a>Source</a>').attr( 'href',this.data.meta.source.URL));
 			}
 			this.dom.content.find( 'a' ).attr("target","_blank");
 			this.dom.content.find( 'img,iframe' ).css("max-width","100%");
-			this.dom.content.find( 'img,iframe' ).css("max-height","100%");
+			//this.dom.content.find( 'img,iframe' ).css("max-height","100%");
 		}
 
 		this.showMeta = function() {
