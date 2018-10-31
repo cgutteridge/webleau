@@ -155,37 +155,12 @@ $(document).ready(function() {
 				//this.dom.content.html( dataToHTML( data ) );
 				var keys = Object.keys( data.nodes );
 				for( var i=0;i<keys.length;++i) {
-					var node = data.nodes[keys[i]];
-					var row = $('<div></div>').text( " "+node.title);
+					var apiNode = data.nodes[keys[i]];
+					var row = $('<div></div>').text( " "+apiNode.title);
 					var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>');
 					row.prepend(view);
 					this.dom.content.append(row);
-					view.click( function() {
-						var id = "graph/"+this.node.data.endpoint+"/node/"+this.apiNode.id;
-						if( nodes[id] ) {
-							nodes[id].reveal();
-							return;
-						} 
-						var pt = toVirtual(screenMiddle());
-						addNode({
-							id: id,
-							x: pt.x,
- 							y: pt.y,	
-							title: this.apiNode.title,
-							width:  ((winWidth() /2/winScale))/layoutScale,
-							height: ((winHeight()/2/winScale))/layoutScale,
-							type: "graph-node",
-							nodeID: this.apiNode.id,
-							endpoint: this.node.data.endpoint,
-							meta: {}
-						});
-						addLink({
-							subject: {node: id},
-							object: {node: this.node.data.id},
-							label: "belongs to",
-							id: uuid() 
-						});
-					}.bind({node:this,apiNode:node}));
+					view.click( function() { this.node.manifestGraphNode(this.apiNode); }.bind({node:this,apiNode:apiNode}) );
 				}
 				this.fitSize();
 			}.bind(this)).fail(function(){
@@ -194,6 +169,66 @@ $(document).ready(function() {
 			}.bind(this))
 		}
 
+		this.showGraphNode = function() {
+			this.dom.titleText.text( this.data.title );
+			this.dom.content.html("Loading...");
+			var node = this;
+			$.ajax({
+				method: "GET",
+				data: { action: 'nodes', ids:this.data.nodeID },
+				url: node.data.endpoint
+			}).done(function(data){
+				//this.dom.content.html( dataToHTML( data ) );
+				this.data.graph = data.nodes[this.data.nodeID];
+				if( this.data.graph.content ) {
+					this.dom.content.html( this.data.graph.content );
+					// duplicate code, candidate for a function?
+					this.dom.content.find( 'a' ).attr("target","_blank");
+					this.dom.content.find( 'img,iframe' ).css("max-width","100%");
+				} else if( this.data.graph.icon ) {
+					this.dom.content.html( $("<img style='width:100%;min-width:50px;max-width:100%' />").attr('src',this.data.graph.icon));
+				} else {
+					this.showGraphNodeLinks();
+				}	
+				this.fitSize();
+			}.bind(this)).fail(function(){
+				this.dom.content.html( "API Call failed" );
+				this.fitSize();
+			}.bind(this))
+		}
+
+		this.manifestGraphNode = function(apiNode) {
+			var id = "graph/"+this.data.endpoint+"/node/"+apiNode.id;
+			var link_id = "graph/link/"+id+"/"+this.data.id;
+			if( nodes[id] ) {
+				nodes[id].reveal();
+			} else {
+				var pt = toVirtual(screenMiddle());
+				addNode({
+					id: id,
+					x: pt.x,
+ 					y: pt.y,	
+					title: apiNode.title,
+					width:  ((winWidth() /2/winScale))/layoutScale,
+					height: ((winHeight()/2/winScale))/layoutScale,
+					type: "graph-node",
+					link: true,
+					nodeID: apiNode.id,
+					endpoint: this.data.endpoint,
+					meta: {}
+				});
+			}
+			if( !links[link_id] ){ 
+				addLink({
+					subject: {node: id},
+					object: {node: this.data.id},
+					label: "belongs to",
+					id: link_id
+				});
+			}
+		}
+
+		
 		this.showGraphBase = function() {
 			this.dom.titleText.text( this.data.title );
 			this.dom.content.html("Loading...");
@@ -212,38 +247,57 @@ $(document).ready(function() {
 					var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>');
 					row.prepend(view);
 					this.dom.content.append(row);
-					view.click( function() {
-						var id = "graph/"+this.node.data.endpoint+"/type/"+this.type;
-						if( nodes[id] ) {
-							nodes[id].reveal();
-							return;
-						}
-						var pt = toVirtual(screenMiddle());
-						addNode({
-							id: id,
-							x: pt.x,
- 							y: pt.y,	
-							title: "Graph API: "+this.type+" nodes",
-							width:  ((winWidth() /2/winScale))/layoutScale,
-							height: ((winHeight()/2/winScale))/layoutScale,
-							type: "graph-type",
-							nodeType: this.type,
-							endpoint: this.node.data.endpoint,
-							meta: {}
-						});
-						addLink({
-							subject: {node: id},
-							object: {node: this.node.data.id},
-							label: "belongs to",
-							id: uuid() 
-						});
-					}.bind({node:this,type:type}));
+					view.click( function() { this.node.manifestGraphType(this.type); }.bind({node:this,type:type}) );
 				}
 				this.fitSize();
 			}.bind(this)).fail(function(){
 				this.dom.content.html( "API Call failed" );
 				this.fitSize();
 			}.bind(this))
+		}
+		
+		this.manifestGraphType = function(type) {
+			var id = "graph/"+this.data.endpoint+"/type/"+type;
+			var link_id = "graph/link/"+id+"/"+this.data.id;
+			if( nodes[id] ) {
+				nodes[id].reveal();
+			} else {
+				var pt = toVirtual(screenMiddle());
+				addNode({
+					id: id,
+					x: pt.x,
+ 					y: pt.y,	
+					title: "Graph API: "+type+" nodes",
+					width:  ((winWidth() /2/winScale))/layoutScale,
+					height: ((winHeight()/2/winScale))/layoutScale,
+					type: "graph-type",
+					nodeType: type,
+					endpoint: this.data.endpoint,
+					meta: {}
+				});
+			}
+			if( !links[link_id] ) {
+				addLink({
+					subject: {node: id},
+					object: {node: this.data.id},
+					label: "belongs to",
+					id: link_id
+				});
+			}
+		}
+
+		this.showGraphNodeLinks = function() {
+			
+			this.dom.content.html("<p>Add links from graph</p>");
+		}
+
+		this.showLink = function() {
+			this.showing = "link";
+			if( this.data.type == 'graph-node' ) {
+				this.showGraphNodeLinks();
+				return;
+			}
+			this.dom.content.html("This node does not have a link editing interface");
 		}
 
 
@@ -256,6 +310,10 @@ $(document).ready(function() {
 			}
 			if( this.data.type == 'graph-type' ) {
 				this.showGraphType();
+				return;
+			}
+			if( this.data.type == 'graph-node' ) {
+				this.showGraphNode();
 				return;
 			}
 
@@ -352,6 +410,18 @@ $(document).ready(function() {
 		this.dom.titleRight = $('<div class="webleau_node_title_right"></div>');
 		this.dom.titleText = $('<div class="webleau_node_title_text"></div>');
 		this.dom.content = $('<div class="webleau_node_content"></div>');
+
+		if( nodeData.link ) {
+			this.dom.toolLink = $('<div class="webleau_tool"><span class="glyphicon glyphicon-link" aria-hidden="true"></span></div>');
+			this.dom.titleLeft.append( this.dom.toolLink );
+			this.dom.toolLink.click( function() {
+				if( this.showing != 'link' ) {
+					this.showLink();
+				} else {
+					this.showFullContent();
+				}
+			}.bind(this));
+		}
 
 		if( nodeData.edit ) {
 			this.dom.toolEdit = $('<div class="webleau_tool"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></div>');
@@ -622,15 +692,14 @@ $(document).ready(function() {
 
 		this.dom = {};
 
-		this.dom.id = "link_"+linkData.id;
+		this.dom.id = "link_"+uuid();
  		var line = document.createElementNS("http://www.w3.org/2000/svg","line");
 		line.id = this.dom.id;
 		line.setAttribute( "class", "webleau_link" );
 		line.setAttribute( "marker-end", "url(#arrow)" );
 		arrowsG.appendChild( line );
-		this.dom.from_id = "link_from_"+linkData.id;
 
-		this.dom.from_id = "link_from_"+linkData.id;
+		this.dom.from_id = "link_from_"+uuid();
  		var fromText = document.createElementNS("http://www.w3.org/2000/svg","text");
 		fromText.setAttribute( "class", "webleau_link_from_text" );
 		fromText.id = this.dom.from_id;
@@ -737,7 +806,6 @@ $(document).ready(function() {
 		centrePage();
 
 		nodesLayer.dblclick(function() {
-console.log(mouse);
 			var nodeData = {
 				id: uuid(),
 				x: mouse.x,
@@ -910,6 +978,17 @@ console.log(mouse);
 			return true;
 		}
 	}
+
+	function ascii2hex(str) {
+		var arr1 = [];
+		for (var n = 0, l = str.length; n < l; n ++) 
+     		{
+			var hex = Number(str.charCodeAt(n)).toString(16);
+			arr1.push(hex);
+		}
+		return arr1.join('');
+   	}
+
 	function uuid() {
 		function randomDigit() {
 			if (crypto && crypto.getRandomValues) {
