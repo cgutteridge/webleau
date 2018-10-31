@@ -18,7 +18,7 @@ $(document).ready(function() {
 				y: 200,
 				width: 200,
 				height: 200,
-				title: 'Comment',
+				title: '',
 				text: 'Try pasting URLs from media sites. Try double clicking on the background. Use the spanner to save state (to a text string for now). Drag nodes to touch to make a link.',
 				edit: true
 			}
@@ -262,7 +262,7 @@ $(document).ready(function() {
 				id: uuid(),
 				x: mouseX,
  				y: mouseY,	
-				title: "Comment",
+				title: "",
 				width:  ((winWidth() /2/winScale))/layoutScale,
 				height: ((winHeight()/2/winScale))/layoutScale,
 				text: "",
@@ -585,7 +585,7 @@ $(document).ready(function() {
 				id: uuid(),
 				x: mouseX,
  				y: mouseY,	
-				title: "Comment",
+				title: "",
 				width:  winWidth() /2/winScale/layoutScale,
 				height: winHeight()/2/winScale/layoutScale,
 				text: "",
@@ -596,7 +596,7 @@ $(document).ready(function() {
 			comment.showEdit();
 		});
 
-		$('body').append( $('<div class="ident">Webleau</div>'));
+		//$('body').append( $('<div class="ident">Webleau</div>'));
 		/* CONTROLS */
 
 		var controlsWrapper = $('<div class="controls_wrapper"><div class="controls_icon"><span class="glyphicon glyphicon-wrench" aria-hidden="true"></span></div></div>');
