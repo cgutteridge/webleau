@@ -449,7 +449,7 @@ $(document).ready(function() {
 				var linkData = {
 					subject: { node: ui.draggable.attr('data-node') },
 					object: { node: this.data.id },
-					label: "link",
+					label: "",
 					id: uuid() 
 				};
 				var newLink = addLink( linkData );
