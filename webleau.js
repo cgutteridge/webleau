@@ -177,16 +177,21 @@ $(document).ready(function() {
 			buttons.append( this.dom.edit.save  );	
 			buttons.append( this.dom.edit.cancel  );	
 			this.dom.edit.textarea.focus();
+			this.dom.edit.textarea.keyup(function(event){
+				if( event.which==13 && !event.shiftKey) {
+					this.dom.edit.save.click();
+				}	
+			}.bind(this));
 			if( this.data.html ) {
 				this.dom.edit.textarea.text( this.data.html );
 				this.dom.edit.save.click( function() {
-					this.data.html = this.dom.edit.textarea.val();
+					this.data.html = this.dom.edit.textarea.val().trim();
 					this.showFullContent();
 				}.bind(this));
 			} else {
 				this.dom.edit.textarea.text( this.data.text );
 				this.dom.edit.save.click( function() {
-					this.data.text = this.dom.edit.textarea.val();
+					this.data.text = this.dom.edit.textarea.val().trim();
 					this.showFullContent();
 					this.fitSize();
 				}.bind(this));
