@@ -160,7 +160,7 @@ $(document).ready(function() {
 					var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>');
 					row.prepend(view);
 					this.dom.content.append(row);
-					row.click( function() { this.node.manifestGraphNode(this.apiNode); }.bind({node:this,apiNode:apiNode}) );
+					row.click( function() { this.node.manifestGraphNode(this.apiNode,'belongs to',true); }.bind({node:this,apiNode:apiNode}) );
 				}
 				this.fitSize();
 			}.bind(this)).fail(function(){
@@ -188,7 +188,7 @@ $(document).ready(function() {
 				} else if( this.data.graph.icon ) {
 					this.dom.content.html( $("<img style='width:100%;min-width:50px;max-width:100%' />").attr('src',this.data.graph.icon));
 				} else {
-					this.showGraphNodeLinks();
+					this.dom.content.text( "<null>" );
 				}	
 				this.fitSize();
 			}.bind(this)).fail(function(){
@@ -197,9 +197,8 @@ $(document).ready(function() {
 			}.bind(this))
 		}
 
-		this.manifestGraphNode = function(apiNode) {
+		this.manifestGraphNode = function(apiNode,relation,forwards) {
 			var id = "graph/"+this.data.endpoint+"/node/"+apiNode.id;
-			var link_id = "graph/link/"+id+"/"+this.data.id;
 			if( nodes[id] ) {
 				nodes[id].reveal();
 			} else {
@@ -218,13 +217,26 @@ $(document).ready(function() {
 					meta: {}
 				});
 			}
-			if( !links[link_id] ){ 
-				addLink({
-					subject: {node: id},
-					object: {node: this.data.id},
-					label: "belongs to",
-					id: link_id
-				});
+			if( forwards ) {
+				var link_id = "graph/link/"+relation+"/"+id+"/"+this.data.id;
+				if( !links[link_id] ){ 
+					addLink({
+						subject: {node: id},
+						object: {node: this.data.id},
+						label: relation,
+						id: link_id
+					});
+				}
+			} else {
+				var link_id = "graph/link/"+relation+"/"+this.data.id+"/"+id;
+				if( !links[link_id] ){ 
+					addLink({
+						subject: {node: this.data.id},
+						object: {node: id},
+						label: relation,
+						id: link_id
+					});
+				}
 			}
 		}
 
@@ -298,22 +310,22 @@ $(document).ready(function() {
 				//this.dom.content.append( dataToHTML( data ));
 				this.dom.content.append( $('<div>This endpoint has the following links:</div>'));
 				for( var i=0;i<data.links.length; ++i ) {
-					link = data.links[i];
-					if( link.subject == this.data.nodeID && data.nodes[link.object] ) {
-						var object = data.nodes[link.object];
-						var row = $('<div style="cursor:pointer" > '+link.type+' link to  '+object.title+' ('+object.type+') </div>');
+					apiLink = data.links[i];
+					if( apiLink.subject == this.data.nodeID && data.nodes[apiLink.object] ) {
+						var apiNode = data.nodes[apiLink.object];
+						var row = $('<div style="cursor:pointer" > '+apiLink.type+' link to  '+apiNode.title+' ('+apiNode.type+') </div>');
 						var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-link" aria-hidden="true"></span>');
 						row.prepend(view);
 						this.dom.content.append(row);
-						//view.click( function() { this.node.manifestGraphType(this.type); }.bind({node:this,type:type}) );
+						row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,true); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
 					}
-					if( link.object == this.data.nodeID && data.nodes[link.subject] ) {
-						var subject = data.nodes[link.subject];
-						var row = $('<div style="cursor:pointer" > '+link.type+' link from  '+subject.title+' ('+subject.type+') </div>');
+					if( apiLink.object == this.data.nodeID && data.nodes[apiLink.subject] ) {
+						var apiNode = data.nodes[apiLink.subject];
+						var row = $('<div style="cursor:pointer" > '+apiLink.type+' link from  '+apiNode.title+' ('+apiNode.type+') </div>');
 						var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-link" aria-hidden="true"></span>');
 						row.prepend(view);
 						this.dom.content.append(row);
-						//view.click( function() { this.node.manifestGraphType(this.type); }.bind({node:this,type:type}) );
+						row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,false); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
 					}
 				}
 				this.fitSize();
