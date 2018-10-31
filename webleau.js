@@ -160,7 +160,7 @@ $(document).ready(function() {
 					var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>');
 					row.prepend(view);
 					this.dom.content.append(row);
-					view.click( function() { this.node.manifestGraphNode(this.apiNode); }.bind({node:this,apiNode:apiNode}) );
+					row.click( function() { this.node.manifestGraphNode(this.apiNode); }.bind({node:this,apiNode:apiNode}) );
 				}
 				this.fitSize();
 			}.bind(this)).fail(function(){
@@ -247,7 +247,7 @@ $(document).ready(function() {
 					var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>');
 					row.prepend(view);
 					this.dom.content.append(row);
-					view.click( function() { this.node.manifestGraphType(this.type); }.bind({node:this,type:type}) );
+					row.click( function() { this.node.manifestGraphType(this.type); }.bind({node:this,type:type}) );
 				}
 				this.fitSize();
 			}.bind(this)).fail(function(){
@@ -287,8 +287,40 @@ $(document).ready(function() {
 		}
 
 		this.showGraphNodeLinks = function() {
-			
-			this.dom.content.html("<p>Add links from graph</p>");
+			this.dom.content.html("Loading...");
+			var node = this;
+			$.ajax({
+				method: "GET",
+				data: { action: 'nodes', ids: this.data.nodeID, followLinks: '*', stub: 1 },
+				url: node.data.endpoint
+			}).done(function(data){
+				this.dom.content.html("");
+				//this.dom.content.append( dataToHTML( data ));
+				this.dom.content.append( $('<div>This endpoint has the following links:</div>'));
+				for( var i=0;i<data.links.length; ++i ) {
+					link = data.links[i];
+					if( link.subject == this.data.nodeID && data.nodes[link.object] ) {
+						var object = data.nodes[link.object];
+						var row = $('<div style="cursor:pointer" > '+link.type+' link to  '+object.title+' ('+object.type+') </div>');
+						var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-link" aria-hidden="true"></span>');
+						row.prepend(view);
+						this.dom.content.append(row);
+						//view.click( function() { this.node.manifestGraphType(this.type); }.bind({node:this,type:type}) );
+					}
+					if( link.object == this.data.nodeID && data.nodes[link.subject] ) {
+						var subject = data.nodes[link.subject];
+						var row = $('<div style="cursor:pointer" > '+link.type+' link from  '+subject.title+' ('+subject.type+') </div>');
+						var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-link" aria-hidden="true"></span>');
+						row.prepend(view);
+						this.dom.content.append(row);
+						//view.click( function() { this.node.manifestGraphType(this.type); }.bind({node:this,type:type}) );
+					}
+				}
+				this.fitSize();
+			}.bind(this)).fail(function(){
+				this.dom.content.html( "API Call failed" );
+				this.fitSize();
+			}.bind(this))
 		}
 
 		this.showLink = function() {
