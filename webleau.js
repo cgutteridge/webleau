@@ -46,7 +46,7 @@ $(document).ready(function() {
 
 	// location of mouse on tablau
 	$( document).on( "mousemove", function( event ) {
-		return toVirtual( new Point( event.pageX, event.pageY ) );
+		mouse = toVirtual( new Point( event.pageX, event.pageY ) );
 	});
 
 	function screenMiddle() {
@@ -141,15 +141,121 @@ $(document).ready(function() {
 	function Node( nodeData ) {
 
 		// functions we need to define early
+		this.showGraphType = function() {
+			this.dom.titleText.text( this.data.title );
+			this.dom.content.html("Loading...");
+			var node = this;
+			$.ajax({
+				method: "GET",
+				data: { action: 'nodes', stub:1, types:this.data.nodeType },
+				url: node.data.endpoint
+			}).done(function(data){
+				this.dom.content.html("");
+				this.dom.content.append( $('<div>This endpoint has the following types of node:</div>'));
+				//this.dom.content.html( dataToHTML( data ) );
+				var keys = Object.keys( data.nodes );
+				for( var i=0;i<keys.length;++i) {
+					var node = data.nodes[keys[i]];
+					var row = $('<div></div>').text( " "+node.title);
+					var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>');
+					row.prepend(view);
+					this.dom.content.append(row);
+					view.click( function() {
+						var id = "graph/"+this.node.data.endpoint+"/node/"+this.apiNode.id;
+						if( nodes[id] ) {
+							nodes[id].reveal();
+							return;
+						} 
+						var pt = toVirtual(screenMiddle());
+						addNode({
+							id: id,
+							x: pt.x,
+ 							y: pt.y,	
+							title: this.apiNode.title,
+							width:  ((winWidth() /2/winScale))/layoutScale,
+							height: ((winHeight()/2/winScale))/layoutScale,
+							type: "graph-node",
+							nodeID: this.apiNode.id,
+							endpoint: this.node.data.endpoint,
+							meta: {}
+						});
+						addLink({
+							subject: {node: id},
+							object: {node: this.node.data.id},
+							label: "belongs to",
+							id: uuid() 
+						});
+					}.bind({node:this,apiNode:node}));
+				}
+				this.fitSize();
+			}.bind(this)).fail(function(){
+				this.dom.content.html( "API Call failed" );
+				this.fitSize();
+			}.bind(this))
+		}
+
 		this.showGraphBase = function() {
 			this.dom.titleText.text( this.data.title );
 			this.dom.content.html("Loading...");
+			var node = this;
+			$.ajax({
+				method: "GET",
+				data: { action: 'nodeTypes' },
+				url: node.data.endpoint
+			}).done(function(data){
+				this.dom.content.html("");
+				this.dom.content.append( $('<div>This endpoint has the following types of node:</div>'));
+				var keys = Object.keys( data.nodeTypes );
+				for( var i=0;i<keys.length;++i) {
+					var type = keys[i];
+					var row = $('<div> '+type+' ('+data.nodeTypes[type]+') </div>');
+					var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>');
+					row.prepend(view);
+					this.dom.content.append(row);
+					view.click( function() {
+						var id = "graph/"+this.node.data.endpoint+"/type/"+type;
+						if( nodes[id] ) {
+							nodes[id].reveal();
+							return;
+						}
+						var pt = toVirtual(screenMiddle());
+						addNode({
+							id: id,
+							x: pt.x,
+ 							y: pt.y,	
+							title: "Graph API: "+this.type+" nodes",
+							width:  ((winWidth() /2/winScale))/layoutScale,
+							height: ((winHeight()/2/winScale))/layoutScale,
+							type: "graph-type",
+							nodeType: this.type,
+							endpoint: this.node.data.endpoint,
+							meta: {}
+						});
+						addLink({
+							subject: {node: id},
+							object: {node: this.node.data.id},
+							label: "belongs to",
+							id: uuid() 
+						});
+					}.bind({node:this,type:type}));
+				}
+				this.fitSize();
+			}.bind(this)).fail(function(){
+				this.dom.content.html( "API Call failed" );
+				this.fitSize();
+			}.bind(this))
 		}
+
+
 		this.showFullContent = function() {
 			this.showing = "full-content";
 			// this should be plugin based eventually
 			if( this.data.type == 'graph-base' ) {
 				this.showGraphBase();
+				return;
+			}
+			if( this.data.type == 'graph-type' ) {
+				this.showGraphType();
 				return;
 			}
 
@@ -292,8 +398,8 @@ $(document).ready(function() {
 		this.dom.outer.dblclick(function() {
 			var nodeData = {
 				id: uuid(),
-				x: mouseX,
- 				y: mouseY,	
+				x: mouse.x,
+ 				y: mouse.y,	
 				title: "",
 				width:  ((winWidth() /2/winScale))/layoutScale,
 				height: ((winHeight()/2/winScale))/layoutScale,
@@ -319,6 +425,9 @@ $(document).ready(function() {
 		this.showFullContent();
 
 		// methods
+		this.reveal = function() {
+			focusPage( new Point( this.data.x, this.data.y ) );
+		}
 
 		this.resized = function(event, ui) { 
 			var wDelta  = ui.size.width  - ui.originalSize.width;
@@ -494,7 +603,16 @@ $(document).ready(function() {
  		this.data = linkData;
 		if( !this.data.id  ) { this.data.id=uuid(); }
 		var subjectNode = nodes[this.data.subject.node];
+		if( !subjectNode ) {
+			alert( "Failed to link subjectNode "+JSON.stringify( this.data.subject ));
+			return;
+		}
 		var objectNode = nodes[this.data.object.node];
+		if( !objectNode ) {
+			alert( "Failed to link objectNode "+JSON.stringify( this.data.object ));
+			return;
+		}
+
 		// TODO check if these exist and handle exceptions	
 		subjectNode.registerLink(this);
 		objectNode.registerLink(this);
@@ -598,7 +716,13 @@ $(document).ready(function() {
 	}
 
 	function centrePage() {
-		window.scrollTo( offsetX-winWidth()/2, offsetY-winHeight()/2 );
+		focusPage( new Point(0,0) );
+	}
+
+	// focus the real scroll window onto a point on the virtual layout
+	function focusPage( vpt ) {
+		rpt = toReal(vpt);
+		window.scrollTo( rpt.x-winWidth()/2, rpt.y-winHeight()/2 );
 	}
 		
 	function initPage() {
@@ -613,10 +737,11 @@ $(document).ready(function() {
 		centrePage();
 
 		nodesLayer.dblclick(function() {
+console.log(mouse);
 			var nodeData = {
 				id: uuid(),
-				x: mouseX,
- 				y: mouseY,	
+				x: mouse.x,
+ 				y: mouse.y,	
 				title: "",
 				width:  winWidth() /2/winScale/layoutScale,
 				height: winHeight()/2/winScale/layoutScale,
@@ -638,8 +763,8 @@ $(document).ready(function() {
 
 		/* CONTROLS: sliders */
 
-		var winScaleSlider = $('<input type="range" value="1" min="0.001" max="8" step="0.001" />');
-		var layoutScaleSlider = $('<input type="range" value="1" min="0.001" max="8" step="0.001" />');
+		var winScaleSlider = $('<input type="range" value="1" min="0.001" max="2" step="0.001" />');
+		var layoutScaleSlider = $('<input type="range" value="1" min="0.001" max="2" step="0.001" />');
 		var nodeScaleDisplay = $('<span>100%</span>');
 		controls.append( $('<div>Node scale: </div>' ).append(nodeScaleDisplay));
 		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(winScaleSlider) );
@@ -696,14 +821,15 @@ $(document).ready(function() {
 		controlTools.append( graphTool );
 		graphTool.click( function() {
 			var endpoint = "graph-api.php";
-			var id = "graph/".endpoint;
+			var id = "graph/"+endpoint;
 			if( nodes[id] ) {
 				nodes[id].reveal();
 			} else {
+				var pt = toVirtual(screenMiddle());
 				addNode({
-					id: uuid(),
-					x: mouseX,
- 					y: mouseY,	
+					id: id,
+					x: pt.x,
+ 					y: pt.y,	
 					title: "Graph API",
 					width:  ((winWidth() /2/winScale))/layoutScale,
 					height: ((winHeight()/2/winScale))/layoutScale,
@@ -807,8 +933,8 @@ $(document).ready(function() {
 		var json = clipboardData.getData('application/json');
 		var nodeData = {
 			id: uuid(),
-			x: mouseX,
- 			y: mouseY,
+			x: mouse.x,
+ 			y: mouse.y,
 			width:  winWidth() /2/winScale/layoutScale,
 			height: winHeight()/2/winScale/layoutScale,
 			meta: {}
