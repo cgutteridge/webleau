@@ -138,6 +138,47 @@ $(document).ready(function() {
 		};
 	}
 
+	
+	function manifestGraphBase(endpoint) {
+		var id = "graph/"+endpoint;
+		var node;
+		if( nodes[id] ) {
+			node = nodes[id];
+			node.reveal();
+		} else {
+			var pt = toVirtual(screenMiddle());
+			node = addNode({
+				id: id,
+				x: pt.x,
+ 				y: pt.y,	
+				title: "Graph API",
+				width:  ((winWidth() /2/winScale))/layoutScale,
+				height: ((winHeight()/2/winScale))/layoutScale,
+				type: "graph-base",
+				endpoint: endpoint,
+				meta: {}
+			});
+		}
+		return node;
+	}
+
+	function manifestGraphSelect() {
+		var pt = toVirtual(screenMiddle());
+		var node = addNode({
+			id: uuid(),
+			x: pt.x,
+ 			y: pt.y,	
+			title: "Select graph endpoint",
+			width:  ((winWidth() /2/winScale))/layoutScale,
+			height: ((winHeight()/2/winScale))/layoutScale,
+			type: "graph-select",
+			meta: {}
+		});
+		return node;
+	}
+
+//todo, decouple manifest functions from the bit that creates links?
+
 	function Node( nodeData ) {
 
 		// functions we need to define early
@@ -247,8 +288,7 @@ $(document).ready(function() {
 				}
 			}
 		}
-
-		
+	
 		this.showGraphBase = function() {
 			this.setTitleText( this.data.title );
 			this.dom.content.html("Loading...");
@@ -346,10 +386,27 @@ $(document).ready(function() {
 			this.dom.content.html("This node does not have a link editing interface");
 		}
 
+		this.showGraphSelect = function() {	
+			this.setTitleText(this.data.title);
+			var input = $("<input value='graph-api.php' />");
+			var button = $("<button>CONNECT</button>");
+			button.click( function() {
+				manifestGraphBase( input.val() );
+			});
+			this.dom.content.html("");
+			this.dom.content.append( input );
+			this.dom.content.append( button );
+console.log(this);
+			this.fitSize();
+		}
 
 		this.showFullContent = function() {
 			this.showing = "full-content";
-			// this should be plugin based eventually
+			// this should clearly be plugin based eventually
+			if( this.data.type == 'graph-select' ) {
+				this.showGraphSelect();
+				return;
+			}
 			if( this.data.type == 'graph-base' ) {
 				this.showGraphBase();
 				return;
@@ -444,106 +501,7 @@ $(document).ready(function() {
 			this.fitSize();
 		}
 
-		//init
-		
-		// data
-		this.data = nodeData;
 
-		// links
-		// TODO should this distinguish incoming and outgoing?
-		this.links = {};
-
-		// dom
-		this.dom = {};
-		this.dom.outer = $('<div class="webleau_node"></div>').attr("data-node",this.data.id);
-		this.dom.title = $('<div class="webleau_node_title"></div>');
-		this.dom.titleLeft = $('<div class="webleau_node_title_left"></div>');
-		this.dom.titleRight = $('<div class="webleau_node_title_right"></div>');
-		this.dom.titleText = $('<div class="webleau_node_title_text"></div>');
-		this.dom.content = $('<div class="webleau_node_content"></div>');
-
-		if( nodeData.link ) {
-			this.dom.toolLink = $('<div class="webleau_tool">L</div>');
-			this.dom.titleLeft.append( this.dom.toolLink );
-			this.dom.toolLink.click( function() {
-				if( this.showing != 'link' ) {
-					this.showLink();
-				} else {
-					this.showFullContent();
-				}
-			}.bind(this));
-		}
-
-		if( nodeData.edit ) {
-			this.dom.toolEdit = $('<div class="webleau_tool">E</div>');
-			this.dom.titleLeft.append( this.dom.toolEdit );
-			this.dom.toolEdit.click( function() {
-				this.showEdit();
-			}.bind(this));
-		}
-
-		this.dom.toolfit = $('<div class="webleau_tool">+</div>');
-		this.dom.titleLeft.append( this.dom.toolfit );
-		this.dom.toolfit.click( function() {
-			this.fitSize();
-		}.bind(this));
-
-		this.dom.toolinfo = $('<div class="webleau_tool">M</div>');
-		this.dom.titleLeft.append( this.dom.toolinfo );
-		this.dom.toolinfo.click( function() {
-			if( this.showing != 'meta' ) {
-				this.showMeta();
-			} else {
-				this.showFullContent();
-			}
-		}.bind(this));
-
-		this.dom.toolRemove = $('<div class="webleau_tool">X</div>');
-		this.dom.toolRemove.click( function() {
-			if( confirm( "Really delete?" ) ) {
-				this.remove();
-				updateAllPositions();
-			}
-		}.bind(this)); 
-		
-		this.dom.titleRight.append( this.dom.toolRemove );
-		//this.dom.toolResize = $('<div class="webleau_node_resize webleau_tool"><span class="glyphicon glyphicon-resize-small" aria-hidden="true"></span></div>');
-		//this.dom.outer.append( this.dom.toolResize );
-			
-		this.dom.outer.append( this.dom.title );
-		this.dom.title.append( this.dom.titleLeft );
-		this.dom.title.append( this.dom.titleRight );
-		this.dom.title.append( this.dom.titleText );
-		this.dom.outer.append( this.dom.content );
-		nodesLayer.append( this.dom.outer );
-		this.dom.outer.dblclick(function() {
-			var nodeData = {
-				id: uuid(),
-				x: mouse.x,
- 				y: mouse.y,	
-				title: "",
-				width:  ((winWidth() /2/winScale))/layoutScale,
-				height: ((winHeight()/2/winScale))/layoutScale,
-				text: "",
-				edit: true,
-				meta: {}
-			};
-			var comment = addNode(nodeData);
-			var linkData = {
-				subject: { node: comment.data.id },
-				object: { node: this.data.id },
-				label: "comments",
-				id: uuid() 
-			};
-			var newLink = addLink( linkData );
-			//subjectNode.updateLinksPosition();
-			comment.showEdit();
-			return false; // don't also run on background
-		}.bind(this));
-		this.links = {};
-
-		// state
-		this.showFullContent();
 
 		// methods
 		this.reveal = function() {
@@ -681,6 +639,111 @@ $(document).ready(function() {
 			delete nodes[this.data.id];
 			this.dom.outer.remove();
 		}
+
+
+		//init
+		
+		// data
+		this.data = nodeData;
+
+		// links
+		// TODO should this distinguish incoming and outgoing?
+		this.links = {};
+
+		// dom
+		this.dom = {};
+		this.dom.outer = $('<div class="webleau_node"></div>').attr("data-node",this.data.id);
+		this.dom.title = $('<div class="webleau_node_title"></div>');
+		this.dom.titleLeft = $('<div class="webleau_node_title_left"></div>');
+		this.dom.titleRight = $('<div class="webleau_node_title_right"></div>');
+		this.dom.titleText = $('<div class="webleau_node_title_text"></div>');
+		this.dom.content = $('<div class="webleau_node_content"></div>');
+
+		if( nodeData.link ) {
+			this.dom.toolLink = $('<div class="webleau_tool">L</div>');
+			this.dom.titleLeft.append( this.dom.toolLink );
+			this.dom.toolLink.click( function() {
+				if( this.showing != 'link' ) {
+					this.showLink();
+				} else {
+					this.showFullContent();
+				}
+			}.bind(this));
+		}
+
+		if( nodeData.edit ) {
+			this.dom.toolEdit = $('<div class="webleau_tool">E</div>');
+			this.dom.titleLeft.append( this.dom.toolEdit );
+			this.dom.toolEdit.click( function() {
+				this.showEdit();
+			}.bind(this));
+		}
+
+		this.dom.toolfit = $('<div class="webleau_tool">+</div>');
+		this.dom.titleLeft.append( this.dom.toolfit );
+		this.dom.toolfit.click( function() {
+			this.fitSize();
+		}.bind(this));
+
+		this.dom.toolinfo = $('<div class="webleau_tool">M</div>');
+		this.dom.titleLeft.append( this.dom.toolinfo );
+		this.dom.toolinfo.click( function() {
+			if( this.showing != 'meta' ) {
+				this.showMeta();
+			} else {
+				this.showFullContent();
+			}
+		}.bind(this));
+
+		this.dom.toolRemove = $('<div class="webleau_tool">X</div>');
+		this.dom.toolRemove.click( function() {
+			if( confirm( "Really delete?" ) ) {
+				this.remove();
+				updateAllPositions();
+			}
+		}.bind(this)); 
+		
+		this.dom.titleRight.append( this.dom.toolRemove );
+		//this.dom.toolResize = $('<div class="webleau_node_resize webleau_tool"><span class="glyphicon glyphicon-resize-small" aria-hidden="true"></span></div>');
+		//this.dom.outer.append( this.dom.toolResize );
+			
+		this.dom.outer.append( this.dom.title );
+		this.dom.title.append( this.dom.titleLeft );
+		this.dom.title.append( this.dom.titleRight );
+		this.dom.title.append( this.dom.titleText );
+		this.dom.outer.append( this.dom.content );
+		nodesLayer.append( this.dom.outer );
+		this.dom.outer.dblclick(function() {
+			var nodeData = {
+				id: uuid(),
+				x: mouse.x,
+ 				y: mouse.y,	
+				title: "",
+				width:  ((winWidth() /2/winScale))/layoutScale,
+				height: ((winHeight()/2/winScale))/layoutScale,
+				text: "",
+				edit: true,
+				meta: {}
+			};
+			var comment = addNode(nodeData);
+			var linkData = {
+				subject: { node: comment.data.id },
+				object: { node: this.data.id },
+				label: "comments",
+				id: uuid() 
+			};
+			var newLink = addLink( linkData );
+			//subjectNode.updateLinksPosition();
+			comment.showEdit();
+			return false; // don't also run on background
+		}.bind(this));
+		this.links = {};
+
+		// state
+		this.showFullContent();
+
+
+
 
 		// register UI hooks
 		this.dom.outer.resizable({
@@ -951,24 +1014,7 @@ $(document).ready(function() {
 		var graphTool = $('<div title="graph" class="webleau_tool">G</div>');
 		controlTools.append( graphTool );
 		graphTool.click( function() {
-			var endpoint = "graph-api.php";
-			var id = "graph/"+endpoint;
-			if( nodes[id] ) {
-				nodes[id].reveal();
-			} else {
-				var pt = toVirtual(screenMiddle());
-				addNode({
-					id: id,
-					x: pt.x,
- 					y: pt.y,	
-					title: "Graph API",
-					width:  ((winWidth() /2/winScale))/layoutScale,
-					height: ((winHeight()/2/winScale))/layoutScale,
-					type: "graph-base",
-					endpoint: endpoint,
-					meta: {}
-				});
-			}
+			manifestGraphSelect();
 		});
 
 		/* CONTROLS: load/save */
