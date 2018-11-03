@@ -188,13 +188,13 @@ $(document).ready(function() {
 			}).done(function(data){
 				//this.dom.content.html( dataToHTML( data ) );
 				this.data.graph = data.nodes[this.data.nodeID];
-				if( this.data.graph.content ) {
-					this.dom.content.html( this.data.graph.content );
+				if( this.data.graph.data.html ) {
+					this.dom.content.html( this.data.graph.data.html );
 					// duplicate code, candidate for a function?
 					this.dom.content.find( 'a' ).attr("target","_blank");
 					this.dom.content.find( 'img,iframe' ).css("max-width","100%");
-				} else if( this.data.graph.icon ) {
-					this.dom.content.html( $("<img style='width:100%;min-width:50px;max-width:100%' />").attr('src',this.data.graph.icon));
+				} else if( this.data.graph.data.icon ) {
+					this.dom.content.html( $("<img style='width:100%;min-width:50px;max-width:100%' />").attr('src',this.data.graph.data.icon));
 				} else {
 					this.dom.content.text( "<null>" );
 				}	
@@ -848,13 +848,19 @@ $(document).ready(function() {
 	}
 		
 	function initPage() {
+
+		var bgsvg = $('<svg class="webleau_bgsvg"><g id="axis"><line id="vaxis" /><line id="haxis" /></g></svg>');
+		$('body').append(bgsvg);
+		bgsvg.html( bgsvg.html() ); // reset SVG layer 
+		$('#vaxis').attr('x1',offsetX).attr('y1',0).attr('x2',offsetX).attr('y2',offsetY*2);
+		$('#haxis').attr('x1',0).attr('y1',offsetY).attr('x2',offsetX*2).attr('y2',offsetY);
+
 		nodesLayer = $('<div class="webleau_nodes"></div>');
 		$('body').append(nodesLayer);
-		var svg = $('<svg class="webleau_svg"><defs><marker id="arrow" markerWidth="11" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs><g id="svg_arrows"></g><g id="svg_labels"></g><g class="crosshair"><line x1="0" y1="-20" x2="0" y2="20" /><line x1="-20" y1="0" x2="20" y2="0" /></g></svg>');
+
+		var svg = $('<svg class="webleau_svg"><defs><marker id="arrow" markerWidth="11" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs><g id="svg_arrows"></g><g id="svg_labels"></g></svg>');
 		$('body').append(svg);
-		$('.crosshair').attr("transform","translate("+offsetX+","+offsetY+")");
-		// reset SVG layer 
-		svg.html( svg.html() );
+		svg.html( svg.html() ); // reset SVG layer 
 	
 		centrePage();
 

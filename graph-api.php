@@ -1,6 +1,8 @@
 <?php
 # hopefully this is a mock up for what we'll get the data from Wordpress or other node sources
 
+# with no params it should say it's a graph API and for what. Maybe what it supports.
+
 #$_GET['action']='nodes';
 #$_GET['ids'] = 'user/9';
 #$_GET['followLinks'] = '*';
@@ -15,6 +17,7 @@
 
 $g = getData();
 $result = array( "ok"=>false, "action"=>"error" );
+
 if( $_GET['action'] == 'nodeTypes' ) {
 	$result["action"] = "nodeTypes";
 	$result["ok"] = true;
@@ -55,7 +58,7 @@ elseif( $_GET['action']=='nodes' && ( isset( $_GET['ids'] ) || isset( $_GET['typ
 		}
 	}
 
-
+#http://www.soton.ac.uk/~totl/webleau-dev/graph-api.php?action=nodes&stub=1&types=comment
 	if( isset( $_GET["followLinks"] ) ) {
 		$result["links"] = array();
 		$linkTypes = preg_split( "/\s*,\s*/", trim( $_GET["followLinks"] ) );
@@ -80,39 +83,16 @@ elseif( $_GET['action']=='nodes' && ( isset( $_GET['ids'] ) || isset( $_GET['typ
 
 	if( $_GET['stub'] ) {
 		// just return the title & type & id for each node
-		$stubNodes = array();
 		foreach( $result["nodes"] as $id=>$node ) {
-			$type = "";
-			if( isset( $node["type"] ) ) {
-				$type = $node["type"];
-			}
-			$title = $type."#".$id;
-			if( isset($node["title"]) && $node["title"]!="" ) {
-				$title = $node["title"];
-			} elseif( isset($node["name"]) && $node["name"]!="" ) {
-				$title = $node["name"];
-			}
-				
-			
-			$stubNodes[$id] = array( 
-				"id"=>$id, 
-				"type"=>$type,
-				"title"=>$title
-			);
+			unset( $node["data"] );
 		}
-		$result["nodes"] = $stubNodes;
 	}	
 
 }
 
-
-	
 header( "Content-type: application/json" );
 print json_encode( $result);
 exit;
-
-
-
 
 function getData() {
 	return json_decode(file_get_contents( "wordpress-graph.json"),true);
