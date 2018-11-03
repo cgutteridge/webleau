@@ -141,8 +141,18 @@ $(document).ready(function() {
 	function Node( nodeData ) {
 
 		// functions we need to define early
+		this.setTitleText = function( text ) {
+			this.dom.titleText.text( text );
+			if( text == "" ) {
+				this.dom.title.addClass("webleau_node_empty_title");
+			} else {
+				this.dom.title.removeClass("webleau_node_empty_title");
+			}
+		}
+
+			
 		this.showGraphType = function() {
-			this.dom.titleText.text( this.data.title );
+			this.setTitleText( this.data.title );
 			this.dom.content.html("Loading...");
 			var node = this;
 			$.ajax({
@@ -156,9 +166,7 @@ $(document).ready(function() {
 				var keys = Object.keys( data.nodes );
 				for( var i=0;i<keys.length;++i) {
 					var apiNode = data.nodes[keys[i]];
-					var row = $('<div></div>').text( " "+apiNode.title);
-					var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>');
-					row.prepend(view);
+					var row = $('<div style="cursor:pointer"></div>').text( " "+apiNode.title);
 					this.dom.content.append(row);
 					row.click( function() { this.node.manifestGraphNode(this.apiNode,'belongs to',true); }.bind({node:this,apiNode:apiNode}) );
 				}
@@ -170,7 +178,7 @@ $(document).ready(function() {
 		}
 
 		this.showGraphNode = function() {
-			this.dom.titleText.text( this.data.title );
+			this.setTitleText( this.data.title );
 			this.dom.content.html("Loading...");
 			var node = this;
 			$.ajax({
@@ -242,7 +250,7 @@ $(document).ready(function() {
 
 		
 		this.showGraphBase = function() {
-			this.dom.titleText.text( this.data.title );
+			this.setTitleText( this.data.title );
 			this.dom.content.html("Loading...");
 			var node = this;
 			$.ajax({
@@ -255,9 +263,7 @@ $(document).ready(function() {
 				var keys = Object.keys( data.nodeTypes );
 				for( var i=0;i<keys.length;++i) {
 					var type = keys[i];
-					var row = $('<div> '+type+' ('+data.nodeTypes[type]+') </div>');
-					var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-eye-open" aria-hidden="true"></span>');
-					row.prepend(view);
+					var row = $('<div style="cursor:pointer"> '+type+' ('+data.nodeTypes[type]+') </div>');
 					this.dom.content.append(row);
 					row.click( function() { this.node.manifestGraphType(this.type); }.bind({node:this,type:type}) );
 				}
@@ -314,16 +320,12 @@ $(document).ready(function() {
 					if( apiLink.subject == this.data.nodeID && data.nodes[apiLink.object] ) {
 						var apiNode = data.nodes[apiLink.object];
 						var row = $('<div style="cursor:pointer" > '+apiLink.type+' link to  '+apiNode.title+' ('+apiNode.type+') </div>');
-						var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-link" aria-hidden="true"></span>');
-						row.prepend(view);
 						this.dom.content.append(row);
 						row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,true); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
 					}
 					if( apiLink.object == this.data.nodeID && data.nodes[apiLink.subject] ) {
 						var apiNode = data.nodes[apiLink.subject];
 						var row = $('<div style="cursor:pointer" > '+apiLink.type+' link from  '+apiNode.title+' ('+apiNode.type+') </div>');
-						var view = $('<span style="cursor:pointer" class="glyphicon glyphicon-link" aria-hidden="true"></span>');
-						row.prepend(view);
 						this.dom.content.append(row);
 						row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,false); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
 					}
@@ -362,7 +364,7 @@ $(document).ready(function() {
 			}
 
 			// html, text, or using metadata
-			this.dom.titleText.text( this.data.title );
+			this.setTitleText( this.data.title );
 			var hasContent = false;
 			if( this.data.html ) {
 				this.dom.content.html( this.data.html );
@@ -387,7 +389,6 @@ $(document).ready(function() {
 				if( !hasContent ) {	
 		 			this.dom.content.text( "<no content>" );
 				}
-				console.log( this.data.meta );
 			}
 			if( this.data.meta && this.data.meta.source && this.data.meta.source.URL ) {
 				var span = $('<div style="text-align:right">- </div>');
@@ -462,7 +463,7 @@ $(document).ready(function() {
 		this.dom.content = $('<div class="webleau_node_content"></div>');
 
 		if( nodeData.link ) {
-			this.dom.toolLink = $('<div class="webleau_tool"><span class="glyphicon glyphicon-link" aria-hidden="true"></span></div>');
+			this.dom.toolLink = $('<div class="webleau_tool">L</div>');
 			this.dom.titleLeft.append( this.dom.toolLink );
 			this.dom.toolLink.click( function() {
 				if( this.showing != 'link' ) {
@@ -474,20 +475,20 @@ $(document).ready(function() {
 		}
 
 		if( nodeData.edit ) {
-			this.dom.toolEdit = $('<div class="webleau_tool"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span></div>');
+			this.dom.toolEdit = $('<div class="webleau_tool">E</div>');
 			this.dom.titleLeft.append( this.dom.toolEdit );
 			this.dom.toolEdit.click( function() {
 				this.showEdit();
 			}.bind(this));
 		}
 
-		this.dom.toolfit = $('<div class="webleau_tool"><span class="glyphicon glyphicon-leaf" aria-hidden="true"></span></div>');
+		this.dom.toolfit = $('<div class="webleau_tool">+</div>');
 		this.dom.titleLeft.append( this.dom.toolfit );
 		this.dom.toolfit.click( function() {
 			this.fitSize();
 		}.bind(this));
 
-		this.dom.toolinfo = $('<div class="webleau_tool"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span></div>');
+		this.dom.toolinfo = $('<div class="webleau_tool">M</div>');
 		this.dom.titleLeft.append( this.dom.toolinfo );
 		this.dom.toolinfo.click( function() {
 			if( this.showing != 'meta' ) {
@@ -497,7 +498,7 @@ $(document).ready(function() {
 			}
 		}.bind(this));
 
-		this.dom.toolRemove = $('<div class="webleau_tool"><span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span></div>');
+		this.dom.toolRemove = $('<div class="webleau_tool">X</div>');
 		this.dom.toolRemove.click( function() {
 			if( confirm( "Really delete?" ) ) {
 				this.remove();
@@ -550,16 +551,15 @@ $(document).ready(function() {
 		}
 
 		this.resized = function(event, ui) { 
+
 			var wDelta  = ui.size.width  - ui.originalSize.width;
+			var adjustedWidth  = ui.originalSize.width  + 2*wDelta;
+			this.data.width  = Math.max(50,adjustedWidth/winScale/layoutScale);
+
 			var hDelta  = ui.size.height - ui.originalSize.height;
-			ui.size.width  = Math.max(50, ui.originalSize.width  + 2*wDelta);
-			ui.size.height = Math.max(50, ui.originalSize.height + 2*hDelta);
-			wDelta  = ui.size.width  - ui.originalSize.width;
-			hDelta  = ui.size.height - ui.originalSize.height;
-			ui.position.top  = ui.originalPosition.top - hDelta/2;
-			ui.position.left = ui.originalPosition.left - wDelta/2;
-			this.data.width  = (ui.size.width/winScale)/layoutScale;
-			this.data.height = (ui.size.height/winScale)/layoutScale;
+			var adjustedHeight =  ui.originalSize.height + 2*hDelta;
+			this.data.height = Math.max(50,adjustedHeight/winScale/layoutScale);
+
 			this.updatePosition();
 			this.updateLinksPosition();
 		}
@@ -574,11 +574,15 @@ $(document).ready(function() {
 		}
 	
 		this.updatePosition = function() {
-			this.dom.outer.css('top',this.realY()-this.realHeight()/2);
 			this.dom.outer.css('left',this.realX()-this.realWidth()/2);
-			this.dom.outer.css('width', this.data.width*winScale*layoutScale);
+			this.dom.outer.css('top', this.realY()-this.realHeight()/2);
+			this.dom.outer.css('width', this.data.width *winScale*layoutScale);
 			this.dom.outer.css('height',this.data.height*winScale*layoutScale);
-			this.dom.content.css('height',this.data.height*winScale*layoutScale-20 ); // height of box minus borders and title
+			var titleHeight = (18*layoutScale);
+			var fontHeight = (16*layoutScale);
+			this.dom.content.css('height',this.data.height*winScale*layoutScale-titleHeight ); // height of box minus borders and title
+			this.dom.title.css('font-size',fontHeight+"px");
+			this.dom.title.css('height',   titleHeight+"px" );
 		}
 		this.updateLinksPosition = function() {
 			var  linkIds = Object.keys(links);
@@ -607,7 +611,7 @@ $(document).ready(function() {
 			return new Point( this.realX(), this.realY() );
 		}
 
-		this.borderSize = 2;
+		this.borderSize = 4;
 		// real means actual pixels not the place on the conceptual layout
 		this.realX = function() {
 			return this.data.x*layoutScale+offsetX;
@@ -633,10 +637,10 @@ $(document).ready(function() {
 		// find the point in a block nearest to the given point
 		this.nearestPointTo = function( pt ) {
 			// find the intersection with each edge
-			var tl = new Point( this.realX()-this.realWidthFull()/2,   this.realY()-this.realHeightFull()/2 );
-			var tr = new Point( this.realX()+this.realWidthFull()/2-1, this.realY()-this.realHeightFull()/2 );
-			var bl = new Point( this.realX()-this.realWidthFull()/2,   this.realY()+this.realHeightFull()/2-1 );
-			var br = new Point( this.realX()+this.realWidthFull()/2-1, this.realY()+this.realHeightFull()/2-1 );
+			var tl = new Point( this.realX()-this.realWidthFull()/2+1, this.realY()-this.realHeightFull()/2+1 );
+			var tr = new Point( this.realX()+this.realWidthFull()/2  , this.realY()-this.realHeightFull()/2+1 );
+			var bl = new Point( this.realX()-this.realWidthFull()/2+1, this.realY()+this.realHeightFull()/2   );
+			var br = new Point( this.realX()+this.realWidthFull()/2  , this.realY()+this.realHeightFull()/2   );
 			var lines = [
 				new Line( tl, tr ),
 				new Line( tr, br ),
@@ -681,9 +685,7 @@ $(document).ready(function() {
 		// register UI hooks
 		this.dom.outer.resizable({
 			resize: this.resized.bind(this),
-			//stop: this.resizeStopped.bind(this),
-			minHeight: 50,
-			minWidth: 50
+			handles: "all"
 		});
 		this.dom.outer.draggable( { 
 			containment: $('.webleau_nodes'),
@@ -749,10 +751,10 @@ $(document).ready(function() {
 		line.setAttribute( "marker-end", "url(#arrow)" );
 		arrowsG.appendChild( line );
 
-		this.dom.from_id = "link_from_"+uuid();
+		this.dom.label_id = "link_from_"+uuid();
  		var fromText = document.createElementNS("http://www.w3.org/2000/svg","text");
 		fromText.setAttribute( "class", "webleau_link_from_text" );
-		fromText.id = this.dom.from_id;
+		fromText.id = this.dom.label_id;
 		fromText.appendChild( document.createTextNode( linkData.label ));
 		labelsG.appendChild( fromText );
 /*
@@ -778,8 +780,9 @@ $(document).ready(function() {
 				$("#"+this.dom.id).attr('y1',pt1.y);	
 				$("#"+this.dom.id).attr('x2',pt2.x);	
 				$("#"+this.dom.id).attr('y2',pt2.y);	
-				$("#"+this.dom.from_id).attr('x',(pt1.x+(pt2.x-pt1.x)/4));
-				$("#"+this.dom.from_id).attr('y',(pt1.y+(pt2.y-pt1.y)/4));
+				$("#"+this.dom.label_id).attr('x',(pt1.x+(pt2.x-pt1.x)/4));
+				$("#"+this.dom.label_id).attr('y',(pt1.y+(pt2.y-pt1.y)/4));
+				$("#"+this.dom.label_id).css('font-size',(80*layoutScale)+"%"); 
 /*
 				$("#"+this.dom.to_id).attr('x',pt2.x);
 				$("#"+this.dom.to_id).attr('y',pt2.y);
@@ -794,7 +797,7 @@ $(document).ready(function() {
 			objectNode.deRegisterLink(this);
 			delete links[this.data.id];
 			$("#"+this.dom.id).remove();
-			$("#"+this.dom.from_id).remove();
+			$("#"+this.dom.label_id).remove();
 			$("#"+this.dom.to_id).remove();
 		}
 	}
@@ -874,29 +877,32 @@ $(document).ready(function() {
 		//$('body').append( $('<div class="ident">Webleau</div>'));
 		/* CONTROLS */
 
-		var controlsWrapper = $('<div class="controls_wrapper"><div class="controls_icon"><span class="glyphicon glyphicon-wrench" aria-hidden="true"></span></div></div>');
+		var controlsWrapper = $('<div class="controls_wrapper"><div class="controls_icon">TOOLS</div></div>');
 		var controls = $('<div class="controls"></div>');
 		$(controlsWrapper).append(controls);
 		$('body').append(controlsWrapper);
 
 		/* CONTROLS: sliders */
 
+		/*
 		var winScaleSlider = $('<input type="range" value="1" min="0.001" max="2" step="0.001" />');
-		var layoutScaleSlider = $('<input type="range" value="1" min="0.001" max="2" step="0.001" />');
 		var nodeScaleDisplay = $('<span>100%</span>');
 		controls.append( $('<div>Node scale: </div>' ).append(nodeScaleDisplay));
 		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(winScaleSlider) );
-		var layoutScaleDisplay = $('<span>100%</span>');
-		controls.append( $('<div>Layout scale: </div>' ).append(layoutScaleDisplay));
-		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(layoutScaleSlider) );
-		controls.append( layoutScaleSlider );
-		//controls.append( contentToggle );
 		winScaleSlider.on('propertychange input', function( event ) {
 			winScale = winScaleSlider.val();
 			var perc = Math.round( winScale*100000 ) / 1000;
 			nodeScaleDisplay.text( ""+perc+"%" );
 			updateAllPositions();
 		});
+		*/
+
+		var layoutScaleSlider = $('<input type="range" value="1" min="0.001" max="2" step="0.001" />');
+		var layoutScaleDisplay = $('<span>100%</span>');
+		controls.append( $('<div>Layout scale: </div>' ).append(layoutScaleDisplay));
+		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(layoutScaleSlider) );
+		controls.append( layoutScaleSlider );
+		//controls.append( contentToggle );
 		layoutScaleSlider.on('propertychange input', function(event) {
 			// find coords of screen centre
 			var screenMiddleVirt = toVirtual(screenMiddle());
@@ -916,7 +922,7 @@ $(document).ready(function() {
 		controls.append(controlTools);
 	
 		// rightsize
-		var rightsizeTool = $('<div title="rightsize" class="webleau_tool"><span class="glyphicon glyphicon-leaf" aria-hidden="true"></span></div>');
+		var rightsizeTool = $('<div title="rightsize" class="webleau_tool">+</div>');
 		controlTools.append( rightsizeTool );
 		rightsizeTool.click( function() {
 			nodeKeys = Object.keys(nodes);
@@ -926,16 +932,17 @@ $(document).ready(function() {
 		});
 
 		// reset
-		var resetTool = $('<div title="reset" class="webleau_tool"><span class="glyphicon glyphicon-move" aria-hidden="true"></span></div>');
+		var resetTool = $('<div title="reset" class="webleau_tool">R</div>');
 		controlTools.append( resetTool );
 		resetTool.click( function() {
-			winScaleSlider.val(1).trigger('input');
+			//winScaleSlider.val(1).trigger('input');
 			layoutScaleSlider.val(1).trigger('input');
 			centrePage();
+			updateAllPositions();
 		});
 
 		// graph
-		var graphTool = $('<div title="graph" class="webleau_tool"><span class="glyphicon glyphicon-fire" aria-hidden="true"></span></div>');
+		var graphTool = $('<div title="graph" class="webleau_tool">G</div>');
 		controlTools.append( graphTool );
 		graphTool.click( function() {
 			var endpoint = "graph-api.php";
@@ -963,9 +970,9 @@ $(document).ready(function() {
 		var ioTextarea = $('<textarea class="normal-paste" placeholder="save/load: hit save and copy this, or paste in here and hit load" style="width: 100%; height: 10%;" id="webleau_io"></textarea>');
 		controls.append( $("<div style='margin-top:1em'>Upload/Download</div>"));
 		controls.append( ioTextarea );
-		var downloadTool = $('<div title="download" class="webleau_tool"><span class="glyphicon glyphicon-download" aria-hidden="true"></span></div>');
+		var downloadTool = $('<div title="download" class="webleau_tool">&darr;<div>');
 		controlIO.append( downloadTool );
-		var uploadTool = $('<div title="upload" class="webleau_tool"><span class="glyphicon glyphicon-upload" aria-hidden="true"></span></div>');
+		var uploadTool = $('<div title="upload" class="webleau_tool">&uarr;</div>');
 		controlIO.append( uploadTool );
 		controls.append(controlIO);
 		downloadTool.click( function() {
@@ -1143,6 +1150,26 @@ $(document).ready(function() {
 		var newNode = addNode(nodeData);
 		newNode.fitSize();
 	});	
+
+
+	var curYPos = 0;
+	var curXPos = 0;
+	var curDown = false;
+
+	$(document).on("mousemove", function (event) {
+		if (curDown === true) {
+			$(document).scrollTop(parseInt($(document).scrollTop() + (curYPos - event.pageY)));
+			$(document).scrollLeft(parseInt($(document).scrollLeft() + (curXPos - event.pageX)));
+		}
+	});
+	
+	$(document).on("mousedown", function (e) { 
+		if( $(e.target).hasClass( "webleau_nodes" ) ) {
+			curDown = true; curYPos = e.pageY; curXPos = e.pageX; e.preventDefault(); 
+		}
+	});
+	$(window).on("mouseup", function (e) { curDown = false; });
+	$(window).on("mouseout", function (e) { curDown = false; });
 
 	function dataToHTML(value) {
 		if( value && typeof value === 'object' && value.constructor === Array ) {
