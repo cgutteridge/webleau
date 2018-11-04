@@ -1,5 +1,7 @@
 {
     "require": {
-        "embed/embed": "2.7.7"
-    }
+        "embed/embed": "2.7.7",
+        "cgutteridge/graphite": "^2.0"
+    },
+	"minimum-stability": "dev"
 }

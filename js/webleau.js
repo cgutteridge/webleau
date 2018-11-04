@@ -1,38 +1,5 @@
-$(document).ready(function() {
+function liquidSpaceInit( layout ) {
 
-	var layout = {
-		nodes: [
-			{
-				id: 'welcome',
-				x: 0,
-				y: 0,
-				width: 200,
-				height: 200,
-				title: 'Welcome',
-				html: '<p>Welcome to Webleau.</p><p><a href="https://jrnl.global/2018/10/30/webleau-progress/">Introduction blog post</a></p>',
-				edit: true
-			},
-			{
-				id: 'a',
-				x: 300,
-				y: 200,
-				width: 200,
-				height: 200,
-				title: '',
-				text: 'Try pasting URLs from media sites. Try double clicking on the background. Use the spanner to save state (to a text string for now). Drag nodes to touch to make a link.',
-				edit: true
-			}
-		],
-		links: [
-			{
-				label: "comments",
-				id: 'welcomelink',
-				subject: { node: 'a' },
-				object: { node: 'welcome' }
-			}
-		]
-	};
-	
 	var nodesLayer;
 	var arrowsLayer;
 	var labelsLayer;
@@ -43,11 +10,9 @@ $(document).ready(function() {
 	var mouse = toVirtual(screenMiddle());
 	var offsetX = 5000;
 	var offsetY = 5000;
-
-	// location of mouse on tablau
-	$( document).on( "mousemove", function( event ) {
-		mouse = toVirtual( new Point( event.pageX, event.pageY ) );
-	});
+	var curYPos = 0;
+	var curXPos = 0;
+	var curDown = false;
 
 	function screenMiddle() {
 		return new Point( winLeft()+winWidth()/2, winTop()+winHeight()/2 );
@@ -90,9 +55,6 @@ $(document).ready(function() {
 		return (window.pageYOffset || d.scrollTop)  - (d.clientTop || 0);
 	}
 
-	initPage();
-	setLayout( layout );
-
 	function Point( x,y ) {
 		this.x = x;
 		this.y = y;
@@ -105,6 +67,7 @@ $(document).ready(function() {
 	function between(val, limit1,limit2 ) {
 		return( val>=Math.min(limit1,limit2)-1 && val<=Math.max(limit1,limit2)+1 );
 	}
+
 	function Line( from, to ) {
 		this.from = from;
 		this.to = to;
@@ -193,6 +156,7 @@ $(document).ready(function() {
 
 			
 		this.showGraphType = function() {
+			this.reset();
 			this.setTitleText( this.data.title );
 			this.dom.content.html("Loading...");
 			var node = this;
@@ -219,6 +183,7 @@ $(document).ready(function() {
 		}
 
 		this.showGraphNode = function() {
+			this.reset();
 			this.setTitleText( this.data.title );
 			this.dom.content.html("Loading...");
 			var node = this;
@@ -290,6 +255,7 @@ $(document).ready(function() {
 		}
 	
 		this.showGraphBase = function() {
+			this.reset();
 			this.setTitleText( this.data.title );
 			this.dom.content.html("Loading...");
 			var node = this;
@@ -345,6 +311,7 @@ $(document).ready(function() {
 		}
 
 		this.showGraphNodeLinks = function() {
+			this.reset();
 			this.dom.content.html("Loading...");
 			var node = this;
 			$.ajax({
@@ -378,6 +345,7 @@ $(document).ready(function() {
 		}
 
 		this.showLink = function() {
+			this.reset();
 			this.showing = "link";
 			if( this.data.type == 'graph-node' ) {
 				this.showGraphNodeLinks();
@@ -387,6 +355,7 @@ $(document).ready(function() {
 		}
 
 		this.showGraphSelect = function() {	
+			this.reset();
 			this.setTitleText(this.data.title);
 			var input = $("<input value='graph-api.php' />");
 			var button = $("<button>CONNECT</button>");
@@ -396,11 +365,11 @@ $(document).ready(function() {
 			this.dom.content.html("");
 			this.dom.content.append( input );
 			this.dom.content.append( button );
-console.log(this);
 			this.fitSize();
 		}
 
 		this.showFullContent = function() {
+			this.reset();
 			this.showing = "full-content";
 			// this should clearly be plugin based eventually
 			if( this.data.type == 'graph-select' ) {
@@ -458,12 +427,19 @@ console.log(this);
 		}
 
 		this.showMeta = function() {
+			this.reset();
 			this.dom.content.html( dataToHTML( this.data ) );
 			this.showing = "meta";
 		}
 
-		this.showEdit = function() {
+		this.reset = function() {
+			this.dom.outer.removeClass('webleau_node_notitle');
 			this.dom.content.html( '' );
+		}
+
+		this.showEdit = function() {
+			this.reset();
+			this.dom.outer.addClass('webleau_node_notitle');
 			this.dom.edit = {};
 			this.dom.edit.div = $('<div class="webleau_node_edit"></div>');
 			this.dom.content.append( this.dom.edit.div );
@@ -640,9 +616,6 @@ console.log(this);
 			this.dom.outer.remove();
 		}
 
-
-		//init
-		
 		// data
 		this.data = nodeData;
 
@@ -1112,6 +1085,45 @@ console.log(this);
 		return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, randomDigit);
 	}
 
+	function dataToHTML(value) {
+		if( value && typeof value === 'object' && value.constructor === Array ) {
+			// array
+			var table = $('<table class="meta_array"></table');
+			for( var i=0; i<value.length; ++i ) {
+				var tr = $('<tr></tr>');
+				tr.append( $('<th></th>').text(i) );
+				tr.append( $('<td></td>').append( dataToHTML( value[i] ) ) );
+				table.append(tr);
+			}
+			return table;
+		} else if( value && typeof value === 'object' && value.constructor === Object ) {
+			// object
+			var keys = Object.keys(value);
+			var table = $('<table class="meta_object"></table');
+			for( var i=0; i<keys.length; ++i ) {
+				var tr = $('<tr></tr>');
+				tr.append( $('<th></th>').text(keys[i]) );
+				tr.append( $('<td></td>').append( dataToHTML( value[keys[i]] ) ) );
+				table.append(tr);
+			}
+			return table;
+		} else {
+			return $('<span class="meta_value"></span>').text(value);
+		}
+	}
+
+	/* init */
+
+	initPage();
+
+	// location of mouse on tablau
+	$( document).on( "mousemove", function( event ) {
+		mouse = new Point( event.pageX, event.pageY );
+	});
+
+
+	/* fancy stuff with paste */
+
 	nodesLayer.focus();
 	nodesLayer.on('paste', function(event) {
 		// if we are focused on a normal-paste element just skip this handler
@@ -1204,9 +1216,7 @@ console.log(this);
 	});	
 
 
-	var curYPos = 0;
-	var curXPos = 0;
-	var curDown = false;
+	/* drag background to scroll */
 
 	$(document).on("mousemove", function (event) {
 		if (curDown === true) {
@@ -1223,30 +1233,7 @@ console.log(this);
 	$(window).on("mouseup", function (e) { curDown = false; });
 	$(window).on("mouseout", function (e) { curDown = false; });
 
-	function dataToHTML(value) {
-		if( value && typeof value === 'object' && value.constructor === Array ) {
-			// array
-			var table = $('<table class="meta_array"></table');
-			for( var i=0; i<value.length; ++i ) {
-				var tr = $('<tr></tr>');
-				tr.append( $('<th></th>').text(i) );
-				tr.append( $('<td></td>').append( dataToHTML( value[i] ) ) );
-				table.append(tr);
-			}
-			return table;
-		} else if( value && typeof value === 'object' && value.constructor === Object ) {
-			// object
-			var keys = Object.keys(value);
-			var table = $('<table class="meta_object"></table');
-			for( var i=0; i<keys.length; ++i ) {
-				var tr = $('<tr></tr>');
-				tr.append( $('<th></th>').text(keys[i]) );
-				tr.append( $('<td></td>').append( dataToHTML( value[keys[i]] ) ) );
-				table.append(tr);
-			}
-			return table;
-		} else {
-			return $('<span class="meta_value"></span>').text(value);
-		}
-	}
-});
+	/* install the layout */
+
+	setLayout( layout );	
+}
