@@ -1,13 +1,11 @@
 <?php
 include __DIR__.'/vendor/autoload.php';
-
 use Embed\Embed;
 
 header( "Content-type: application/json");
 
 # TODO check origin of request
 $info = Embed::create($_GET['url']);
-
 $r = array( 
 "title"=>$info->title,
 "description"=>$info->description,

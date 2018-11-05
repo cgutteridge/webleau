@@ -899,7 +899,6 @@ function liquidSpaceInit( layout ) {
 	}
 		
 	function initPage() {
-
 		var bgsvg = $('<svg class="webleau_bgsvg"><g id="axis"><line id="vaxis" /><line id="haxis" /></g></svg>');
 		$('body').append(bgsvg);
 		bgsvg.html( bgsvg.html() ); // reset SVG layer 
@@ -1165,7 +1164,6 @@ function liquidSpaceInit( layout ) {
 
 
 	/* fancy stuff with paste */
-
 	nodesLayer.focus();
 	nodesLayer.on('paste', function(event) {
 		// if we are focused on a normal-paste element just skip this handler
