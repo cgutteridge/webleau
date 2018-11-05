@@ -155,6 +155,9 @@ a {
 .webleau_node:hover .webleau_node_empty_title {
 	display: block;
 }
+.webleau_node_notitle .webleau_node_title {
+	display: none !important;
+}
 .webleau_node:hover .webleau_tool {
 	color: white;
 	cursor: pointer;

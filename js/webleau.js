@@ -7,7 +7,7 @@ function liquidSpaceInit( layout ) {
 	var links = {};
 	var winScale = 1;
 	var layoutScale = 1;
-	var mouse = toVirtual(screenMiddle());
+	var mouse = screenMiddle();
 	var offsetX = 5000;
 	var offsetY = 5000;
 	var curYPos = 0;
@@ -456,24 +456,38 @@ function liquidSpaceInit( layout ) {
 				if( event.which==13 && !event.shiftKey) {
 					this.dom.edit.save.click();
 				}	
+				if( event.which==27 ) {
+					this.dom.edit.cancel.click();
+				}	
 			}.bind(this));
 			if( this.data.html ) {
 				this.dom.edit.textarea.text( this.data.html );
 				this.dom.edit.save.click( function() {
-					this.data.html = this.dom.edit.textarea.val().trim();
+					var v = this.dom.edit.textarea.val().trim();
+					if( v == "" ) { this.remove(); return; }
+					this.data.html = v;
+					this.showFullContent();
+				}.bind(this));
+				this.dom.edit.cancel.click( function() {
+					var v = this.dom.edit.textarea.val().trim();
+					if( v == "" ) { this.remove(); return; }
 					this.showFullContent();
 				}.bind(this));
 			} else {
 				this.dom.edit.textarea.text( this.data.text );
 				this.dom.edit.save.click( function() {
-					this.data.text = this.dom.edit.textarea.val().trim();
+					var v = this.dom.edit.textarea.val().trim();
+					if( v == "" ) { this.remove(); return; }
+					this.data.text = v;
 					this.showFullContent();
 					this.fitSize();
 				}.bind(this));
+				this.dom.edit.cancel.click( function() {
+					var v = this.dom.edit.textarea.val().trim();
+					if( v == "" ) { this.remove(); return; }
+					this.showFullContent();
+				}.bind(this));
 			} 
-			this.dom.edit.cancel.click( function() {
-				this.showFullContent();
-			}.bind(this));
 			this.fitSize();
 		}
 
@@ -687,10 +701,11 @@ function liquidSpaceInit( layout ) {
 		this.dom.outer.append( this.dom.content );
 		nodesLayer.append( this.dom.outer );
 		this.dom.outer.dblclick(function() {
+			var pt = toVirtual( mouse );
 			var nodeData = {
 				id: uuid(),
-				x: mouse.x,
- 				y: mouse.y,	
+				x: pt.x,
+ 				y: pt.y,	
 				title: "",
 				width:  ((winWidth() /2/winScale))/layoutScale,
 				height: ((winHeight()/2/winScale))/layoutScale,
@@ -879,7 +894,7 @@ function liquidSpaceInit( layout ) {
 
 	// focus the real scroll window onto a point on the virtual layout
 	function focusPage( vpt ) {
-		rpt = toReal(vpt);
+		var rpt = toReal(vpt);
 		window.scrollTo( rpt.x-winWidth()/2, rpt.y-winHeight()/2 );
 	}
 		
@@ -901,10 +916,11 @@ function liquidSpaceInit( layout ) {
 		centrePage();
 
 		nodesLayer.dblclick(function() {
+			var pt = toVirtual( mouse );
 			var nodeData = {
 				id: uuid(),
-				x: mouse.x,
- 				y: mouse.y,	
+				x: pt.x,
+ 				y: pt.y,	
 				title: "",
 				width:  winWidth() /2/winScale/layoutScale,
 				height: winHeight()/2/winScale/layoutScale,
@@ -1131,10 +1147,11 @@ function liquidSpaceInit( layout ) {
 		// nb need to stop this applying to textarea and input
 		var clipboardData = event.clipboardData || window.clipboardData || event.originalEvent.clipboardData;
 		var json = clipboardData.getData('application/json');
+		var pt = toVirtual(mouse);
 		var nodeData = {
 			id: uuid(),
-			x: mouse.x,
- 			y: mouse.y,
+			x: pt.x,
+ 			y: pt.y,
 			width:  winWidth() /2/winScale/layoutScale,
 			height: winHeight()/2/winScale/layoutScale,
 			meta: {}
