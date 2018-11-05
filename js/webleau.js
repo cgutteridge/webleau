@@ -999,6 +999,17 @@ function liquidSpaceInit( layout ) {
 			updateAllPositions();
 		});
 
+		// quine download
+		var quineTool = $('<div title="quine" class="webleau_tool">Q</div>');
+		controlTools.append( quineTool );
+		quineTool.click( function() {
+			var head = $('head').html();
+			var jsonLayout = JSON.stringify( getLayout());
+			var page = "<!DOCTYPE html>\n<html lang='en'><head>" +head+"</head><body></body><script>$(document).ready(function(){ liquidSpaceInit("+ jsonLayout+");});</"+"script></html>" ;
+			var filename = "liquid-space."+Date.now()+".html";
+			download( filename, page, "text/html" );
+		});
+
 		// graph
 		var graphTool = $('<div title="graph" class="webleau_tool">G</div>');
 		controlTools.append( graphTool );
@@ -1033,6 +1044,21 @@ function liquidSpaceInit( layout ) {
 		
 
 		/* end controls */
+	}
+
+	function download(filename, data, mimetype) {
+		var blob = new Blob([data], {type: mimetype});
+		if(window.navigator.msSaveOrOpenBlob) {
+			window.navigator.msSaveBlob(blob, filename);
+		}
+		else{
+			var elem = window.document.createElement('a');
+			elem.href = window.URL.createObjectURL(blob);
+			elem.download = filename;        
+			document.body.appendChild(elem);
+			elem.click();        
+			document.body.removeChild(elem);
+		}
 	}
 
 
