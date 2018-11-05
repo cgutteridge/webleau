@@ -83,7 +83,7 @@ elseif( $_GET['action']=='nodes' && ( isset( $_GET['ids'] ) || isset( $_GET['typ
 
 	if( $_GET['stub'] ) {
 		// just return the title & type & id for each node
-		foreach( $result["nodes"] as $id=>$node ) {
+		foreach( $result["nodes"] as $id=>&$node ) {
 			unset( $node["data"] );
 		}
 	}	
