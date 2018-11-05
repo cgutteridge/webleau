@@ -1,4 +1,10 @@
 {
+  "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/cgutteridge/PHP-SPARQL-Lib"
+        }
+    ],
  "require" : {
         "embed/embed": "2.7.7"
     }

@@ -393,7 +393,7 @@ function liquidSpaceInit( layout ) {
 			this.setTitleText( this.data.title );
 			var hasContent = false;
 			if( this.data.html ) {
-				this.dom.content.html( this.data.html );
+				this.dom.content.html( sanitiseHtml(this.data.html) );
 			} else if( this.data.text ) {
 				this.dom.content.text( this.data.text );	
 			} else {
@@ -1004,9 +1004,11 @@ function liquidSpaceInit( layout ) {
 		quineTool.click( function() {
 			var head = $('head').html();
 			var jsonLayout = JSON.stringify( getLayout());
+			jsonLayout = jsonLayout.replace( /<\/script>/i, "<\/\"+\"script>" );
 			var page = "<!DOCTYPE html>\n<html lang='en'><head>" +head+"</head><body></body><script>$(document).ready(function(){ liquidSpaceInit("+ jsonLayout+");});</"+"script></html>" ;
 			var filename = "liquid-space."+Date.now()+".html";
 			download( filename, page, "text/html" );
+			//console.log( page );
 		});
 
 		// graph
@@ -1153,6 +1155,12 @@ function liquidSpaceInit( layout ) {
 		}
 	}
 
+	// remove the obvious secruity issues from 3rd party html
+	function sanitiseHtml( html ) {
+		html = html.replace( /<script>.*?<\/script>/, '' );
+		return html;
+	}
+
 	/* init */
 
 	initPage();
@@ -1165,7 +1173,7 @@ function liquidSpaceInit( layout ) {
 
 	/* fancy stuff with paste */
 	nodesLayer.focus();
-	nodesLayer.on('paste', function(event) {
+	$('body').on('paste', function(event) {
 		// if we are focused on a normal-paste element just skip this handler
 		if( $('.normal-paste:focus').length ) { return; }
 		// nb need to stop this applying to textarea and input

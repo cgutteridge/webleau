@@ -47,6 +47,7 @@ a {
 	background-color: #999;
 }
 .controls_wrapper {
+	z-index: 100; // higher the resizeable handles
 }
 .controls {
 	width:30%;
