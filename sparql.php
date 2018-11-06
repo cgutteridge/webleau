@@ -17,7 +17,9 @@ $_GET['endpoint'] = "http://sparql.data.southampton.ac.uk/";
 
 # follow Links ; ^ to indicate inverse links, * for wildcard matching both dirs.
 
-require_once( 'sparqllib.php');
+$MAX_TYPES=200;
+
+require_once( 'lib/sparqllib.php');
 $result = array( "ok"=>false, "action"=>"error" );
 
 if( $_GET['action'] == 'nodeTypes' ) {
@@ -27,17 +29,17 @@ if( $_GET['action'] == 'nodeTypes' ) {
 	$db = sparql_connect( $_GET['endpoint'] );
 	if( !$db ) { print $db->errno() . ": " . $db->error(). "\n"; exit; }
  	
-	$sparql = "SELECT DISTINCT ?type WHERE { ?foo a ?type } LIMIT 51";
+	$sparql = "SELECT DISTINCT ?type WHERE { ?foo a ?type } LIMIT ".($MAX_TYPES+1);
 	$sparqlResult = $db->query( $sparql ); 
 	if( $sparqlResult ) { 
 		$fields = $sparqlResult->field_array( $result );
  		
-		$sparqlResult["nodeTypes"] = array();
+		$result["nodeTypes"] = array();
 		while( $row = $sparqlResult->fetch_array() )
 		{
-			$sparqlResult["nodeTypes"][$row["type"]] = null; 
+			$result["nodeTypes"][$row["type"]] = {}; 
 		}
-		if( $sparqlResult->num_rows() == $MAX+1 ) {
+		if( $sparqlResult->num_rows() > $MAX_TYPES ) {
 			$result["complete"] = false;
 		}
 	} else {

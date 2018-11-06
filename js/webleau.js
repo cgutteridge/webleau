@@ -13,6 +13,7 @@ function liquidSpaceInit( layout ) {
 	var curYPos = 0;
 	var curXPos = 0;
 	var curDown = false;
+	var layoutScaleSlider;
 
 	function screenMiddle() {
 		return new Point( winLeft()+winWidth()/2, winTop()+winHeight()/2 );
@@ -119,6 +120,7 @@ function liquidSpaceInit( layout ) {
 				height: ((winHeight()/2/winScale))/layoutScale,
 				type: "graph-base",
 				endpoint: endpoint,
+				gizmo: true,
 				meta: {}
 			});
 		}
@@ -135,6 +137,7 @@ function liquidSpaceInit( layout ) {
 			width:  ((winWidth() /2/winScale))/layoutScale,
 			height: ((winHeight()/2/winScale))/layoutScale,
 			type: "graph-select",
+			gizmo: true,
 			meta: {}
 		});
 		return node;
@@ -162,7 +165,7 @@ function liquidSpaceInit( layout ) {
 			var node = this;
 			$.ajax({
 				method: "GET",
-				data: { action: 'nodes', stub:1, types:this.data.nodeType },
+				data: { action: 'nodes', types:this.data.nodeType },
 				url: node.data.endpoint
 			}).done(function(data){
 				this.dom.content.html("");
@@ -171,7 +174,7 @@ function liquidSpaceInit( layout ) {
 				var keys = Object.keys( data.nodes );
 				for( var i=0;i<keys.length;++i) {
 					var apiNode = data.nodes[keys[i]];
-					var row = $('<div style="cursor:pointer"></div>').text( " "+apiNode.title);
+					var row = $('<div class="webleau_seed"></div>').text( " "+apiNode.title);
 					this.dom.content.append(row);
 					row.click( function() { this.node.manifestGraphNode(this.apiNode,'belongs to',true); }.bind({node:this,apiNode:apiNode}) );
 				}
@@ -189,7 +192,7 @@ function liquidSpaceInit( layout ) {
 			var node = this;
 			$.ajax({
 				method: "GET",
-				data: { action: 'nodes', ids:this.data.nodeID },
+				data: { action: 'nodes', ids:this.data.nodeID, data:1 },
 				url: node.data.endpoint
 			}).done(function(data){
 				//this.dom.content.html( dataToHTML( data ) );
@@ -269,7 +272,10 @@ function liquidSpaceInit( layout ) {
 				var keys = Object.keys( data.nodeTypes );
 				for( var i=0;i<keys.length;++i) {
 					var type = keys[i];
-					var row = $('<div style="cursor:pointer"> '+type+' ('+data.nodeTypes[type]+') </div>');
+					var row = $('<div class="webleau_seed">'+type+' </div>');
+					if( data.nodeTypes[type]["count"] ) {
+						row.append( $('<span>('+data.nodeTypes[type]["count"]+')</span>' ) );
+					}
 					this.dom.content.append(row);
 					row.click( function() { this.node.manifestGraphType(this.type); }.bind({node:this,type:type}) );
 				}
@@ -297,6 +303,7 @@ function liquidSpaceInit( layout ) {
 					type: "graph-type",
 					nodeType: type,
 					endpoint: this.data.endpoint,
+					gizmo: true,
 					meta: {}
 				});
 			}
@@ -316,7 +323,7 @@ function liquidSpaceInit( layout ) {
 			var node = this;
 			$.ajax({
 				method: "GET",
-				data: { action: 'nodes', ids: this.data.nodeID, followLinks: '*', stub: 1 },
+				data: { action: 'nodes', ids: this.data.nodeID, followLinks: '*' },
 				url: node.data.endpoint
 			}).done(function(data){
 				this.dom.content.html("");
@@ -326,13 +333,13 @@ function liquidSpaceInit( layout ) {
 					apiLink = data.links[i];
 					if( apiLink.subject == this.data.nodeID && data.nodes[apiLink.object] ) {
 						var apiNode = data.nodes[apiLink.object];
-						var row = $('<div style="cursor:pointer" > '+apiLink.type+' link to  '+apiNode.title+' ('+apiNode.type+') </div>');
+						var row = $('<div class="webleau_seed" > '+apiLink.type+' link to  '+apiNode.title+' ('+apiNode.type+') </div>');
 						this.dom.content.append(row);
 						row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,true); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
 					}
 					if( apiLink.object == this.data.nodeID && data.nodes[apiLink.subject] ) {
 						var apiNode = data.nodes[apiLink.subject];
-						var row = $('<div style="cursor:pointer" > '+apiLink.type+' link from  '+apiNode.title+' ('+apiNode.type+') </div>');
+						var row = $('<div class="webleau_seed" > '+apiLink.type+' link from  '+apiNode.title+' ('+apiNode.type+') </div>');
 						this.dom.content.append(row);
 						row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,false); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
 					}
@@ -357,7 +364,7 @@ function liquidSpaceInit( layout ) {
 		this.showGraphSelect = function() {	
 			this.reset();
 			this.setTitleText(this.data.title);
-			var input = $("<input value='graph-api.php' />");
+			var input = $("<input class='normal-paste' value='https://www.southampton.ac.uk/~totl/wordpress-graph-demo/' />");
 			var button = $("<button>CONNECT</button>");
 			button.click( function() {
 				manifestGraphBase( input.val() );
@@ -645,6 +652,10 @@ function liquidSpaceInit( layout ) {
 		this.dom.titleRight = $('<div class="webleau_node_title_right"></div>');
 		this.dom.titleText = $('<div class="webleau_node_title_text"></div>');
 		this.dom.content = $('<div class="webleau_node_content"></div>');
+
+		if( nodeData.gizmo ) {
+			this.dom.outer.addClass( 'webleau_gizmo' );
+		}
 
 		if( nodeData.link ) {
 			this.dom.toolLink = $('<div class="webleau_tool">L</div>');
@@ -954,7 +965,7 @@ function liquidSpaceInit( layout ) {
 		});
 		*/
 
-		var layoutScaleSlider = $('<input type="range" value="1" min="0.001" max="2" step="0.001" />');
+		layoutScaleSlider = $('<input type="range" value="1" min="0.05" max="2" step="0.001" />');
 		var layoutScaleDisplay = $('<span>100%</span>');
 		controls.append( $('<div>Layout scale: </div>' ).append(layoutScaleDisplay));
 		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(layoutScaleSlider) );
@@ -1008,7 +1019,6 @@ function liquidSpaceInit( layout ) {
 			var page = "<!DOCTYPE html>\n<html lang='en'><head>" +head+"</head><body></body><script>$(document).ready(function(){ liquidSpaceInit("+ jsonLayout+");});</"+"script></html>" ;
 			var filename = "liquid-space."+Date.now()+".html";
 			download( filename, page, "text/html" );
-			//console.log( page );
 		});
 
 		// graph
@@ -1161,22 +1171,7 @@ function liquidSpaceInit( layout ) {
 		return html;
 	}
 
-	/* init */
-
-	initPage();
-
-	// location of mouse on tablau
-	$( document).on( "mousemove", function( event ) {
-		mouse = new Point( event.pageX, event.pageY );
-	});
-
-
-	/* fancy stuff with paste */
-	nodesLayer.focus();
-	$('body').on('paste', function(event) {
-		// if we are focused on a normal-paste element just skip this handler
-		if( $('.normal-paste:focus').length ) { return; }
-		// nb need to stop this applying to textarea and input
+	function pasteToBackground(event) {
 		var clipboardData = event.clipboardData || window.clipboardData || event.originalEvent.clipboardData;
 		var json = clipboardData.getData('application/json');
 		var pt = toVirtual(mouse);
@@ -1262,8 +1257,38 @@ function liquidSpaceInit( layout ) {
 		nodeData.edit = true;
 		var newNode = addNode(nodeData);
 		newNode.fitSize();
-	});	
+	}	
 
+	/* init */
+
+	initPage();
+
+	// location of mouse on tablau
+	$( document).on( "mousemove", function( event ) {
+		mouse = new Point( event.pageX, event.pageY );
+	});
+
+
+	/* fancy stuff with paste */
+	nodesLayer.focus();
+	$('body').on('paste', function(event) {
+		// if we are focused on a normal-paste element just skip this handler
+		if( $('.normal-paste:focus').length ) { return; }
+		pasteToBackground(event);
+	});
+
+	$('body').bind('wheel mousewheel', function(e){
+		var delta;
+
+		if (e.originalEvent.wheelDelta !== undefined) {
+			delta = e.originalEvent.wheelDelta;
+		} else {
+			delta = e.originalEvent.deltaY * -1;
+		}
+		layoutScaleSlider.val( parseFloat(layoutScaleSlider.val())+delta*0.001 );
+		layoutScaleSlider.trigger('propertychange');
+		return false;
+	});
 
 	/* drag background to scroll */
 
