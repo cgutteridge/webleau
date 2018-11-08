@@ -40,7 +40,7 @@ $(document).ready(function(){ liquidSpaceInit({
 				width: 200,
 				height: 200,
 				title: 'Welcome',
-				html: '<p>Welcome to Webleau.</p><p><a href="https://jrnl.global/2018/10/30/webleau-progress/">Introduction blog post</a></p>',
+				html: '<p>Welcome to Liquid Space.</p><p>To get started, for now all we have is an <a href="https://jrnl.global/2018/10/30/webleau-progress/">Introduction blog post</a></p>',
 				edit: true
 			}
 		],

@@ -161,6 +161,9 @@ function liquidSpaceInit( layout ) {
 		this.showGraphType = function() {
 			this.reset();
 			this.setTitleText( this.data.title );
+			if( this.data.graphIdent && this.data.graphIdent.title ) {
+				this.setTitleText( this.data.graphIdent.title+" #"+this.data.nodeType );
+			}
 			this.dom.content.html("Loading...");
 			var node = this;
 			$.ajax({
@@ -169,7 +172,6 @@ function liquidSpaceInit( layout ) {
 				url: node.data.endpoint
 			}).done(function(data){
 				this.dom.content.html("");
-				this.dom.content.append( $('<div>This endpoint has the following types of node:</div>'));
 				//this.dom.content.html( dataToHTML( data ) );
 				var keys = Object.keys( data.nodes );
 				for( var i=0;i<keys.length;++i) {
@@ -268,7 +270,10 @@ function liquidSpaceInit( layout ) {
 					data: {},
 					url: node.data.endpoint
 				}).done(function(data){
-					console.log(data);
+					node.data.graphIdent = data;
+					if( node.data.graphIdent && node.data.graphIdent.title ) {
+						node.setTitleText( node.data.graphIdent.title );
+					}
 				});
 			}
 			$.ajax({
@@ -313,13 +318,14 @@ function liquidSpaceInit( layout ) {
 					nodeType: type,
 					endpoint: this.data.endpoint,
 					gizmo: true,
+					graphIdent: this.data.graphIdent,
 					meta: {}
 				});
 			}
 			if( !links[link_id] ) {
 				addLink({
-					subject: {node: id},
-					object: {node: this.data.id},
+					object: {node: id},
+					subject: {node: this.data.id},
 					label: "belongs to",
 					id: link_id
 				});
@@ -385,6 +391,13 @@ function liquidSpaceInit( layout ) {
 			this.fitSize();
 		}
 
+		this.showIcon = function() {
+			this.dom.outer.hide();
+			this.dom.icon.show();
+			this.showing = "icon";
+			this.updatePosition();
+			this.updateLinksPosition();
+		}
 		this.showFullContent = function() {
 			this.reset();
 			this.showing = "full-content";
@@ -539,6 +552,12 @@ function liquidSpaceInit( layout ) {
 		}
 	
 		this.updatePosition = function() {
+			if( this.showing == 'icon' ) {
+				this.dom.icon.css('left',this.realX()-this.realWidth()/2);
+				this.dom.icon.css('top', this.realY()-this.realHeight()/2);
+				this.dom.icon.css( 'background-color','green');
+				return;
+			}
 			this.dom.outer.css('left',this.realX()-this.realWidth()/2);
 			this.dom.outer.css('top', this.realY()-this.realHeight()/2);
 			this.dom.outer.css('width', this.data.width *winScale*layoutScale);
@@ -586,17 +605,23 @@ function liquidSpaceInit( layout ) {
 		}
 		// the width of the node in pixels in the current scale
 		this.realWidth = function() {
+			if( this.showing == 'icon' ) {
+				return this.data.iconWidth;
+			}
 			return this.data.width*winScale*layoutScale;
 		}
 		// the hight of the node in pixels in the current scale
 		this.realHeight = function() {
+			if( this.showing == 'icon' ) {
+				return this.data.iconHeight;
+			}
 			return this.data.height*winScale*layoutScale;
 		}
 		this.realWidthFull = function() {
-			return this.data.width*winScale*layoutScale+this.borderSize*2;
+			return this.realWidth()+this.borderSize*2;
 		}
 		this.realHeightFull = function() {
-			return this.data.height*winScale*layoutScale+this.borderSize*2;
+			return this.realHeight()+this.borderSize*2;
 		}
 
 		// find the point in a block nearest to the given point
@@ -645,6 +670,7 @@ function liquidSpaceInit( layout ) {
 			}
 			delete nodes[this.data.id];
 			this.dom.outer.remove();
+			this.dom.icon.remove();
 		}
 
 		// data
@@ -693,6 +719,42 @@ function liquidSpaceInit( layout ) {
 			this.fitSize();
 		}.bind(this));
 
+
+
+		this.dom.toolfit = $('<div class="lqs_tool">-</div>');
+		this.dom.titleLeft.append( this.dom.toolfit );
+		this.dom.toolfit.click( function() {
+			this.showIcon();
+		}.bind(this));
+		this.dom.icon = $("<div class='lqs_node_icon'>X</div>");
+		this.data.iconWidth = 50;
+		this.data.iconHeight = 50;
+		this.dom.icon.width( this.data.iconWidth );
+		this.dom.icon.height( this.data.iconHeight );
+		this.dom.icon.hide();
+		nodesLayer.append( this.dom.icon );
+		this.iconDragging = false;
+		this.dom.icon.mousedown( function() {
+		        $(window).mousemove(function() {
+            			this.iconDragging = true;
+            			$(window).unbind("mousemove");
+        		}.bind( this ));
+		}.bind(this));
+		this.dom.icon.mouseup( function() {
+        		var wasDragging = this.iconDragging;
+        		this.iconDragging = false;
+        		$(window).unbind("mousemove");
+        		if (!wasDragging) {
+				this.dom.icon.hide();		
+				this.dom.outer.show();		
+            			this.showFullContent();
+				this.updatePosition();
+				this.updateLinksPosition();
+			}
+		}.bind(this));		
+
+
+
 		this.dom.toolinfo = $('<div class="lqs_tool">M</div>');
 		this.dom.titleLeft.append( this.dom.toolinfo );
 		this.dom.toolinfo.click( function() {
@@ -715,6 +777,7 @@ function liquidSpaceInit( layout ) {
 		//this.dom.toolResize = $('<div class="lqs_node_resize lqs_tool"><span class="glyphicon glyphicon-resize-small" aria-hidden="true"></span></div>');
 		//this.dom.outer.append( this.dom.toolResize );
 			
+	
 		this.dom.outer.append( this.dom.title );
 		this.dom.title.append( this.dom.titleLeft );
 		this.dom.title.append( this.dom.titleRight );
@@ -762,6 +825,18 @@ function liquidSpaceInit( layout ) {
 		this.dom.outer.draggable( { 
 			containment: $('.lqs_nodes'),
 			handle: ".lqs_node_title",
+			opacity: 0.8,
+			scroll: true,
+		//	scrollSensitivity: 100,
+			drag: this.dragged.bind(this),
+			start: function() {
+				this.dragStartX = this.data.x;
+				this.dragStartY = this.data.y;
+			}.bind(this)
+		});
+		this.dom.icon.draggable( { 
+			containment: $('.lqs_nodes'),
+			//handle: ".lqs_node_title",
 			opacity: 0.8,
 			scroll: true,
 		//	scrollSensitivity: 100,
@@ -952,7 +1027,8 @@ function liquidSpaceInit( layout ) {
 			comment.showEdit();
 		});
 
-		//$('body').append( $('<div class="ident">Webleau</div>'));
+		$('body').append( $('<div class="ident">liquid space</div>'));
+
 		/* CONTROLS */
 
 		var controlsWrapper = $('<div class="controls_wrapper"><div class="controls_icon">TOOLS</div></div>');
@@ -1027,7 +1103,7 @@ function liquidSpaceInit( layout ) {
 		quineTool.click( function() {
 			var head = $('head').html();
 			var jsonLayout = JSON.stringify( getLayout());
-			jsonLayout = jsonLayout.replace( /<\/script>/i, "<\/\"+\"script>" );
+			jsonLayout = jsonLayout.replace( /<\/script>/ig, "<\/\"+\"script>" );
 			var page = "<!DOCTYPE html>\n<html lang='en'><head>" +head+"</head><body></body><script>$(document).ready(function(){ liquidSpaceInit("+ jsonLayout+");});</"+"script></html>" ;
 			var filename = "liquid-space."+Date.now()+".html";
 			download( filename, page, "text/html" );
