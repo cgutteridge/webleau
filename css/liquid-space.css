@@ -8,7 +8,7 @@ body {
 a {
 	color: #fff !important;
 }
-.webleau_nodes {
+.lqs_nodes {
 	cursor: crosshair;
 	position: absolute;
 	top: 0px;
@@ -16,7 +16,7 @@ a {
 	width: 10000px;
 	height: 10000px;
 }
-.webleau_svg, .webleau_bgsvg {
+.lqs_svg, .lqs_bgsvg {
 	width: 10000px;
 	height: 10000px;
 	position: absolute;
@@ -35,11 +35,12 @@ a {
 	opacity: 0.1;
 	font-size: 300%;
 }
-.webleau_seed {
+.lqs_seed {
 	background-color: rgba( 255,255,255,0.2);
 	margin: 2px 10px;
 	padding: 3px 10px;
 	border-radius: 1em;
+	display: inline-block;
 }
 /* controls */
 .controls_icon {
@@ -75,10 +76,10 @@ a {
 .controls_wrapper input {
 	width: 100%;
 }
-.controls .webleau_controls_tools {
+.controls .lqs_controls_tools {
 	text-align: left;
 }
-.controls .webleau_tool {
+.controls .lqs_tool {
 	background-color: #999;
 	color: white;
 	cursor: pointer;
@@ -87,14 +88,14 @@ a {
 	margin: 3px;
 	display: inline-block;
 }
-.controls .webleau_tool:hover {
+.controls .lqs_tool:hover {
 	background-color: #666;
 }
 /* end controls */
 
 
 /* nodes */
-.webleau_node:hover .webleau_tool {
+.lqs_node:hover .lqs_tool {
 	color: white;
 	cursor: pointer;
 	font-size: 100%;
@@ -107,9 +108,9 @@ a {
 .ui-resizable-handle {
 	opacity: 0;
 }
-.webleau_node {
+.lqs_node {
 	position: absolute;
-	cursor: crosshair;
+	cursor: default;
 	top: 0px;
 	left: 0px;
 	background-color: #ccc;
@@ -120,10 +121,10 @@ a {
 	overflow: hidden;
   	box-shadow:         2px 6px 20px 2px rgba(0,0,0,0.1);
 }
-.webleau_gizmo {
+.lqs_gizmo {
 	background-color: #dbd;
 }
-.webleau_node_title {
+.lqs_node_title {
 	text-align: center;
 	background-color: #999;
 	color: #fff;
@@ -136,44 +137,44 @@ a {
 	cursor: move;	
 	padding-top: 2px;
 }
-.webleau_gizmo .webleau_node_title {
+.lqs_gizmo .lqs_node_title {
 	background-color: #a8a;
 }
-.webleau_node_title_text {
+.lqs_node_title_text {
 	padding: 0px 3px;
 }
-.webleau_node_title_left {
+.lqs_node_title_left {
 	float: left;
 }
-.webleau_node_title_right {
+.lqs_node_title_right {
 	float: right;
 }
-.webleau_node_title_left  .webleau_tool {
+.lqs_node_title_left  .lqs_tool {
 	margin-right: 0.2em;
 }
-.webleau_node_title_right  .webleau_tool {
+.lqs_node_title_right  .lqs_tool {
 	margin-left: 0.2em;
 }
-.webleau_node_resize {
+.lqs_node_resize {
 	position: absolute;
 	right: 0;
 	bottom: 0;
 }
-.webleau_node .webleau_tool {
+.lqs_node .lqs_tool {
 	display: none;
 }
-.webleau_node .webleau_node_empty_title {
+.lqs_node .lqs_node_empty_title {
 	display: none;
 	position: absolute;
 	width: 100%;
 }
-.webleau_node:hover .webleau_node_empty_title {
+.lqs_node:hover .lqs_node_empty_title {
 	display: block;
 }
-.webleau_node_notitle .webleau_node_title {
+.lqs_node_notitle .lqs_node_title {
 	display: none !important;
 }
-.webleau_node:hover .webleau_tool {
+.lqs_node:hover .lqs_tool {
 	color: white;
 	cursor: pointer;
 	font-size: 100%;
@@ -186,10 +187,10 @@ a {
 .weblau_node:hover .ui-icon {
 	display: block;
 }
-.webleau_node .webleau_tool:hover {
+.lqs_node .lqs_tool:hover {
 	color: #666;
 }
-.webleau_node_content {
+.lqs_node_content {
 	padding: 5px;
 	color: black;
 	overflow: auto;
@@ -197,19 +198,19 @@ a {
 .drop-hover {
 	background-color: #999;
 }
-.drop-hover .webleau_node_title{
+.drop-hover .lqs_node_title{
 	background-color: #666;
 }
 /* end nodes */
 
 
 /* SVG */
-.webleau_link {
+.lqs_link {
 	stroke:#666;
 	stroke-width:2;
 	opacity: 0.2;
 }
-.webleau_link_from_text {
+.lqs_link_from_text {
         opacity: 0.6;
 	text-anchor: middle;
 }

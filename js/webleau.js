@@ -151,9 +151,9 @@ function liquidSpaceInit( layout ) {
 		this.setTitleText = function( text ) {
 			this.dom.titleText.text( text );
 			if( text == "" ) {
-				this.dom.title.addClass("webleau_node_empty_title");
+				this.dom.title.addClass("lqs_node_empty_title");
 			} else {
-				this.dom.title.removeClass("webleau_node_empty_title");
+				this.dom.title.removeClass("lqs_node_empty_title");
 			}
 		}
 
@@ -174,7 +174,7 @@ function liquidSpaceInit( layout ) {
 				var keys = Object.keys( data.nodes );
 				for( var i=0;i<keys.length;++i) {
 					var apiNode = data.nodes[keys[i]];
-					var row = $('<div class="webleau_seed"></div>').text( " "+apiNode.title);
+					var row = $('<div class="lqs_seed"></div>').text( " "+apiNode.title);
 					this.dom.content.append(row);
 					row.click( function() { this.node.manifestGraphNode(this.apiNode,'belongs to',true); }.bind({node:this,apiNode:apiNode}) );
 				}
@@ -262,17 +262,26 @@ function liquidSpaceInit( layout ) {
 			this.setTitleText( this.data.title );
 			this.dom.content.html("Loading...");
 			var node = this;
+			if( !this.data.graphIdent ) {
+				$.ajax({
+					method: "GET",
+					data: {},
+					url: node.data.endpoint
+				}).done(function(data){
+					console.log(data);
+				});
+			}
 			$.ajax({
 				method: "GET",
 				data: { action: 'nodeTypes' },
 				url: node.data.endpoint
 			}).done(function(data){
 				this.dom.content.html("");
-				this.dom.content.append( $('<div>This endpoint has the following types of node:</div>'));
+				//this.dom.content.append( $('<div>This endpoint has the following types of node:</div>'));
 				var keys = Object.keys( data.nodeTypes );
 				for( var i=0;i<keys.length;++i) {
 					var type = keys[i];
-					var row = $('<div class="webleau_seed">'+type+' </div>');
+					var row = $('<div class="lqs_seed">'+type+' </div>');
 					if( data.nodeTypes[type]["count"] ) {
 						row.append( $('<span>('+data.nodeTypes[type]["count"]+')</span>' ) );
 					}
@@ -333,13 +342,13 @@ function liquidSpaceInit( layout ) {
 					apiLink = data.links[i];
 					if( apiLink.subject == this.data.nodeID && data.nodes[apiLink.object] ) {
 						var apiNode = data.nodes[apiLink.object];
-						var row = $('<div class="webleau_seed" > '+apiLink.type+' link to  '+apiNode.title+' ('+apiNode.type+') </div>');
+						var row = $('<div class="lqs_seed" > '+apiLink.type+' link to  '+apiNode.title+' ('+apiNode.type+') </div>');
 						this.dom.content.append(row);
 						row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,true); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
 					}
 					if( apiLink.object == this.data.nodeID && data.nodes[apiLink.subject] ) {
 						var apiNode = data.nodes[apiLink.subject];
-						var row = $('<div class="webleau_seed" > '+apiLink.type+' link from  '+apiNode.title+' ('+apiNode.type+') </div>');
+						var row = $('<div class="lqs_seed" > '+apiLink.type+' link from  '+apiNode.title+' ('+apiNode.type+') </div>');
 						this.dom.content.append(row);
 						row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,false); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
 					}
@@ -368,7 +377,8 @@ function liquidSpaceInit( layout ) {
 			var button = $("<button>CONNECT</button>");
 			button.click( function() {
 				manifestGraphBase( input.val() );
-			});
+				this.remove();
+			}.bind(this));
 			this.dom.content.html("");
 			this.dom.content.append( input );
 			this.dom.content.append( button );
@@ -440,15 +450,15 @@ function liquidSpaceInit( layout ) {
 		}
 
 		this.reset = function() {
-			this.dom.outer.removeClass('webleau_node_notitle');
+			this.dom.outer.removeClass('lqs_node_notitle');
 			this.dom.content.html( '' );
 		}
 
 		this.showEdit = function() {
 			this.reset();
-			this.dom.outer.addClass('webleau_node_notitle');
+			this.dom.outer.addClass('lqs_node_notitle');
 			this.dom.edit = {};
-			this.dom.edit.div = $('<div class="webleau_node_edit"></div>');
+			this.dom.edit.div = $('<div class="lqs_node_edit"></div>');
 			this.dom.content.append( this.dom.edit.div );
 			this.dom.edit.textarea = $('<textarea class="normal-paste" style="width:99%; height: 80%;"></textarea>');
 			var buttons = $('<div style="margin-top:3%;text-align:right"></div>');
@@ -552,10 +562,10 @@ function liquidSpaceInit( layout ) {
 			this.dom.content.css('height','auto');
 			this.dom.outer.css('max-width',(winWidth()/2)+"px");
 			this.dom.outer.css('max-height',(winHeight()*3/4)+"px");
-			this.dom.outer.find( '.webleau_tool' ).addClass('noTools');
+			this.dom.outer.find( '.lqs_tool' ).addClass('noTools');
 			this.data.width =  (this.dom.outer.width() /winScale)/layoutScale+10;
 			this.data.height = (this.dom.outer.height()/winScale)/layoutScale+10;
-			this.dom.outer.find( '.webleau_tool' ).removeClass('noTools');
+			this.dom.outer.find( '.lqs_tool' ).removeClass('noTools');
 			this.dom.outer.css('max-width','none');
 			this.dom.outer.css('max-height','none');
 			this.updatePosition();
@@ -646,19 +656,19 @@ function liquidSpaceInit( layout ) {
 
 		// dom
 		this.dom = {};
-		this.dom.outer = $('<div class="webleau_node"></div>').attr("data-node",this.data.id);
-		this.dom.title = $('<div class="webleau_node_title"></div>');
-		this.dom.titleLeft = $('<div class="webleau_node_title_left"></div>');
-		this.dom.titleRight = $('<div class="webleau_node_title_right"></div>');
-		this.dom.titleText = $('<div class="webleau_node_title_text"></div>');
-		this.dom.content = $('<div class="webleau_node_content"></div>');
+		this.dom.outer = $('<div class="lqs_node"></div>').attr("data-node",this.data.id);
+		this.dom.title = $('<div class="lqs_node_title"></div>');
+		this.dom.titleLeft = $('<div class="lqs_node_title_left"></div>');
+		this.dom.titleRight = $('<div class="lqs_node_title_right"></div>');
+		this.dom.titleText = $('<div class="lqs_node_title_text"></div>');
+		this.dom.content = $('<div class="lqs_node_content"></div>');
 
 		if( nodeData.gizmo ) {
-			this.dom.outer.addClass( 'webleau_gizmo' );
+			this.dom.outer.addClass( 'lqs_gizmo' );
 		}
 
 		if( nodeData.link ) {
-			this.dom.toolLink = $('<div class="webleau_tool">L</div>');
+			this.dom.toolLink = $('<div class="lqs_tool">L</div>');
 			this.dom.titleLeft.append( this.dom.toolLink );
 			this.dom.toolLink.click( function() {
 				if( this.showing != 'link' ) {
@@ -670,20 +680,20 @@ function liquidSpaceInit( layout ) {
 		}
 
 		if( nodeData.edit ) {
-			this.dom.toolEdit = $('<div class="webleau_tool">E</div>');
+			this.dom.toolEdit = $('<div class="lqs_tool">E</div>');
 			this.dom.titleLeft.append( this.dom.toolEdit );
 			this.dom.toolEdit.click( function() {
 				this.showEdit();
 			}.bind(this));
 		}
 
-		this.dom.toolfit = $('<div class="webleau_tool">+</div>');
+		this.dom.toolfit = $('<div class="lqs_tool">+</div>');
 		this.dom.titleLeft.append( this.dom.toolfit );
 		this.dom.toolfit.click( function() {
 			this.fitSize();
 		}.bind(this));
 
-		this.dom.toolinfo = $('<div class="webleau_tool">M</div>');
+		this.dom.toolinfo = $('<div class="lqs_tool">M</div>');
 		this.dom.titleLeft.append( this.dom.toolinfo );
 		this.dom.toolinfo.click( function() {
 			if( this.showing != 'meta' ) {
@@ -693,7 +703,7 @@ function liquidSpaceInit( layout ) {
 			}
 		}.bind(this));
 
-		this.dom.toolRemove = $('<div class="webleau_tool">X</div>');
+		this.dom.toolRemove = $('<div class="lqs_tool">X</div>');
 		this.dom.toolRemove.click( function() {
 			if( confirm( "Really delete?" ) ) {
 				this.remove();
@@ -702,7 +712,7 @@ function liquidSpaceInit( layout ) {
 		}.bind(this)); 
 		
 		this.dom.titleRight.append( this.dom.toolRemove );
-		//this.dom.toolResize = $('<div class="webleau_node_resize webleau_tool"><span class="glyphicon glyphicon-resize-small" aria-hidden="true"></span></div>');
+		//this.dom.toolResize = $('<div class="lqs_node_resize lqs_tool"><span class="glyphicon glyphicon-resize-small" aria-hidden="true"></span></div>');
 		//this.dom.outer.append( this.dom.toolResize );
 			
 		this.dom.outer.append( this.dom.title );
@@ -750,11 +760,11 @@ function liquidSpaceInit( layout ) {
 			handles: "all"
 		});
 		this.dom.outer.draggable( { 
-			containment: $('.webleau_nodes'),
-			handle: ".webleau_node_title",
+			containment: $('.lqs_nodes'),
+			handle: ".lqs_node_title",
 			opacity: 0.8,
 			scroll: true,
-			scrollSensitivity: 100,
+		//	scrollSensitivity: 100,
 			drag: this.dragged.bind(this),
 			start: function() {
 				this.dragStartX = this.data.x;
@@ -809,20 +819,20 @@ function liquidSpaceInit( layout ) {
 		this.dom.id = "link_"+uuid();
  		var line = document.createElementNS("http://www.w3.org/2000/svg","line");
 		line.id = this.dom.id;
-		line.setAttribute( "class", "webleau_link" );
+		line.setAttribute( "class", "lqs_link" );
 		line.setAttribute( "marker-end", "url(#arrow)" );
 		arrowsG.appendChild( line );
 
 		this.dom.label_id = "link_from_"+uuid();
  		var fromText = document.createElementNS("http://www.w3.org/2000/svg","text");
-		fromText.setAttribute( "class", "webleau_link_from_text" );
+		fromText.setAttribute( "class", "lqs_link_from_text" );
 		fromText.id = this.dom.label_id;
 		fromText.appendChild( document.createTextNode( linkData.label ));
 		labelsG.appendChild( fromText );
 /*
 		this.dom.to_id = "link_to_"+linkData.id;
  		var toText = document.createElementNS("http://www.w3.org/2000/svg","text");
-		toText.setAttribute( "class", "webleau_link_to_text" );
+		toText.setAttribute( "class", "lqs_link_to_text" );
 		toText.id = this.dom.to_id;
 		toText.appendChild( document.createTextNode( "is "+linkData.label+" of" ));
 		labelsG.appendChild( toText );
@@ -910,16 +920,16 @@ function liquidSpaceInit( layout ) {
 	}
 		
 	function initPage() {
-		var bgsvg = $('<svg class="webleau_bgsvg"><g id="axis"><line id="vaxis" /><line id="haxis" /></g></svg>');
+		var bgsvg = $('<svg class="lqs_bgsvg"><g id="axis"><line id="vaxis" /><line id="haxis" /></g></svg>');
 		$('body').append(bgsvg);
 		bgsvg.html( bgsvg.html() ); // reset SVG layer 
 		$('#vaxis').attr('x1',offsetX).attr('y1',0).attr('x2',offsetX).attr('y2',offsetY*2);
 		$('#haxis').attr('x1',0).attr('y1',offsetY).attr('x2',offsetX*2).attr('y2',offsetY);
 
-		nodesLayer = $('<div class="webleau_nodes"></div>');
+		nodesLayer = $('<div class="lqs_nodes"></div>');
 		$('body').append(nodesLayer);
 
-		var svg = $('<svg class="webleau_svg"><defs><marker id="arrow" markerWidth="11" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs><g id="svg_arrows"></g><g id="svg_labels"></g></svg>');
+		var svg = $('<svg class="lqs_svg"><defs><marker id="arrow" markerWidth="11" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs><g id="svg_arrows"></g><g id="svg_labels"></g></svg>');
 		$('body').append(svg);
 		svg.html( svg.html() ); // reset SVG layer 
 	
@@ -985,12 +995,13 @@ function liquidSpaceInit( layout ) {
 
 
 		/* CONTROLS: tools */
-		var controlTools = $('<div class="webleau_controls_tools"></div>');
+		var controlTools = $('<div class="lqs_controls_tools"></div>');
 		controls.append( $("<div style='margin-top:1em'>Tools</div>"));
 		controls.append(controlTools);
-	
+
+/*	 I've gone off this idea
 		// rightsize
-		var rightsizeTool = $('<div title="rightsize" class="webleau_tool">+</div>');
+		var rightsizeTool = $('<div title="rightsize" class="lqs_tool">+</div>');
 		controlTools.append( rightsizeTool );
 		rightsizeTool.click( function() {
 			nodeKeys = Object.keys(nodes);
@@ -998,9 +1009,10 @@ function liquidSpaceInit( layout ) {
 				nodes[nodeKeys[i]].fitSize();
 			}
 		});
+*/
 
 		// reset
-		var resetTool = $('<div title="reset" class="webleau_tool">R</div>');
+		var resetTool = $('<div title="reset" class="lqs_tool">R</div>');
 		controlTools.append( resetTool );
 		resetTool.click( function() {
 			//winScaleSlider.val(1).trigger('input');
@@ -1010,7 +1022,7 @@ function liquidSpaceInit( layout ) {
 		});
 
 		// quine download
-		var quineTool = $('<div title="quine" class="webleau_tool">Q</div>');
+		var quineTool = $('<div title="quine" class="lqs_tool">Q</div>');
 		controlTools.append( quineTool );
 		quineTool.click( function() {
 			var head = $('head').html();
@@ -1021,21 +1033,36 @@ function liquidSpaceInit( layout ) {
 			download( filename, page, "text/html" );
 		});
 
+/*
+		// screenshot
+		var screenshotTool = $('<div title="screenshot" class="lqs_tool">S</div>');
+		controlTools.append( screenshotTool );
+		screenshotTool.click( function() {
+			html2canvas(window).then(function(canvas){
+				console.log(23);
+				console.log(canvas.toDataURL("image/png"));
+			});
+		});
+*/
+
+
+
+
 		// graph
-		var graphTool = $('<div title="graph" class="webleau_tool">G</div>');
+		var graphTool = $('<div title="graph" class="lqs_tool">G</div>');
 		controlTools.append( graphTool );
 		graphTool.click( function() {
 			manifestGraphSelect();
 		});
 
 		/* CONTROLS: load/save */
-		var controlIO = $('<div class="webleau_controls_tools"></div>');
-		var ioTextarea = $('<textarea class="normal-paste" placeholder="save/load: hit save and copy this, or paste in here and hit load" style="width: 100%; height: 10%;" id="webleau_io"></textarea>');
+		var controlIO = $('<div class="lqs_controls_tools"></div>');
+		var ioTextarea = $('<textarea class="normal-paste" placeholder="save/load: hit save and copy this, or paste in here and hit load" style="width: 100%; height: 10%;" id="lqs_io"></textarea>');
 		controls.append( $("<div style='margin-top:1em'>Upload/Download</div>"));
 		controls.append( ioTextarea );
-		var downloadTool = $('<div title="download" class="webleau_tool">&darr;<div>');
+		var downloadTool = $('<div title="download" class="lqs_tool">&darr;<div>');
 		controlIO.append( downloadTool );
-		var uploadTool = $('<div title="upload" class="webleau_tool">&uarr;</div>');
+		var uploadTool = $('<div title="upload" class="lqs_tool">&uarr;</div>');
 		controlIO.append( uploadTool );
 		controls.append(controlIO);
 		downloadTool.click( function() {
@@ -1300,7 +1327,7 @@ function liquidSpaceInit( layout ) {
 	});
 	
 	$(document).on("mousedown", function (e) { 
-		if( $(e.target).hasClass( "webleau_nodes" ) ) {
+		if( $(e.target).hasClass( "lqs_nodes" ) ) {
 			curDown = true; curYPos = e.pageY; curXPos = e.pageX; e.preventDefault(); 
 		}
 	});
