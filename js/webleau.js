@@ -157,6 +157,47 @@ function liquidSpaceInit( layout ) {
 			}
 		}
 
+		this.showGraphBase = function() {
+			this.reset();
+			this.setTitleText( this.data.title );
+			this.dom.content.html("Loading...");
+			var node = this;
+			if( !this.data.graphIdent ) {
+				$.ajax({
+					method: "GET",
+					data: {},
+					url: node.data.endpoint
+				}).done(function(data){
+					node.data.graphIdent = data;
+					if( node.data.graphIdent && node.data.graphIdent.title ) {
+						node.setTitleText( node.data.graphIdent.title );
+					}
+				});
+			}
+			$.ajax({
+				method: "GET",
+				data: { action: 'nodeTypes' },
+				url: node.data.endpoint
+			}).done(function(data){
+				this.dom.content.html("");
+				//this.dom.content.append( $('<div>This endpoint has the following types of node:</div>'));
+				var keys = Object.keys( data.nodeTypes );
+				for( var i=0;i<keys.length;++i) {
+					var type = keys[i];
+					var row = $('<div class="lqs_seed">'+type+' </div>');
+					if( data.nodeTypes[type]["count"] ) {
+						row.append( $('<span>('+data.nodeTypes[type]["count"]+')</span>' ) );
+					}
+					this.dom.content.append(row);
+					row.click( function() { this.node.manifestGraphType(this.type); }.bind({node:this,type:type}) );
+				}
+				this.fitSize();
+			}.bind(this)).fail(function(){
+				this.dom.content.html( "API Call failed" );
+				this.fitSize();
+			}.bind(this))
+		}
+		
 			
 		this.showGraphType = function() {
 			this.reset();
@@ -259,50 +300,8 @@ function liquidSpaceInit( layout ) {
 			}
 		}
 	
-		this.showGraphBase = function() {
-			this.reset();
-			this.setTitleText( this.data.title );
-			this.dom.content.html("Loading...");
-			var node = this;
-			if( !this.data.graphIdent ) {
-				$.ajax({
-					method: "GET",
-					data: {},
-					url: node.data.endpoint
-				}).done(function(data){
-					node.data.graphIdent = data;
-					if( node.data.graphIdent && node.data.graphIdent.title ) {
-						node.setTitleText( node.data.graphIdent.title );
-					}
-				});
-			}
-			$.ajax({
-				method: "GET",
-				data: { action: 'nodeTypes' },
-				url: node.data.endpoint
-			}).done(function(data){
-				this.dom.content.html("");
-				//this.dom.content.append( $('<div>This endpoint has the following types of node:</div>'));
-				var keys = Object.keys( data.nodeTypes );
-				for( var i=0;i<keys.length;++i) {
-					var type = keys[i];
-					var row = $('<div class="lqs_seed">'+type+' </div>');
-					if( data.nodeTypes[type]["count"] ) {
-						row.append( $('<span>('+data.nodeTypes[type]["count"]+')</span>' ) );
-					}
-					this.dom.content.append(row);
-					row.click( function() { this.node.manifestGraphType(this.type); }.bind({node:this,type:type}) );
-				}
-				this.fitSize();
-			}.bind(this)).fail(function(){
-				this.dom.content.html( "API Call failed" );
-				this.fitSize();
-			}.bind(this))
-		}
-		
 		this.manifestGraphType = function(type) {
 			var id = "graph/"+this.data.endpoint+"/type/"+type;
-			var link_id = "graph/link/"+id+"/"+this.data.id;
 			if( nodes[id] ) {
 				nodes[id].reveal();
 			} else {
@@ -322,6 +321,7 @@ function liquidSpaceInit( layout ) {
 					meta: {}
 				});
 			}
+			var link_id = "graph/link/"+id+"/"+this.data.id;
 			if( !links[link_id] ) {
 				addLink({
 					object: {node: id},
@@ -819,8 +819,8 @@ function liquidSpaceInit( layout ) {
 
 		// register UI hooks
 		this.dom.outer.resizable({
-			resize: this.resized.bind(this),
-			handles: "all"
+			resize: this.resized.bind(this)
+			//handles: "all"
 		});
 		this.dom.outer.draggable( { 
 			containment: $('.lqs_nodes'),
