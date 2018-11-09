@@ -14,6 +14,7 @@ function liquidSpaceInit( layout ) {
 	var curXPos = 0;
 	var curDown = false;
 	var layoutScaleSlider;
+	var inspectorProxy = 'http://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
 
 	function screenMiddle() {
 		return new Point( winLeft()+winWidth()/2, winTop()+winHeight()/2 );
@@ -962,6 +963,7 @@ function liquidSpaceInit( layout ) {
 			layout.nodes.push( nodes[nodeKeys[i]].data );
 		}
 
+		layout.inspectorProxy = inspectorProxy;
 		return layout;
 	}
 
@@ -981,6 +983,11 @@ function liquidSpaceInit( layout ) {
 		}
 		for( var i=0; i<layout.links.length; ++i ) {
 			addLink( layout.links[i] );
+		}
+
+		inspectorProxy = 'http://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
+		if( layout.inspectorProxy ) {
+			inspectorProxy = layout.inspectorProxy;
 		}
 	}
 
@@ -1320,7 +1327,7 @@ function liquidSpaceInit( layout ) {
 			$.ajax({
 				method: "GET",
 				data: { url: text },
-				url: "oembed.php"
+				url: inspectorProxy
 			}).done(function(data){
 				nodeData.text=null;
 				nodeData.html=null;
