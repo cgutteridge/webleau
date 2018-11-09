@@ -14,7 +14,8 @@ function liquidSpaceInit( layout ) {
 	var curXPos = 0;
 	var curDown = false;
 	var layoutScaleSlider;
-	var inspectorProxy = 'http://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
+	var defaultInspectorProxy = 'https://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
+	var inspectorProxy = defaultInspectorProxy;
 
 	function screenMiddle() {
 		return new Point( winLeft()+winWidth()/2, winTop()+winHeight()/2 );
@@ -985,7 +986,7 @@ function liquidSpaceInit( layout ) {
 			addLink( layout.links[i] );
 		}
 
-		inspectorProxy = 'http://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
+		inspectorProxy = defaultInspectorProxy;
 		if( layout.inspectorProxy ) {
 			inspectorProxy = layout.inspectorProxy;
 		}
