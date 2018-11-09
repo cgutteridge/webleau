@@ -137,7 +137,7 @@ function liquidSpaceInit( layout ) {
 				id: id,
 				x: pt.x,
  				y: pt.y,	
-				title: "Graph API",
+				title: "Data connection",
 				width:  ((winWidth() /2))/layoutScale,
 				height: ((winHeight()/2))/layoutScale,
 				type: "graph-base",
@@ -155,7 +155,7 @@ function liquidSpaceInit( layout ) {
 			id: uuid(),
 			x: pt.x,
  			y: pt.y,	
-			title: "Select graph endpoint",
+			title: "Data connector",
 			width:  ((winWidth() /2))/layoutScale,
 			height: ((winHeight()/2))/layoutScale,
 			type: "graph-select",
@@ -207,16 +207,19 @@ function liquidSpaceInit( layout ) {
 				var keys = Object.keys( data.nodeTypes );
 				for( var i=0;i<keys.length;++i) {
 					var type = keys[i];
-					var row = $('<div class="lqs_seed">'+type+' </div>');
+					var seed = $('<div class="lqs_seed">'+type+' </div>');
 					if( data.nodeTypes[type]["count"] ) {
-						row.append( $('<span>('+data.nodeTypes[type]["count"]+')</span>' ) );
+						seed.append( $('<span>('+data.nodeTypes[type]["count"]+')</span>' ) );
 					}
-					this.dom.content.append(row);
-					row.click( function() { this.node.manifestGraphType(this.type); }.bind({node:this,type:type}) );
+					this.dom.content.append(seed);
+					seed.click( function() { 
+						this.node.manifestGraphType(this.type); 
+						this.node.showIcon();
+					}.bind({node:this,type:type}) );
 				}
 				this.fitSize();
 			}.bind(this)).fail(function(){
-				this.dom.content.html( "API Call failed" );
+				this.dom.content.html( "Failed to get data (TODO: add a 'retry' icon)" );
 				this.fitSize();
 			}.bind(this))
 		}
@@ -240,13 +243,16 @@ function liquidSpaceInit( layout ) {
 				var keys = Object.keys( data.nodes );
 				for( var i=0;i<keys.length;++i) {
 					var apiNode = data.nodes[keys[i]];
-					var row = $('<div class="lqs_seed"></div>').text( " "+apiNode.title);
-					this.dom.content.append(row);
-					row.click( function() { this.node.manifestGraphNode(this.apiNode,'belongs to',true); }.bind({node:this,apiNode:apiNode}) );
+					var seed = $('<div class="lqs_seed"></div>').text( " "+apiNode.title);
+					this.dom.content.append(seed);
+					seed.click( function() { 
+						this.node.manifestGraphNode(this.apiNode,'belongs to',true); 
+						this.node.showIcon();
+					}.bind({node:this,apiNode:apiNode}) );
 				}
 				this.fitSize();
 			}.bind(this)).fail(function(){
-				this.dom.content.html( "API Call failed" );
+				this.dom.content.html( "Failed to get data (TODO: add a 'retry' icon)" );
 				this.fitSize();
 			}.bind(this))
 		}
@@ -261,23 +267,33 @@ function liquidSpaceInit( layout ) {
 				data: { action: 'nodes', ids:this.data.nodeID, data:1 },
 				url: node.data.endpoint
 			}).done(function(data){
-				//this.dom.content.html( dataToHTML( data ) );
 				this.data.graph = data.nodes[this.data.nodeID];
-				if( this.data.graph.data.html ) {
-					this.dom.content.html( this.data.graph.data.html );
-					// duplicate code, candidate for a function?
-					this.dom.content.find( 'a' ).attr("target","_blank");
-					this.dom.content.find( 'img,iframe' ).css("max-width","100%");
-				} else if( this.data.graph.data.icon ) {
-					this.dom.content.html( $("<img style='width:100%;min-width:50px;max-width:100%' />").attr('src',this.data.graph.data.icon));
-				} else {
-					this.dom.content.text( "<null>" );
-				}	
+				this.dom.content.text('');
+				this.dom.content.append( this.renderGraphNodeContent() );
 				this.fitSize();
 			}.bind(this)).fail(function(){
-				this.dom.content.html( "API Call failed" );
+				this.dom.content.text( "Failed to get data (TODO: add a 'retry' icon). Using cached version." );
+				this.dom.content.append( 
+					$("<div class='lqs_cached'></div>").append(this.renderGraphNodeContent()));
 				this.fitSize();
 			}.bind(this))
+		}
+
+		this.renderGraphNodeContent = function() {	
+			var content = $('<div></div>');
+			if( !this.data.graph || !this.data.graph.data ) {
+				content.text( "cache not available" );
+			} else if( this.data.graph.data.html ) {
+				content.html( this.data.graph.data.html );
+				// duplicate code, candidate for a function?
+				content.find( 'a' ).attr("target","_blank");
+				content.find( 'img,iframe' ).css("max-width","100%");
+			} else if( this.data.graph.data.icon ) {
+				content.html( $("<img style='width:100%;min-width:50px;max-width:100%' />").attr('src',this.data.graph.data.icon));
+			} else {
+				content.text( "<null>" );
+			}	
+			return content;
 		}
 
 		this.manifestGraphNode = function(apiNode,relation,forwards) {
@@ -426,13 +442,14 @@ function liquidSpaceInit( layout ) {
 			this.dom.outer.show();
 			this.dom.dot.hide();
 			this.dom.dotText.hide();
-			this.data.view = "full-content";
+			this.showFullContent();
 			this.updatePosition();
 			this.updateLinksPosition();
 		}
 		this.showIcon = function() {
 			this.dom.outer.hide();
 			this.dom.icon.show();
+			this.dom.dotText.show();
 			this.data.view = "icon";
 			this.updatePosition();
 			this.updateLinksPosition();
@@ -440,7 +457,8 @@ function liquidSpaceInit( layout ) {
 		this.hideIcon = function() {
 			this.dom.outer.show();
 			this.dom.icon.hide();
-			this.data.view = "full-content";
+			this.dom.dotText.hide();
+			this.showFullContent();
 			this.updatePosition();
 			this.updateLinksPosition();
 		}
@@ -600,19 +618,21 @@ function liquidSpaceInit( layout ) {
 		}
 	
 		this.updatePosition = function() {
+			var baseFontSize = 10;
+			if( this.data.view == 'icon' || this.data.view == 'dot' ) {
+				this.dom.dotText.attr('x',this.realX() );
+				this.dom.dotText.attr('y', this.realY()+this.realHeight()/2+baseFontSize*layoutScale);
+				this.dom.dotText.css('font-size',(baseFontSize*layoutScale)+"px"); 
+			}
 			if( this.data.view == 'icon' ) {
 				this.dom.icon.css('left',this.realX()-this.realWidth()/2);
 				this.dom.icon.css('top', this.realY()-this.realHeight()/2);
 				return;
 			}
 			if( this.data.view == 'dot' ) {
-				var baseFontSize = 10;
 				this.dom.dot.attr('cx',this.realX()-this.realWidth()/2);
 				this.dom.dot.attr('cy', this.realY()-this.realHeight()/2);
 				this.dom.dot.attr('r', this.dotSize*winScale*layoutScale);
-				this.dom.dotText.attr('x',this.realX()-this.realWidth()/2);
-				this.dom.dotText.attr('y', this.realY()+this.realHeight()/2+baseFontSize*layoutScale);
-				this.dom.dotText.css('font-size',(baseFontSize*layoutScale)+"px"); 
 				return;
 			}
 			this.dom.outer.css('left',this.realX()-this.realWidth()/2);
@@ -873,11 +893,11 @@ function liquidSpaceInit( layout ) {
 		nodesLayer.append( this.dom.outer );
 		this.dom.outer.dblclick(function() {
 			var pt = toVirtual( mouse );
-			var width = ((winWidth() /2))/layoutScale;
-			var height= ((winHeight()/2))/layoutScale;
+			var width = ((winWidth() /4))/layoutScale;
+			var height= ((winHeight()/4))/layoutScale;
 			var nodeData = {
 				id: uuid(),
-				x: this.data.x+this.data.width/2+width/2+20,
+				x: this.data.x+(this.data.width/2)+width/2,
  				y: pt.y,	
 				title: "",
 				width: width,
@@ -887,6 +907,7 @@ function liquidSpaceInit( layout ) {
 				meta: {}
 			};
 			var comment = addNode(nodeData);
+			comment.reveal();
 			var linkData = {
 				subject: { node: comment.data.id },
 				object: { node: this.data.id },
@@ -901,7 +922,14 @@ function liquidSpaceInit( layout ) {
 		this.links = {};
 
 		// state
+		var view = this.data.view;
 		this.showFullContent();
+		if( view == "icon" ) {
+			this.showIcon();
+		} 
+		if( view == "dot" ) {
+			this.showDot();
+		}
 
 
 
@@ -1087,7 +1115,10 @@ function liquidSpaceInit( layout ) {
 	// focus the real scroll window onto a point on the virtual layout
 	function focusPage( vpt ) {
 		var rpt = toReal(vpt);
-		window.scrollTo( rpt.x-winWidth()/2, rpt.y-winHeight()/2 );
+		$('html,body').animate({
+			'scrollLeft': rpt.x-winWidth()/2,
+			'scrollTop': rpt.y-winHeight()/2
+		},1000);
 	}
 		
 	function initPage() {
@@ -1104,7 +1135,8 @@ function liquidSpaceInit( layout ) {
 		$('body').append(svg);
 		svg.html( svg.html() ); // reset SVG layer 
 	
-		centrePage();
+		var rpt = toReal(new Point(0,0));
+		window.scrollTo( rpt.x-winWidth()/2, rpt.y-winHeight()/2 );
 
 		nodesLayer.dblclick(function() {
 			var pt = toVirtual( mouse );
@@ -1462,7 +1494,8 @@ function liquidSpaceInit( layout ) {
 		pasteToBackground(event);
 	});
 
-	$('body').bind('wheel mousewheel', function(e){
+	/* zoom on mousewheel */
+	$('html,body').bind('wheel mousewheel', function(e){
 		var delta;
 
 		if (e.originalEvent.wheelDelta !== undefined) {
