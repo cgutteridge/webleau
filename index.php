@@ -8,7 +8,6 @@
 readfile("js/jquery-1.12.4.min.js");
 readfile("js/jquery-ui.js");
 readfile("js/jquery.ui.touch-punch.min.js");
-readfile("js/html2canvas.min.js");
 readfile("js/webleau.js");
 ?>
     </script>
