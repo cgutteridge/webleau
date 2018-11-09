@@ -776,8 +776,8 @@ function liquidSpaceInit( layout ) {
 		this.dom.content = $('<div class="lqs_node_content"></div>');
 
 		this.dom.icon = $("<div class='lqs_node_icon'></div>");
-		this.data.iconWidth = 50;
-		this.data.iconHeight = 50;
+		this.data.iconWidth = 32;
+		this.data.iconHeight = 32;
 		this.dom.icon.width( this.data.iconWidth );
 		this.dom.icon.height( this.data.iconHeight );
 		this.dom.icon.hide();
