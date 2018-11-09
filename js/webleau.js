@@ -16,6 +16,27 @@ function liquidSpaceInit( layout ) {
 	var layoutScaleSlider;
 	var inspectorProxy = 'http://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
 
+	function noDragClick( element, fn ){
+		if( !element.noDragClick ) {
+			element.beingDragged = false;
+			element.mousedown( function() {
+		        	$(window).mousemove(function() {
+            				this.beingDragged = true;
+            				$(window).unbind("mousemove");
+        			}.bind(this ));
+			}.bind(element));
+		}
+		element.mouseup( function() {
+        		var wasDragging = this.beingDragged;
+        		this.beingDragged = false;
+        		$(window).unbind("mousemove");
+        		if (!wasDragging) {
+				fn();
+			}
+		}.bind(element));		
+	}
+
+
 	function screenMiddle() {
 		return new Point( winLeft()+winWidth()/2, winTop()+winHeight()/2 );
 	}
@@ -117,8 +138,8 @@ function liquidSpaceInit( layout ) {
 				x: pt.x,
  				y: pt.y,	
 				title: "Graph API",
-				width:  ((winWidth() /2/winScale))/layoutScale,
-				height: ((winHeight()/2/winScale))/layoutScale,
+				width:  ((winWidth() /2))/layoutScale,
+				height: ((winHeight()/2))/layoutScale,
 				type: "graph-base",
 				endpoint: endpoint,
 				gizmo: true,
@@ -135,8 +156,8 @@ function liquidSpaceInit( layout ) {
 			x: pt.x,
  			y: pt.y,	
 			title: "Select graph endpoint",
-			width:  ((winWidth() /2/winScale))/layoutScale,
-			height: ((winHeight()/2/winScale))/layoutScale,
+			width:  ((winWidth() /2))/layoutScale,
+			height: ((winHeight()/2))/layoutScale,
 			type: "graph-select",
 			gizmo: true,
 			meta: {}
@@ -150,6 +171,7 @@ function liquidSpaceInit( layout ) {
 
 		// functions we need to define early
 		this.setTitleText = function( text ) {
+			this.dom.dotText.text( text );
 			this.dom.titleText.text( text );
 			if( text == "" ) {
 				this.dom.title.addClass("lqs_node_empty_title");
@@ -269,8 +291,8 @@ function liquidSpaceInit( layout ) {
 					x: pt.x,
  					y: pt.y,	
 					title: apiNode.title,
-					width:  ((winWidth() /2/winScale))/layoutScale,
-					height: ((winHeight()/2/winScale))/layoutScale,
+					width:  ((winWidth() /2))/layoutScale,
+					height: ((winHeight()/2))/layoutScale,
 					type: "graph-node",
 					link: true,
 					nodeID: apiNode.id,
@@ -312,8 +334,8 @@ function liquidSpaceInit( layout ) {
 					x: pt.x,
  					y: pt.y,	
 					title: "Graph API: "+type+" nodes",
-					width:  ((winWidth() /2/winScale))/layoutScale,
-					height: ((winHeight()/2/winScale))/layoutScale,
+					width:  ((winWidth() /2))/layoutScale,
+					height: ((winHeight()/2))/layoutScale,
 					type: "graph-type",
 					nodeType: type,
 					endpoint: this.data.endpoint,
@@ -369,7 +391,7 @@ function liquidSpaceInit( layout ) {
 
 		this.showLink = function() {
 			this.reset();
-			this.showing = "link";
+			this.data.view = "link";
 			if( this.data.type == 'graph-node' ) {
 				this.showGraphNodeLinks();
 				return;
@@ -392,16 +414,41 @@ function liquidSpaceInit( layout ) {
 			this.fitSize();
 		}
 
-		this.showIcon = function() {
+		this.showDot = function() {
 			this.dom.outer.hide();
-			this.dom.icon.show();
-			this.showing = "icon";
+			this.dom.dot.show();
+			this.dom.dotText.show();
+			this.data.view = "dot";
 			this.updatePosition();
 			this.updateLinksPosition();
 		}
+		this.hideDot = function() {
+			this.dom.outer.show();
+			this.dom.dot.hide();
+			this.dom.dotText.hide();
+			this.data.view = "full-content";
+			this.updatePosition();
+			this.updateLinksPosition();
+		}
+		this.showIcon = function() {
+			this.dom.outer.hide();
+			this.dom.icon.show();
+			this.data.view = "icon";
+			this.updatePosition();
+			this.updateLinksPosition();
+		}
+		this.hideIcon = function() {
+			this.dom.outer.show();
+			this.dom.icon.hide();
+			this.data.view = "full-content";
+			this.updatePosition();
+			this.updateLinksPosition();
+		}
+
+
 		this.showFullContent = function() {
 			this.reset();
-			this.showing = "full-content";
+			this.data.view = "full-content";
 			// this should clearly be plugin based eventually
 			if( this.data.type == 'graph-select' ) {
 				this.showGraphSelect();
@@ -460,7 +507,7 @@ function liquidSpaceInit( layout ) {
 		this.showMeta = function() {
 			this.reset();
 			this.dom.content.html( dataToHTML( this.data ) );
-			this.showing = "meta";
+			this.data.view = "meta";
 		}
 
 		this.reset = function() {
@@ -533,11 +580,11 @@ function liquidSpaceInit( layout ) {
 
 			var wDelta  = ui.size.width  - ui.originalSize.width;
 			var adjustedWidth  = ui.originalSize.width  + 2*wDelta;
-			this.data.width  = Math.max(50,adjustedWidth/winScale/layoutScale);
+			this.data.width  = Math.max(50,adjustedWidth/layoutScale);
 
 			var hDelta  = ui.size.height - ui.originalSize.height;
 			var adjustedHeight =  ui.originalSize.height + 2*hDelta;
-			this.data.height = Math.max(50,adjustedHeight/winScale/layoutScale);
+			this.data.height = Math.max(50,adjustedHeight/layoutScale);
 
 			this.updatePosition();
 			this.updateLinksPosition();
@@ -553,19 +600,28 @@ function liquidSpaceInit( layout ) {
 		}
 	
 		this.updatePosition = function() {
-			if( this.showing == 'icon' ) {
+			if( this.data.view == 'icon' ) {
 				this.dom.icon.css('left',this.realX()-this.realWidth()/2);
 				this.dom.icon.css('top', this.realY()-this.realHeight()/2);
-				this.dom.icon.css( 'background-color','green');
+				return;
+			}
+			if( this.data.view == 'dot' ) {
+				var baseFontSize = 10;
+				this.dom.dot.attr('cx',this.realX()-this.realWidth()/2);
+				this.dom.dot.attr('cy', this.realY()-this.realHeight()/2);
+				this.dom.dot.attr('r', this.dotSize*winScale*layoutScale);
+				this.dom.dotText.attr('x',this.realX()-this.realWidth()/2);
+				this.dom.dotText.attr('y', this.realY()+this.realHeight()/2+baseFontSize*layoutScale);
+				this.dom.dotText.css('font-size',(baseFontSize*layoutScale)+"px"); 
 				return;
 			}
 			this.dom.outer.css('left',this.realX()-this.realWidth()/2);
 			this.dom.outer.css('top', this.realY()-this.realHeight()/2);
-			this.dom.outer.css('width', this.data.width *winScale*layoutScale);
-			this.dom.outer.css('height',this.data.height*winScale*layoutScale);
+			this.dom.outer.css('width', this.data.width *layoutScale);
+			this.dom.outer.css('height',this.data.height*layoutScale);
 			var titleHeight = (18*layoutScale);
 			var fontHeight = (16*layoutScale);
-			this.dom.content.css('height',this.data.height*winScale*layoutScale-titleHeight ); // height of box minus borders and title
+			this.dom.content.css('height',this.data.height*layoutScale-titleHeight ); // height of box minus borders and title
 			this.dom.title.css('font-size',fontHeight+"px");
 			this.dom.title.css('height',   titleHeight+"px" );
 		}
@@ -583,8 +639,8 @@ function liquidSpaceInit( layout ) {
 			this.dom.outer.css('max-width',(winWidth()/2)+"px");
 			this.dom.outer.css('max-height',(winHeight()*3/4)+"px");
 			this.dom.outer.find( '.lqs_tool' ).addClass('noTools');
-			this.data.width =  (this.dom.outer.width() /winScale)/layoutScale+10;
-			this.data.height = (this.dom.outer.height()/winScale)/layoutScale+10;
+			this.data.width =  (this.dom.outer.width() )/layoutScale+10;
+			this.data.height = (this.dom.outer.height())/layoutScale+10;
 			this.dom.outer.find( '.lqs_tool' ).removeClass('noTools');
 			this.dom.outer.css('max-width','none');
 			this.dom.outer.css('max-height','none');
@@ -606,17 +662,23 @@ function liquidSpaceInit( layout ) {
 		}
 		// the width of the node in pixels in the current scale
 		this.realWidth = function() {
-			if( this.showing == 'icon' ) {
+			if( this.data.view == 'icon' ) {
 				return this.data.iconWidth;
 			}
-			return this.data.width*winScale*layoutScale;
+			if( this.data.view == 'dot' ) {
+				return this.dotSize*layoutScale;
+			}
+			return this.data.width*layoutScale;
 		}
-		// the hight of the node in pixels in the current scale
+		// the height of the node in pixels in the current scale
 		this.realHeight = function() {
-			if( this.showing == 'icon' ) {
+			if( this.data.view == 'icon' ) {
 				return this.data.iconHeight;
 			}
-			return this.data.height*winScale*layoutScale;
+			if( this.data.view == 'dot' ) {
+				return this.dotSize*layoutScale;
+			}
+			return this.data.height*layoutScale;
 		}
 		this.realWidthFull = function() {
 			return this.realWidth()+this.borderSize*2;
@@ -672,6 +734,8 @@ function liquidSpaceInit( layout ) {
 			delete nodes[this.data.id];
 			this.dom.outer.remove();
 			this.dom.icon.remove();
+			this.dom.dot.remove();
+			this.dom.dotText.remove();
 		}
 
 		// data
@@ -690,6 +754,34 @@ function liquidSpaceInit( layout ) {
 		this.dom.titleText = $('<div class="lqs_node_title_text"></div>');
 		this.dom.content = $('<div class="lqs_node_content"></div>');
 
+		this.dom.icon = $("<div class='lqs_node_icon'></div>");
+		this.data.iconWidth = 50;
+		this.data.iconHeight = 50;
+		this.dom.icon.width( this.data.iconWidth );
+		this.dom.icon.height( this.data.iconHeight );
+		this.dom.icon.hide();
+		nodesLayer.append( this.dom.icon );
+
+		this.dotSize = 5;
+		this.dom.dot_id = "dot_"+uuid();
+ 		var dot = document.createElementNS("http://www.w3.org/2000/svg","circle");
+		dot.id = this.dom.dot_id;
+		dot.setAttribute( "class", "lqs_dot" );
+		dot.setAttribute( "r", this.dotSize );
+		var arrowsG = document.getElementById('svg_arrows');
+		arrowsG.appendChild( dot );
+		this.dom.dot = $(dot);
+
+		this.dom.dot_label_id = "link_from_"+uuid();
+ 		var dotText = document.createElementNS("http://www.w3.org/2000/svg","text");
+		dotText.setAttribute( "class", "lqs_dot_text" );
+		dotText.id = this.dom.dot_label_id;
+		dotText.appendChild( document.createTextNode( "XXX" ));
+		var labelsG = document.getElementById('svg_labels');
+		labelsG.appendChild( dotText );
+		this.dom.dotText = $(dotText);
+
+
 		if( nodeData.gizmo ) {
 			this.dom.outer.addClass( 'lqs_gizmo' );
 		}
@@ -698,7 +790,7 @@ function liquidSpaceInit( layout ) {
 			this.dom.toolLink = $('<div class="lqs_tool">L</div>');
 			this.dom.titleLeft.append( this.dom.toolLink );
 			this.dom.toolLink.click( function() {
-				if( this.showing != 'link' ) {
+				if( this.data.view != 'link' ) {
 					this.showLink();
 				} else {
 					this.showFullContent();
@@ -721,45 +813,39 @@ function liquidSpaceInit( layout ) {
 		}.bind(this));
 
 
-
-		this.dom.toolfit = $('<div class="lqs_tool">-</div>');
-		this.dom.titleLeft.append( this.dom.toolfit );
-		this.dom.toolfit.click( function() {
+		this.dom.toolicon = $('<div class="lqs_tool">-</div>');
+		this.dom.titleLeft.append( this.dom.toolicon );
+		this.dom.toolicon.click( function() {
 			this.showIcon();
 		}.bind(this));
-		this.dom.icon = $("<div class='lqs_node_icon'>X</div>");
-		this.data.iconWidth = 50;
-		this.data.iconHeight = 50;
-		this.dom.icon.width( this.data.iconWidth );
-		this.dom.icon.height( this.data.iconHeight );
-		this.dom.icon.hide();
-		nodesLayer.append( this.dom.icon );
-		this.iconDragging = false;
-		this.dom.icon.mousedown( function() {
-		        $(window).mousemove(function() {
-            			this.iconDragging = true;
-            			$(window).unbind("mousemove");
-        		}.bind( this ));
+		noDragClick( this.dom.icon, function() {
+			this.hideIcon();
+		}.bind(this) );
+
+
+		this.dom.tooldot = $('<div class="lqs_tool">o</div>');
+		this.dom.titleLeft.append( this.dom.tooldot );
+		this.dom.tooldot.click( function() {
+			this.showDot();
 		}.bind(this));
-		this.dom.icon.mouseup( function() {
-        		var wasDragging = this.iconDragging;
-        		this.iconDragging = false;
-        		$(window).unbind("mousemove");
-        		if (!wasDragging) {
-				this.dom.icon.hide();		
-				this.dom.outer.show();		
-            			this.showFullContent();
-				this.updatePosition();
-				this.updateLinksPosition();
-			}
-		}.bind(this));		
+		/*
+		noDragClick( this.dom.dot, function() {
+			this.hideDot();
+		}.bind(this) );
+		*/
+		this.dom.dot.click( function() { this.hideDot(); }.bind(this) );
+
+
+
+
+
 
 
 
 		this.dom.toolinfo = $('<div class="lqs_tool">M</div>');
 		this.dom.titleLeft.append( this.dom.toolinfo );
 		this.dom.toolinfo.click( function() {
-			if( this.showing != 'meta' ) {
+			if( this.data.view != 'meta' ) {
 				this.showMeta();
 			} else {
 				this.showFullContent();
@@ -787,13 +873,15 @@ function liquidSpaceInit( layout ) {
 		nodesLayer.append( this.dom.outer );
 		this.dom.outer.dblclick(function() {
 			var pt = toVirtual( mouse );
+			var width = ((winWidth() /2))/layoutScale;
+			var height= ((winHeight()/2))/layoutScale;
 			var nodeData = {
 				id: uuid(),
-				x: pt.x,
+				x: this.data.x+this.data.width/2+width/2+20,
  				y: pt.y,	
 				title: "",
-				width:  ((winWidth() /2/winScale))/layoutScale,
-				height: ((winHeight()/2/winScale))/layoutScale,
+				width: width,
+				height: height,
 				text: "",
 				edit: true,
 				meta: {}
@@ -905,6 +993,7 @@ function liquidSpaceInit( layout ) {
 		fromText.id = this.dom.label_id;
 		fromText.appendChild( document.createTextNode( linkData.label ));
 		labelsG.appendChild( fromText );
+
 /*
 		this.dom.to_id = "link_to_"+linkData.id;
  		var toText = document.createElementNS("http://www.w3.org/2000/svg","text");
@@ -930,7 +1019,7 @@ function liquidSpaceInit( layout ) {
 				$("#"+this.dom.id).attr('y2',pt2.y);	
 				$("#"+this.dom.label_id).attr('x',(pt1.x+(pt2.x-pt1.x)/4));
 				$("#"+this.dom.label_id).attr('y',(pt1.y+(pt2.y-pt1.y)/4));
-				$("#"+this.dom.label_id).css('font-size',(80*layoutScale)+"%"); 
+				$("#"+this.dom.label_id).css('font-size',(10*layoutScale)+"px"); 
 /*
 				$("#"+this.dom.to_id).attr('x',pt2.x);
 				$("#"+this.dom.to_id).attr('y',pt2.y);
@@ -1024,8 +1113,8 @@ function liquidSpaceInit( layout ) {
 				x: pt.x,
  				y: pt.y,	
 				title: "",
-				width:  winWidth() /2/winScale/layoutScale,
-				height: winHeight()/2/winScale/layoutScale,
+				width:  winWidth() /2/layoutScale,
+				height: winHeight()/2/layoutScale,
 				text: "",
 				edit: true,
 				meta: {}
@@ -1044,19 +1133,6 @@ function liquidSpaceInit( layout ) {
 		$('body').append(controlsWrapper);
 
 		/* CONTROLS: sliders */
-
-		/*
-		var winScaleSlider = $('<input type="range" value="1" min="0.001" max="2" step="0.001" />');
-		var nodeScaleDisplay = $('<span>100%</span>');
-		controls.append( $('<div>Node scale: </div>' ).append(nodeScaleDisplay));
-		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(winScaleSlider) );
-		winScaleSlider.on('propertychange input', function( event ) {
-			winScale = winScaleSlider.val();
-			var perc = Math.round( winScale*100000 ) / 1000;
-			nodeScaleDisplay.text( ""+perc+"%" );
-			updateAllPositions();
-		});
-		*/
 
 		layoutScaleSlider = $('<input type="range" value="1" min="0.05" max="2" step="0.001" />');
 		var layoutScaleDisplay = $('<span>100%</span>');
@@ -1098,7 +1174,6 @@ function liquidSpaceInit( layout ) {
 		var resetTool = $('<div title="reset" class="lqs_tool">R</div>');
 		controlTools.append( resetTool );
 		resetTool.click( function() {
-			//winScaleSlider.val(1).trigger('input');
 			layoutScaleSlider.val(1).trigger('input');
 			centrePage();
 			updateAllPositions();
@@ -1289,8 +1364,8 @@ function liquidSpaceInit( layout ) {
 			id: uuid(),
 			x: pt.x,
  			y: pt.y,
-			width:  winWidth() /2/winScale/layoutScale,
-			height: winHeight()/2/winScale/layoutScale,
+			width:  winWidth() /2/layoutScale,
+			height: winHeight()/2/layoutScale,
 			meta: {}
 		};
 		if( json ) {

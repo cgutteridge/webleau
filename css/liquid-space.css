@@ -24,6 +24,7 @@ a {
 	left: 0;
 	pointer-events: none; 
 }
+
 .ident {
 	position:fixed;
 	pointer-events: none; 
@@ -205,10 +206,10 @@ a {
 	padding: 0px 3px;
 	display: inline-block;
 }
-.weblau_node .ui-icon {
+.lqs_node .ui-icon {
 	display: none !important;
 }
-.weblau_node:hover .ui-icon {
+.lqs_node:hover .ui-icon {
 	display: block;
 }
 .lqs_node .lqs_tool:hover {
@@ -233,10 +234,22 @@ a {
 	stroke:#666;
 	stroke-width:2;
 	opacity: 0.2;
+	pointer-events: auto; 
 }
 .lqs_link_from_text {
         opacity: 0.6;
 	text-anchor: middle;
+	pointer-events: auto; 
+}
+.lqs_dot {
+	fill: #666;
+        opacity: 0.6;
+	pointer-events: auto; 
+}
+.lqs_dot_text {
+        opacity: 0.6;
+	text-anchor: middle;
+	pointer-events: auto; 
 }
 #axis line {
 	stroke:#666;
