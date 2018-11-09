@@ -22,7 +22,7 @@ readfile("css/liquid-space.css");
   <body></body>
   <script>
 $(document).ready(function(){ liquidSpaceInit({
-		inspectorProxy: 'http://www.southampton.ac.uk/~totl/lqs-inspector-v1/',
+		inspectorProxy: 'https://www.southampton.ac.uk/~totl/lqs-inspector-v1/',
 		nodes: [
 			{
 				id: 'a',
