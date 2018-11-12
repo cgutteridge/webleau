@@ -5,7 +5,6 @@ function liquidSpaceInit( layout ) {
 	var labelsLayer;
 	var nodes = {};
 	var links = {};
-	var winScale = 1;
 	var layoutScale = 1;
 	var mouse = screenMiddle();
 	var offsetX = 5000;
@@ -633,7 +632,7 @@ function liquidSpaceInit( layout ) {
 			if( this.data.view == 'dot' ) {
 				this.dom.dot.attr('cx',this.realX()-this.realWidth()/2);
 				this.dom.dot.attr('cy', this.realY()-this.realHeight()/2);
-				this.dom.dot.attr('r', this.dotSize*winScale*layoutScale);
+				this.dom.dot.attr('r', this.dotSize*layoutScale);
 				return;
 			}
 			this.dom.outer.css('left',this.realX()-this.realWidth()/2);
