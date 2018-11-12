@@ -1,3 +1,53 @@
+class LQSPoint {
+	constructor(x,y) {
+		this.x=x;
+		this.y=y;
+	}
+	distance( pt ) {
+		var ld = (pt.x-this.x)*(pt.x-this.x)+(pt.y-this.y)*(pt.y-this.y);
+		return Math.sqrt( ld );
+	}
+	inBounds( corner1, corner2 ) {
+		return( this.x>=Math.min(corner1.x,corner2.x)-1 && this.x<=Math.max(corner1.x,corner2.x+1) 
+		     && this.y>=Math.min(corner1.y,corner2.y)-1 && this.y<=Math.max(corner1.y,corner2.y+1) );
+	}
+}
+
+class LQSLine {
+	constructor( from, to ) {
+		this.from = from;
+		this.to = to;
+	}
+	intersect( that ) {
+		var offx1 = this.to.x-this.from.x;
+		var offy1 = this.to.y-this.from.y;
+		var offx2 = that.to.x-that.from.x;
+		var offy2 = that.to.y-that.from.y;
+		if( offx1 == 0 ) { offx1 = 0.000000000001; }
+		if( offx2 == 0 ) { offx2 = 0.000000000001; }
+		var g1 = offy1/offx1;
+		var g2 = offy2/offx2;
+		if( g1==g2 ) { return null; } // parallel lines
+		// y=a+x*g1;
+		// y=b+x*g2;
+		var a = this.from.y- this.from.x*g1;
+		var b = that.from.y- that.from.x*g2;
+		// a+x*g1 = b+x*g2
+		// a-b = x*g2-x*g1
+		// a-b = x*(g2-g1)
+		// x= (a-b)/(g2-g1)
+		var x = (a-b)/(g2-g1);
+		var y = this.from.y +  ( x - this.from.x ) * g1;
+		var pt = new LQSPoint( x, y );
+		if( pt.inBounds( this.from, this.to ) && pt.inBounds( that.from, that.to ) ) {
+			return pt;
+		}
+		return null;
+	}
+
+
+}
+
 function liquidSpaceInit( layout ) {
 
 	var nodesLayer;
@@ -38,18 +88,18 @@ function liquidSpaceInit( layout ) {
 
 
 	function screenMiddle() {
-		return new Point( winLeft()+winWidth()/2, winTop()+winHeight()/2 );
+		return new LQSPoint( winLeft()+winWidth()/2, winTop()+winHeight()/2 );
 	}
 
 	function toVirtual(realpt) {
-		return new Point( 
+		return new LQSPoint( 
 			(realpt.x-offsetX)/layoutScale,
 			(realpt.y-offsetY)/layoutScale
 		);
 	}
 
 	function toReal(virtpt) {
-		return new Point( 
+		return new LQSPoint( 
 			virtpt.x*layoutScale+offsetX,
 			virtpt.y*layoutScale+offsetY
 		);
@@ -76,52 +126,6 @@ function liquidSpaceInit( layout ) {
 	function winTop() {
 		var d = document.documentElement;
 		return (window.pageYOffset || d.scrollTop)  - (d.clientTop || 0);
-	}
-
-	function Point( x,y ) {
-		this.x = x;
-		this.y = y;
-		this.distance = function( pt ) {
-			var ld = (pt.x-this.x)*(pt.x-this.x)+(pt.y-this.y)*(pt.y-this.y);
-			return Math.sqrt( ld );
-		}
-	}
-
-	function between(val, limit1,limit2 ) {
-		return( val>=Math.min(limit1,limit2)-1 && val<=Math.max(limit1,limit2)+1 );
-	}
-
-	function Line( from, to ) {
-		this.from = from;
-		this.to = to;
-		this.intersect = function( that ) {
-			var offx1 = this.to.x-this.from.x;
-			var offy1 = this.to.y-this.from.y;
-			var offx2 = that.to.x-that.from.x;
-			var offy2 = that.to.y-that.from.y;
-			if( offx1 == 0 ) { offx1 = 0.000000000001; }
-			if( offx2 == 0 ) { offx2 = 0.000000000001; }
-			var g1 = offy1/offx1;
-			var g2 = offy2/offx2;
-			if( g1==g2 ) { return null; } // parallel lines
-			// y=a+x*g1;
-			// y=b+x*g2;
-			var a = this.from.y- this.from.x*g1;
-			var b = that.from.y- that.from.x*g2;
-			// a+x*g1 = b+x*g2
-			// a-b = x*g2-x*g1
-			// a-b = x*(g2-g1)
-			// x= (a-b)/(g2-g1)
-			var x = (a-b)/(g2-g1);
-			var y = this.from.y +  ( x - this.from.x ) * g1;
-			if( !between(x, this.from.x,this.to.x)
-			 || !between(y, this.from.y,this.to.y)
-			 || !between(x, that.from.x,that.to.x) 
-			 || !between(y, that.from.y,that.to.y) ) {
-				return null;
-			}
-			return new Point( x, y );
-		};
 	}
 
 	
@@ -591,7 +595,7 @@ function liquidSpaceInit( layout ) {
 
 		// methods
 		this.reveal = function() {
-			focusPage( new Point( this.data.x, this.data.y ) );
+			focusPage( new LQSPoint( this.data.x, this.data.y ) );
 		}
 
 		this.resized = function(event, ui) { 
@@ -669,7 +673,7 @@ function liquidSpaceInit( layout ) {
 		}
 
 		this.centrePoint = function() {
-			return new Point( this.realX(), this.realY() );
+			return new LQSPoint( this.realX(), this.realY() );
 		}
 
 		this.borderSize = 4;
@@ -710,17 +714,17 @@ function liquidSpaceInit( layout ) {
 		// find the point in a block nearest to the given point
 		this.nearestPointTo = function( pt ) {
 			// find the intersection with each edge
-			var tl = new Point( this.realX()-this.realWidthFull()/2+1, this.realY()-this.realHeightFull()/2+1 );
-			var tr = new Point( this.realX()+this.realWidthFull()/2  , this.realY()-this.realHeightFull()/2+1 );
-			var bl = new Point( this.realX()-this.realWidthFull()/2+1, this.realY()+this.realHeightFull()/2   );
-			var br = new Point( this.realX()+this.realWidthFull()/2  , this.realY()+this.realHeightFull()/2   );
+			var tl = new LQSPoint( this.realX()-this.realWidthFull()/2+1, this.realY()-this.realHeightFull()/2+1 );
+			var tr = new LQSPoint( this.realX()+this.realWidthFull()/2  , this.realY()-this.realHeightFull()/2+1 );
+			var bl = new LQSPoint( this.realX()-this.realWidthFull()/2+1, this.realY()+this.realHeightFull()/2   );
+			var br = new LQSPoint( this.realX()+this.realWidthFull()/2  , this.realY()+this.realHeightFull()/2   );
 			var lines = [
-				new Line( tl, tr ),
-				new Line( tr, br ),
-				new Line( bl, br ),
-				new Line( tl, bl )
+				new LQSLine( tl, tr ),
+				new LQSLine( tr, br ),
+				new LQSLine( bl, br ),
+				new LQSLine( tl, bl )
 			];
-			var pokeyLine = new Line( pt, this.centrePoint() );
+			var pokeyLine = new LQSLine( pt, this.centrePoint() );
 			var rPt = null;
 			var distance = 99999999;
 			var line = null;
@@ -1109,7 +1113,7 @@ function liquidSpaceInit( layout ) {
 	}
 
 	function centrePage() {
-		focusPage( new Point(0,0) );
+		focusPage( new LQSPoint(0,0) );
 	}
 
 	// focus the real scroll window onto a point on the virtual layout
@@ -1135,7 +1139,7 @@ function liquidSpaceInit( layout ) {
 		$('body').append(svg);
 		svg.html( svg.html() ); // reset SVG layer 
 	
-		var rpt = toReal(new Point(0,0));
+		var rpt = toReal(new LQSPoint(0,0));
 		window.scrollTo( rpt.x-winWidth()/2, rpt.y-winHeight()/2 );
 
 		nodesLayer.dblclick(function() {
@@ -1482,7 +1486,7 @@ function liquidSpaceInit( layout ) {
 
 	// location of mouse on tablau
 	$( document).on( "mousemove", function( event ) {
-		mouse = new Point( event.pageX, event.pageY );
+		mouse = new LQSPoint( event.pageX, event.pageY );
 	});
 
 
