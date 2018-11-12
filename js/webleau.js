@@ -1,3 +1,48 @@
+
+class LQS {
+	static uuid() {
+		function randomDigit() {
+			if (crypto && crypto.getRandomValues) {
+				var rands = new Uint8Array(1);
+				crypto.getRandomValues(rands);
+				return (rands[0] % 16).toString(16);
+			} else {
+				return ((Math.random() * 16) | 0).toString(16);
+			}
+		}
+		var crypto = window.crypto || window.msCrypto;
+		return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, randomDigit);
+	}
+
+	static noDragClick( element, fn ){
+		if( !element.noDragClick ) {
+			element.beingDragged = false;
+			element.mousedown( function() {
+		        	$(window).mousemove(function() {
+            				this.beingDragged = true;
+            				$(window).unbind("mousemove");
+        			}.bind(this ));
+			}.bind(element));
+		}
+		element.mouseup( function() {
+        		var wasDragging = this.beingDragged;
+        		this.beingDragged = false;
+        		$(window).unbind("mousemove");
+        		if (!wasDragging) {
+				fn();
+			}
+		}.bind(element));		
+	}
+
+	// remove the obvious secruity issues from 3rd party html
+	static sanitiseHtml( html ) {
+		html = html.replace( /<script>.*?<\/script>/, '' );
+		return html;
+	}
+
+}
+
+
 class LQSPoint {
 	constructor(x,y) {
 		this.x=x;
@@ -44,725 +89,102 @@ class LQSLine {
 		}
 		return null;
 	}
-
-
 }
 
-function liquidSpaceInit( layout ) {
+class LQSLink {
 
-	var nodesLayer;
-	var arrowsLayer;
-	var labelsLayer;
-	var nodes = {};
-	var links = {};
-	var layoutScale = 1;
-	var mouse = screenMiddle();
-	var offsetX = 5000;
-	var offsetY = 5000;
-	var curYPos = 0;
-	var curXPos = 0;
-	var curDown = false;
-	var layoutScaleSlider;
-	var defaultInspectorProxy = 'https://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
-	var inspectorProxy = defaultInspectorProxy;
+	constructor( linkData, lqs ) {
+		this.lqs = lqs;
 
-	function noDragClick( element, fn ){
-		if( !element.noDragClick ) {
-			element.beingDragged = false;
-			element.mousedown( function() {
-		        	$(window).mousemove(function() {
-            				this.beingDragged = true;
-            				$(window).unbind("mousemove");
-        			}.bind(this ));
-			}.bind(element));
+ 		this.data = linkData;
+		if( !this.data.id  ) { this.data.id=LQS.uuid(); }
+		var subjectNode = this.lqs.nodes[this.data.subject.node];
+		if( !subjectNode ) {
+			alert( "Failed to link subjectNode "+JSON.stringify( this.data.subject ));
+			return;
 		}
-		element.mouseup( function() {
-        		var wasDragging = this.beingDragged;
-        		this.beingDragged = false;
-        		$(window).unbind("mousemove");
-        		if (!wasDragging) {
-				fn();
-			}
-		}.bind(element));		
-	}
-
-
-	function screenMiddle() {
-		return new LQSPoint( winLeft()+winWidth()/2, winTop()+winHeight()/2 );
-	}
-
-	function toVirtual(realpt) {
-		return new LQSPoint( 
-			(realpt.x-offsetX)/layoutScale,
-			(realpt.y-offsetY)/layoutScale
-		);
-	}
-
-	function toReal(virtpt) {
-		return new LQSPoint( 
-			virtpt.x*layoutScale+offsetX,
-			virtpt.y*layoutScale+offsetY
-		);
-	}
-
-	function winHeight() {
-		var w = window;
-    		var d = document;
-    		var e = d.documentElement;
-    		var g = d.getElementsByTagName('body')[0];
-    		return w.innerHeight || e.clientHeight || g.clientHeight;
-	}
-	function winWidth() {
-		var w = window;
-    		var d = document;
-    		var e = d.documentElement;
-    		var g = d.getElementsByTagName('body')[0];
-    		return w.innerWidth || e.clientWidth || g.clientWidth;
-	}
-	function winLeft() {
-		var d = document.documentElement;
-		return (window.pageXOffset || d.scrollLeft) - (d.clientLeft || 0);
-	}
-	function winTop() {
-		var d = document.documentElement;
-		return (window.pageYOffset || d.scrollTop)  - (d.clientTop || 0);
-	}
-
-	
-	function manifestGraphBase(endpoint) {
-		var id = "graph/"+endpoint;
-		var node;
-		if( nodes[id] ) {
-			node = nodes[id];
-			node.reveal();
-		} else {
-			var pt = toVirtual(screenMiddle());
-			node = addNode({
-				id: id,
-				x: pt.x,
- 				y: pt.y,	
-				title: "Data connection",
-				width:  ((winWidth() /2))/layoutScale,
-				height: ((winHeight()/2))/layoutScale,
-				type: "graph-base",
-				endpoint: endpoint,
-				gizmo: true,
-				meta: {}
-			});
+		var objectNode = this.lqs.nodes[this.data.object.node];
+		if( !objectNode ) {
+			alert( "Failed to link objectNode "+JSON.stringify( this.data.object ));
+			return;
 		}
-		return node;
+
+		// TODO check if these exist and handle exceptions	
+		subjectNode.registerLink(this);
+		objectNode.registerLink(this);
+
+		var arrowsG = document.getElementById('svg_arrows');
+		var labelsG = document.getElementById('svg_labels');
+
+		this.dom = {};
+
+		this.dom.id = "link_"+LQS.uuid();
+ 		var line = document.createElementNS("http://www.w3.org/2000/svg","line");
+		line.id = this.dom.id;
+		line.setAttribute( "class", "lqs_link" );
+		line.setAttribute( "marker-end", "url(#arrow)" );
+		arrowsG.appendChild( line );
+
+		this.dom.label_id = "link_from_"+LQS.uuid();
+ 		var fromText = document.createElementNS("http://www.w3.org/2000/svg","text");
+		fromText.setAttribute( "class", "lqs_link_from_text" );
+		fromText.id = this.dom.label_id;
+		fromText.appendChild( document.createTextNode( linkData.label ));
+		labelsG.appendChild( fromText );
+
+/*
+		this.dom.to_id = "link_to_"+linkData.id;
+ 		var toText = document.createElementNS("http://www.w3.org/2000/svg","text");
+		toText.setAttribute( "class", "lqs_link_to_text" );
+		toText.id = this.dom.to_id;
+		toText.appendChild( document.createTextNode( "is "+linkData.label+" of" ));
+		labelsG.appendChild( toText );
+*/
 	}
 
-	function manifestGraphSelect() {
-		var pt = toVirtual(screenMiddle());
-		var node = addNode({
-			id: uuid(),
-			x: pt.x,
- 			y: pt.y,	
-			title: "Data connector",
-			width:  ((winWidth() /2))/layoutScale,
-			height: ((winHeight()/2))/layoutScale,
-			type: "graph-select",
-			gizmo: true,
-			meta: {}
-		});
-		return node;
+
+	updatePosition() {
+		var subjectNode = this.lqs.nodes[this.data.subject.node];
+		var objectNode = this.lqs.nodes[this.data.object.node];
+		var c1 = objectNode.centrePoint();
+		var c2 = subjectNode.centrePoint();
+		var pt1 = subjectNode.nearestPointTo( c1 );
+		var pt2 = objectNode.nearestPointTo( c2 );
+		if( pt1 && pt2 ) {
+			$("#"+this.dom.id).attr('x1',pt1.x);	
+			$("#"+this.dom.id).attr('y1',pt1.y);	
+			$("#"+this.dom.id).attr('x2',pt2.x);	
+			$("#"+this.dom.id).attr('y2',pt2.y);	
+			$("#"+this.dom.label_id).attr('x',(pt1.x+(pt2.x-pt1.x)/4));
+			$("#"+this.dom.label_id).attr('y',(pt1.y+(pt2.y-pt1.y)/4));
+			$("#"+this.dom.label_id).css('font-size',(10*this.lqs.layoutScale)+"px"); 
+/*
+			$("#"+this.dom.to_id).attr('x',pt2.x);
+			$("#"+this.dom.to_id).attr('y',pt2.y);
+*/
+		}
 	}
 
+	remove() {
+		var subjectNode = this.lqs.nodes[this.data.subject.node];
+		var objectNode = this.lqs.nodes[this.data.object.node];
+		subjectNode.deRegisterLink(this);
+		objectNode.deRegisterLink(this);
+		delete this.lqs.links[this.data.id];
+		$("#"+this.dom.id).remove();
+		$("#"+this.dom.label_id).remove();
+		$("#"+this.dom.to_id).remove();
+	}
+}
+// End LQSLink
+
+
+class Node {
 //todo, decouple manifest functions from the bit that creates links?
+	constructor( nodeData, lqs ) {
 
-	function Node( nodeData ) {
-
-		// functions we need to define early
-		this.setTitleText = function( text ) {
-			this.dom.dotText.text( text );
-			this.dom.titleText.text( text );
-			if( text == "" ) {
-				this.dom.title.addClass("lqs_node_empty_title");
-			} else {
-				this.dom.title.removeClass("lqs_node_empty_title");
-			}
-		}
-
-		this.showGraphBase = function() {
-			this.reset();
-			this.setTitleText( this.data.title );
-			this.dom.content.html("Loading...");
-			var node = this;
-			if( !this.data.graphIdent ) {
-				$.ajax({
-					method: "GET",
-					data: {},
-					url: node.data.endpoint
-				}).done(function(data){
-					node.data.graphIdent = data;
-					if( node.data.graphIdent && node.data.graphIdent.title ) {
-						node.setTitleText( node.data.graphIdent.title );
-					}
-				});
-			}
-			$.ajax({
-				method: "GET",
-				data: { action: 'nodeTypes' },
-				url: node.data.endpoint
-			}).done(function(data){
-				this.dom.content.html("");
-				//this.dom.content.append( $('<div>This endpoint has the following types of node:</div>'));
-				var keys = Object.keys( data.nodeTypes );
-				for( var i=0;i<keys.length;++i) {
-					var type = keys[i];
-					var seed = $('<div class="lqs_seed">'+type+' </div>');
-					if( data.nodeTypes[type]["count"] ) {
-						seed.append( $('<span>('+data.nodeTypes[type]["count"]+')</span>' ) );
-					}
-					this.dom.content.append(seed);
-					seed.click( function() { 
-						this.node.manifestGraphType(this.type); 
-						this.node.showIcon();
-					}.bind({node:this,type:type}) );
-				}
-				this.fitSize();
-			}.bind(this)).fail(function(){
-				this.dom.content.html( "Failed to get data (TODO: add a 'retry' icon)" );
-				this.fitSize();
-			}.bind(this))
-		}
-		
-			
-		this.showGraphType = function() {
-			this.reset();
-			this.setTitleText( this.data.title );
-			if( this.data.graphIdent && this.data.graphIdent.title ) {
-				this.setTitleText( this.data.graphIdent.title+" #"+this.data.nodeType );
-			}
-			this.dom.content.html("Loading...");
-			var node = this;
-			$.ajax({
-				method: "GET",
-				data: { action: 'nodes', types:this.data.nodeType },
-				url: node.data.endpoint
-			}).done(function(data){
-				this.dom.content.html("");
-				//this.dom.content.html( dataToHTML( data ) );
-				var keys = Object.keys( data.nodes );
-				for( var i=0;i<keys.length;++i) {
-					var apiNode = data.nodes[keys[i]];
-					var seed = $('<div class="lqs_seed"></div>').text( " "+apiNode.title);
-					this.dom.content.append(seed);
-					seed.click( function() { 
-						this.node.manifestGraphNode(this.apiNode,'belongs to',true); 
-						this.node.showIcon();
-					}.bind({node:this,apiNode:apiNode}) );
-				}
-				this.fitSize();
-			}.bind(this)).fail(function(){
-				this.dom.content.html( "Failed to get data (TODO: add a 'retry' icon)" );
-				this.fitSize();
-			}.bind(this))
-		}
-
-		this.showGraphNode = function() {
-			this.reset();
-			this.setTitleText( this.data.title );
-			this.dom.content.html("Loading...");
-			var node = this;
-			$.ajax({
-				method: "GET",
-				data: { action: 'nodes', ids:this.data.nodeID, data:1 },
-				url: node.data.endpoint
-			}).done(function(data){
-				this.data.graph = data.nodes[this.data.nodeID];
-				this.dom.content.text('');
-				this.dom.content.append( this.renderGraphNodeContent() );
-				this.fitSize();
-			}.bind(this)).fail(function(){
-				this.dom.content.text( "Failed to get data (TODO: add a 'retry' icon). Using cached version." );
-				this.dom.content.append( 
-					$("<div class='lqs_cached'></div>").append(this.renderGraphNodeContent()));
-				this.fitSize();
-			}.bind(this))
-		}
-
-		this.renderGraphNodeContent = function() {	
-			var content = $('<div></div>');
-			if( !this.data.graph || !this.data.graph.data ) {
-				content.text( "cache not available" );
-			} else if( this.data.graph.data.html ) {
-				content.html( this.data.graph.data.html );
-				// duplicate code, candidate for a function?
-				content.find( 'a' ).attr("target","_blank");
-				content.find( 'img,iframe' ).css("max-width","100%");
-			} else if( this.data.graph.data.icon ) {
-				content.html( $("<img style='width:100%;min-width:50px;max-width:100%' />").attr('src',this.data.graph.data.icon));
-			} else {
-				content.text( "<null>" );
-			}	
-			return content;
-		}
-
-		this.manifestGraphNode = function(apiNode,relation,forwards) {
-			var id = "graph/"+this.data.endpoint+"/node/"+apiNode.id;
-			if( nodes[id] ) {
-				nodes[id].reveal();
-			} else {
-				var pt = toVirtual(screenMiddle());
-				addNode({
-					id: id,
-					x: pt.x,
- 					y: pt.y,	
-					title: apiNode.title,
-					width:  ((winWidth() /2))/layoutScale,
-					height: ((winHeight()/2))/layoutScale,
-					type: "graph-node",
-					link: true,
-					nodeID: apiNode.id,
-					endpoint: this.data.endpoint,
-					meta: {}
-				});
-			}
-			if( forwards ) {
-				var link_id = "graph/link/"+relation+"/"+id+"/"+this.data.id;
-				if( !links[link_id] ){ 
-					addLink({
-						subject: {node: id},
-						object: {node: this.data.id},
-						label: relation,
-						id: link_id
-					});
-				}
-			} else {
-				var link_id = "graph/link/"+relation+"/"+this.data.id+"/"+id;
-				if( !links[link_id] ){ 
-					addLink({
-						subject: {node: this.data.id},
-						object: {node: id},
-						label: relation,
-						id: link_id
-					});
-				}
-			}
-		}
-	
-		this.manifestGraphType = function(type) {
-			var id = "graph/"+this.data.endpoint+"/type/"+type;
-			if( nodes[id] ) {
-				nodes[id].reveal();
-			} else {
-				var pt = toVirtual(screenMiddle());
-				addNode({
-					id: id,
-					x: pt.x,
- 					y: pt.y,	
-					title: "Graph API: "+type+" nodes",
-					width:  ((winWidth() /2))/layoutScale,
-					height: ((winHeight()/2))/layoutScale,
-					type: "graph-type",
-					nodeType: type,
-					endpoint: this.data.endpoint,
-					gizmo: true,
-					graphIdent: this.data.graphIdent,
-					meta: {}
-				});
-			}
-			var link_id = "graph/link/"+id+"/"+this.data.id;
-			if( !links[link_id] ) {
-				addLink({
-					object: {node: id},
-					subject: {node: this.data.id},
-					label: "belongs to",
-					id: link_id
-				});
-			}
-		}
-
-		this.showGraphNodeLinks = function() {
-			this.reset();
-			this.dom.content.html("Loading...");
-			var node = this;
-			$.ajax({
-				method: "GET",
-				data: { action: 'nodes', ids: this.data.nodeID, followLinks: '*' },
-				url: node.data.endpoint
-			}).done(function(data){
-				this.dom.content.html("");
-				//this.dom.content.append( dataToHTML( data ));
-				this.dom.content.append( $('<div>This endpoint has the following links:</div>'));
-				for( var i=0;i<data.links.length; ++i ) {
-					apiLink = data.links[i];
-					if( apiLink.subject == this.data.nodeID && data.nodes[apiLink.object] ) {
-						var apiNode = data.nodes[apiLink.object];
-						var row = $('<div class="lqs_seed" > '+apiLink.type+' link to  '+apiNode.title+' ('+apiNode.type+') </div>');
-						this.dom.content.append(row);
-						row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,true); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
-					}
-					if( apiLink.object == this.data.nodeID && data.nodes[apiLink.subject] ) {
-						var apiNode = data.nodes[apiLink.subject];
-						var row = $('<div class="lqs_seed" > '+apiLink.type+' link from  '+apiNode.title+' ('+apiNode.type+') </div>');
-						this.dom.content.append(row);
-						row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,false); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
-					}
-				}
-				this.fitSize();
-			}.bind(this)).fail(function(){
-				this.dom.content.html( "API Call failed" );
-				this.fitSize();
-			}.bind(this))
-		}
-
-		this.showLink = function() {
-			this.reset();
-			this.data.view = "link";
-			if( this.data.type == 'graph-node' ) {
-				this.showGraphNodeLinks();
-				return;
-			}
-			this.dom.content.html("This node does not have a link editing interface");
-		}
-
-		this.showGraphSelect = function() {	
-			this.reset();
-			this.setTitleText(this.data.title);
-			var input = $("<input class='normal-paste' value='https://www.southampton.ac.uk/~totl/wordpress-graph-demo/' />");
-			var button = $("<button>CONNECT</button>");
-			button.click( function() {
-				manifestGraphBase( input.val() );
-				this.remove();
-			}.bind(this));
-			this.dom.content.html("");
-			this.dom.content.append( input );
-			this.dom.content.append( button );
-			this.fitSize();
-		}
-
-		this.showDot = function() {
-			this.dom.outer.hide();
-			this.dom.dot.show();
-			this.dom.dotText.show();
-			this.data.view = "dot";
-			this.updatePosition();
-			this.updateLinksPosition();
-		}
-		this.hideDot = function() {
-			this.dom.outer.show();
-			this.dom.dot.hide();
-			this.dom.dotText.hide();
-			this.showFullContent();
-			this.updatePosition();
-			this.updateLinksPosition();
-		}
-		this.showIcon = function() {
-			this.dom.outer.hide();
-			this.dom.icon.show();
-			this.dom.dotText.show();
-			this.data.view = "icon";
-			this.updatePosition();
-			this.updateLinksPosition();
-		}
-		this.hideIcon = function() {
-			this.dom.outer.show();
-			this.dom.icon.hide();
-			this.dom.dotText.hide();
-			this.showFullContent();
-			this.updatePosition();
-			this.updateLinksPosition();
-		}
-
-
-		this.showFullContent = function() {
-			this.reset();
-			this.data.view = "full-content";
-			// this should clearly be plugin based eventually
-			if( this.data.type == 'graph-select' ) {
-				this.showGraphSelect();
-				return;
-			}
-			if( this.data.type == 'graph-base' ) {
-				this.showGraphBase();
-				return;
-			}
-			if( this.data.type == 'graph-type' ) {
-				this.showGraphType();
-				return;
-			}
-			if( this.data.type == 'graph-node' ) {
-				this.showGraphNode();
-				return;
-			}
-
-			// html, text, or using metadata
-			this.setTitleText( this.data.title );
-			var hasContent = false;
-			if( this.data.html ) {
-				this.dom.content.html( sanitiseHtml(this.data.html) );
-			} else if( this.data.text ) {
-				this.dom.content.text( this.data.text );	
-			} else {
-				this.dom.content.text("");
-				if( this.data.source ) {
-					if( this.data.source.URL ) {
-						this.dom.content.append( $('<div></div>').append( $('<a></a>').attr('href',this.data.source.URL).text(this.data.source.URL)));
-						hasContent = true;
-					}
-					if( this.data.source.image && this.data.source.image.URL ) {
-						this.dom.content.append( $('<img style="float:right; padding: 0 0 5px 5px;width:50%" />').attr('src',this.data.source.image.URL));;
-						hasContent = true;
-					}
-				}
-				if( this.data.description ) {
-					this.dom.content.append( $('<div></div>').text( this.data.description ));
-					hasContent = true;
-				}
-				if( !hasContent ) {	
-		 			this.dom.content.text( "<no content>" );
-				}
-			}
-			if( this.data.meta && this.data.meta.source && this.data.meta.source.URL ) {
-				var span = $('<div style="text-align:right">- </div>');
-				this.dom.content.append( span );
-				span.append( $('<a>Source</a>').attr( 'href',this.data.meta.source.URL));
-			}
-			this.dom.content.find( 'a' ).attr("target","_blank");
-			this.dom.content.find( 'img,iframe' ).css("max-width","100%");
-			//this.dom.content.find( 'img,iframe' ).css("max-height","100%");
-		}
-
-		this.showMeta = function() {
-			this.reset();
-			this.dom.content.html( dataToHTML( this.data ) );
-			this.data.view = "meta";
-		}
-
-		this.reset = function() {
-			this.dom.outer.removeClass('lqs_node_notitle');
-			this.dom.content.html( '' );
-		}
-
-		this.showEdit = function() {
-			this.reset();
-			this.dom.outer.addClass('lqs_node_notitle');
-			this.dom.edit = {};
-			this.dom.edit.div = $('<div class="lqs_node_edit"></div>');
-			this.dom.content.append( this.dom.edit.div );
-			this.dom.edit.textarea = $('<textarea class="normal-paste" style="width:99%; height: 80%;"></textarea>');
-			var buttons = $('<div style="margin-top:3%;text-align:right"></div>');
-			this.dom.edit.save = $('<button style="max-height:10%">OK</button>');	
-			this.dom.edit.cancel = $('<button style="float:right; max-height:10%">Cancel</button>');	
-			this.dom.edit.div.append( this.dom.edit.textarea  );	
-			this.dom.edit.div.append( buttons );
-			buttons.append( this.dom.edit.save  );	
-			buttons.append( this.dom.edit.cancel  );	
-			this.dom.edit.textarea.focus();
-			this.dom.edit.textarea.keyup(function(event){
-				if( event.which==13 && !event.shiftKey) {
-					this.dom.edit.save.click();
-				}	
-				if( event.which==27 ) {
-					this.dom.edit.cancel.click();
-				}	
-			}.bind(this));
-			if( this.data.html ) {
-				this.dom.edit.textarea.text( this.data.html );
-				this.dom.edit.save.click( function() {
-					var v = this.dom.edit.textarea.val().trim();
-					if( v == "" ) { this.remove(); return; }
-					this.data.html = v;
-					this.showFullContent();
-				}.bind(this));
-				this.dom.edit.cancel.click( function() {
-					var v = this.dom.edit.textarea.val().trim();
-					if( v == "" ) { this.remove(); return; }
-					this.showFullContent();
-				}.bind(this));
-			} else {
-				this.dom.edit.textarea.text( this.data.text );
-				this.dom.edit.save.click( function() {
-					var v = this.dom.edit.textarea.val().trim();
-					if( v == "" ) { this.remove(); return; }
-					this.data.text = v;
-					this.showFullContent();
-					this.fitSize();
-				}.bind(this));
-				this.dom.edit.cancel.click( function() {
-					var v = this.dom.edit.textarea.val().trim();
-					if( v == "" ) { this.remove(); return; }
-					this.showFullContent();
-				}.bind(this));
-			} 
-			this.fitSize();
-		}
-
-
-
-		// methods
-		this.reveal = function() {
-			focusPage( new LQSPoint( this.data.x, this.data.y ) );
-		}
-
-		this.resized = function(event, ui) { 
-
-			var wDelta  = ui.size.width  - ui.originalSize.width;
-			var adjustedWidth  = ui.originalSize.width  + 2*wDelta;
-			this.data.width  = Math.max(50,adjustedWidth/layoutScale);
-
-			var hDelta  = ui.size.height - ui.originalSize.height;
-			var adjustedHeight =  ui.originalSize.height + 2*hDelta;
-			this.data.height = Math.max(50,adjustedHeight/layoutScale);
-
-			this.updatePosition();
-			this.updateLinksPosition();
-		}
-
-		this.dragged = function(event, ui) { 
-			ui.position.left = Math.max(10, ui.position.left );
-			ui.position.top = Math.max( 10, ui.position.top );
-			this.data.x = (ui.position.left+this.realWidth()/2 -offsetX) /layoutScale;
-			this.data.y = (ui.position.top +this.realHeight()/2-offsetY) /layoutScale;
-			this.updatePosition();
-			this.updateLinksPosition();
-		}
-	
-		this.updatePosition = function() {
-			var baseFontSize = 10;
-			if( this.data.view == 'icon' || this.data.view == 'dot' ) {
-				this.dom.dotText.attr('x',this.realX() );
-				this.dom.dotText.attr('y', this.realY()+this.realHeight()/2+baseFontSize*layoutScale);
-				this.dom.dotText.css('font-size',(baseFontSize*layoutScale)+"px"); 
-			}
-			if( this.data.view == 'icon' ) {
-				this.dom.icon.css('left',this.realX()-this.realWidth()/2);
-				this.dom.icon.css('top', this.realY()-this.realHeight()/2);
-				return;
-			}
-			if( this.data.view == 'dot' ) {
-				this.dom.dot.attr('cx',this.realX()-this.realWidth()/2);
-				this.dom.dot.attr('cy', this.realY()-this.realHeight()/2);
-				this.dom.dot.attr('r', this.dotSize*layoutScale);
-				return;
-			}
-			this.dom.outer.css('left',this.realX()-this.realWidth()/2);
-			this.dom.outer.css('top', this.realY()-this.realHeight()/2);
-			this.dom.outer.css('width', this.data.width *layoutScale);
-			this.dom.outer.css('height',this.data.height*layoutScale);
-			var titleHeight = (18*layoutScale);
-			var fontHeight = (16*layoutScale);
-			this.dom.content.css('height',this.data.height*layoutScale-titleHeight ); // height of box minus borders and title
-			this.dom.title.css('font-size',fontHeight+"px");
-			this.dom.title.css('height',   titleHeight+"px" );
-		}
-		this.updateLinksPosition = function() {
-			var  linkIds = Object.keys(links);
-			for( var i=0; i<linkIds.length; ++i ) {
-				links[linkIds[i]].updatePosition();
-			}
-		}
-
-		this.fitSize = function() {
-			this.dom.outer.css('width','auto');
-			this.dom.outer.css('height','auto');
-			this.dom.content.css('height','auto');
-			this.dom.outer.css('max-width',(winWidth()/2)+"px");
-			this.dom.outer.css('max-height',(winHeight()*3/4)+"px");
-			this.dom.outer.find( '.lqs_tool' ).addClass('noTools');
-			this.data.width =  (this.dom.outer.width() )/layoutScale+10;
-			this.data.height = (this.dom.outer.height())/layoutScale+10;
-			this.dom.outer.find( '.lqs_tool' ).removeClass('noTools');
-			this.dom.outer.css('max-width','none');
-			this.dom.outer.css('max-height','none');
-			this.updatePosition();
-			this.updateLinksPosition();
-		}
-
-		this.centrePoint = function() {
-			return new LQSPoint( this.realX(), this.realY() );
-		}
-
+		this.lqs = lqs;
 		this.borderSize = 4;
-		// real means actual pixels not the place on the conceptual layout
-		this.realX = function() {
-			return this.data.x*layoutScale+offsetX;
-		}
-		this.realY = function() {
-			return this.data.y*layoutScale+offsetY;
-		}
-		// the width of the node in pixels in the current scale
-		this.realWidth = function() {
-			if( this.data.view == 'icon' ) {
-				return this.data.iconWidth;
-			}
-			if( this.data.view == 'dot' ) {
-				return this.dotSize*layoutScale;
-			}
-			return this.data.width*layoutScale;
-		}
-		// the height of the node in pixels in the current scale
-		this.realHeight = function() {
-			if( this.data.view == 'icon' ) {
-				return this.data.iconHeight;
-			}
-			if( this.data.view == 'dot' ) {
-				return this.dotSize*layoutScale;
-			}
-			return this.data.height*layoutScale;
-		}
-		this.realWidthFull = function() {
-			return this.realWidth()+this.borderSize*2;
-		}
-		this.realHeightFull = function() {
-			return this.realHeight()+this.borderSize*2;
-		}
-
-		// find the point in a block nearest to the given point
-		this.nearestPointTo = function( pt ) {
-			// find the intersection with each edge
-			var tl = new LQSPoint( this.realX()-this.realWidthFull()/2+1, this.realY()-this.realHeightFull()/2+1 );
-			var tr = new LQSPoint( this.realX()+this.realWidthFull()/2  , this.realY()-this.realHeightFull()/2+1 );
-			var bl = new LQSPoint( this.realX()-this.realWidthFull()/2+1, this.realY()+this.realHeightFull()/2   );
-			var br = new LQSPoint( this.realX()+this.realWidthFull()/2  , this.realY()+this.realHeightFull()/2   );
-			var lines = [
-				new LQSLine( tl, tr ),
-				new LQSLine( tr, br ),
-				new LQSLine( bl, br ),
-				new LQSLine( tl, bl )
-			];
-			var pokeyLine = new LQSLine( pt, this.centrePoint() );
-			var rPt = null;
-			var distance = 99999999;
-			var line = null;
-			for(var i=0;i<4;++i) {
-				var iPt = pokeyLine.intersect( lines[i] );
-				if( iPt ) {
-					var iDist = pt.distance( iPt );
-					if( iDist<distance ) {
-						rPt = iPt;
-						distance = iDist;
-						rPt.edge =i;
-					}		
-				}
-			}
-			return rPt;
-		}
-
-		this.registerLink = function( link ) {
-			this.links[link.data.id] = link;
-		}
-
-		this.deRegisterLink = function( link ) {
-			delete this.links[link.data.id];
-		}
-
-		this.remove = function() {
-			var link_ids = Object.keys(this.links);
-			for( var i=0;i<link_ids.length;++i ) {
-				this.links[link_ids[i]].remove();
-			}
-			delete nodes[this.data.id];
-			this.dom.outer.remove();
-			this.dom.icon.remove();
-			this.dom.dot.remove();
-			this.dom.dotText.remove();
-		}
-
-		// data
 		this.data = nodeData;
 
 		// links
@@ -784,10 +206,10 @@ function liquidSpaceInit( layout ) {
 		this.dom.icon.width( this.data.iconWidth );
 		this.dom.icon.height( this.data.iconHeight );
 		this.dom.icon.hide();
-		nodesLayer.append( this.dom.icon );
+		this.lqs.nodesLayer.append( this.dom.icon );
 
 		this.dotSize = 5;
-		this.dom.dot_id = "dot_"+uuid();
+		this.dom.dot_id = "dot_"+LQS.uuid();
  		var dot = document.createElementNS("http://www.w3.org/2000/svg","circle");
 		dot.id = this.dom.dot_id;
 		dot.setAttribute( "class", "lqs_dot" );
@@ -796,7 +218,7 @@ function liquidSpaceInit( layout ) {
 		arrowsG.appendChild( dot );
 		this.dom.dot = $(dot);
 
-		this.dom.dot_label_id = "link_from_"+uuid();
+		this.dom.dot_label_id = "link_from_"+LQS.uuid();
  		var dotText = document.createElementNS("http://www.w3.org/2000/svg","text");
 		dotText.setAttribute( "class", "lqs_dot_text" );
 		dotText.id = this.dom.dot_label_id;
@@ -842,7 +264,7 @@ function liquidSpaceInit( layout ) {
 		this.dom.toolicon.click( function() {
 			this.showIcon();
 		}.bind(this));
-		noDragClick( this.dom.icon, function() {
+		LQS.noDragClick( this.dom.icon, function() {
 			this.hideIcon();
 		}.bind(this) );
 
@@ -853,15 +275,11 @@ function liquidSpaceInit( layout ) {
 			this.showDot();
 		}.bind(this));
 		/*
-		noDragClick( this.dom.dot, function() {
+		LQS.noDragClick( this.dom.dot, function() {
 			this.hideDot();
 		}.bind(this) );
 		*/
 		this.dom.dot.click( function() { this.hideDot(); }.bind(this) );
-
-
-
-
 
 
 
@@ -894,13 +312,13 @@ function liquidSpaceInit( layout ) {
 		this.dom.title.append( this.dom.titleRight );
 		this.dom.title.append( this.dom.titleText );
 		this.dom.outer.append( this.dom.content );
-		nodesLayer.append( this.dom.outer );
+		this.lqs.nodesLayer.append( this.dom.outer );
 		this.dom.outer.dblclick(function() {
 			var pt = toVirtual( mouse );
-			var width = ((winWidth() /4))/layoutScale;
-			var height= ((winHeight()/4))/layoutScale;
+			var width = ((winWidth() /4))/this.lqs.layoutScale;
+			var height= ((winHeight()/4))/this.lqs.layoutScale;
 			var nodeData = {
-				id: uuid(),
+				id: LQS.uuid(),
 				x: this.data.x+(this.data.width/2)+width/2,
  				y: pt.y,	
 				title: "",
@@ -916,14 +334,13 @@ function liquidSpaceInit( layout ) {
 				subject: { node: comment.data.id },
 				object: { node: this.data.id },
 				label: "comments",
-				id: uuid() 
+				id: LQS.uuid() 
 			};
 			var newLink = addLink( linkData );
 			//subjectNode.updateLinksPosition();
 			comment.showEdit();
 			return false; // don't also run on background
 		}.bind(this));
-		this.links = {};
 
 		// state
 		var view = this.data.view;
@@ -934,9 +351,6 @@ function liquidSpaceInit( layout ) {
 		if( view == "dot" ) {
 			this.showDot();
 		}
-
-
-
 
 		// register UI hooks
 		this.dom.outer.resizable({
@@ -971,12 +385,12 @@ function liquidSpaceInit( layout ) {
 			hoverClass: "drop-hover",
 			tolerance: "pointer",
 			drop: function( event , ui ) {
-				var subjectNode = nodes[ui.draggable.attr('data-node')];
+				var subjectNode = this.lqs.nodes[ui.draggable.attr('data-node')];
 				var linkData = {
 					subject: { node: ui.draggable.attr('data-node') },
 					object: { node: this.data.id },
 					label: "",
-					id: uuid() 
+					id: LQS.uuid() 
 				};
 				var newLink = addLink( linkData );
 				subjectNode.data.x = subjectNode.dragStartX;
@@ -985,103 +399,707 @@ function liquidSpaceInit( layout ) {
 				subjectNode.updateLinksPosition();
 			}.bind(this)
 		});
+	} // end Node constructor
+
+
+	setTitleText( text ) {
+		this.dom.dotText.text( text );
+		this.dom.titleText.text( text );
+		if( text == "" ) {
+			this.dom.title.addClass("lqs_node_empty_title");
+		} else {
+			this.dom.title.removeClass("lqs_node_empty_title");
+		}
 	}
-	// End Node
 
-	function Link( linkData ) {
-
- 		this.data = linkData;
-		if( !this.data.id  ) { this.data.id=uuid(); }
-		var subjectNode = nodes[this.data.subject.node];
-		if( !subjectNode ) {
-			alert( "Failed to link subjectNode "+JSON.stringify( this.data.subject ));
-			return;
+	showGraphBase() {
+		this.reset();
+		this.setTitleText( this.data.title );
+		this.dom.content.html("Loading...");
+		var node = this;
+		if( !this.data.graphIdent ) {
+			$.ajax({
+				method: "GET",
+				data: {},
+				url: node.data.endpoint
+			}).done(function(data){
+				node.data.graphIdent = data;
+				if( node.data.graphIdent && node.data.graphIdent.title ) {
+					node.setTitleText( node.data.graphIdent.title );
+				}
+			});
 		}
-		var objectNode = nodes[this.data.object.node];
-		if( !objectNode ) {
-			alert( "Failed to link objectNode "+JSON.stringify( this.data.object ));
-			return;
+		$.ajax({
+			method: "GET",
+			data: { action: 'nodeTypes' },
+			url: node.data.endpoint
+		}).done(function(data){
+			this.dom.content.html("");
+			//this.dom.content.append( $('<div>This endpoint has the following types of node:</div>'));
+			var keys = Object.keys( data.nodeTypes );
+			for( var i=0;i<keys.length;++i) {
+				var type = keys[i];
+				var seed = $('<div class="lqs_seed">'+type+' </div>');
+				if( data.nodeTypes[type]["count"] ) {
+					seed.append( $('<span>('+data.nodeTypes[type]["count"]+')</span>' ) );
+				}
+				this.dom.content.append(seed);
+				seed.click( function() { 
+					this.node.manifestGraphType(this.type); 
+					this.node.showIcon();
+				}.bind({node:this,type:type}) );
+			}
+			this.fitSize();
+		}.bind(this)).fail(function(){
+			this.dom.content.html( "Failed to get data (TODO: add a 'retry' icon)" );
+			this.fitSize();
+		}.bind(this))
+	}
+	
+			
+	showGraphType() {
+		this.reset();
+		this.setTitleText( this.data.title );
+		if( this.data.graphIdent && this.data.graphIdent.title ) {
+			this.setTitleText( this.data.graphIdent.title+" #"+this.data.nodeType );
 		}
+		this.dom.content.html("Loading...");
+		var node = this;
+		$.ajax({
+			method: "GET",
+			data: { action: 'nodes', types:this.data.nodeType },
+			url: node.data.endpoint
+		}).done(function(data){
+			this.dom.content.html("");
+			//this.dom.content.html( dataToHTML( data ) );
+			var keys = Object.keys( data.nodes );
+			for( var i=0;i<keys.length;++i) {
+				var apiNode = data.nodes[keys[i]];
+				var seed = $('<div class="lqs_seed"></div>').text( " "+apiNode.title);
+				this.dom.content.append(seed);
+				seed.click( function() { 
+				this.node.manifestGraphNode(this.apiNode,'belongs to',true); 
+					this.node.showIcon();
+				}.bind({node:this,apiNode:apiNode}) );
+			}
+			this.fitSize();
+		}.bind(this)).fail(function(){
+			this.dom.content.html( "Failed to get data (TODO: add a 'retry' icon)" );
+			this.fitSize();
+		}.bind(this))
+	}
 
-		// TODO check if these exist and handle exceptions	
-		subjectNode.registerLink(this);
-		objectNode.registerLink(this);
+	showGraphNode() {
+		this.reset();
+		this.setTitleText( this.data.title );
+		this.dom.content.html("Loading...");
+		var node = this;
+		$.ajax({
+			method: "GET",
+			data: { action: 'nodes', ids:this.data.nodeID, data:1 },
+			url: node.data.endpoint
+		}).done(function(data){
+			this.data.graph = data.nodes[this.data.nodeID];
+			this.dom.content.text('');
+			this.dom.content.append( this.renderGraphNodeContent() );
+			this.fitSize();
+		}.bind(this)).fail(function(){
+			this.dom.content.text( "Failed to get data (TODO: add a 'retry' icon). Using cached version." );
+			this.dom.content.append( 
+				$("<div class='lqs_cached'></div>").append(this.renderGraphNodeContent()));
+			this.fitSize();
+		}.bind(this))
+	}
 
-		var arrowsG = document.getElementById('svg_arrows');
-		var labelsG = document.getElementById('svg_labels');
+	renderGraphNodeContent() {	
+		var content = $('<div></div>');
+		if( !this.data.graph || !this.data.graph.data ) {
+			content.text( "cache not available" );
+		} else if( this.data.graph.data.html ) {
+			content.html( this.data.graph.data.html );
+			// duplicate code, candidate for a function?
+			content.find( 'a' ).attr("target","_blank");
+				content.find( 'img,iframe' ).css("max-width","100%");
+		} else if( this.data.graph.data.icon ) {
+			content.html( $("<img style='width:100%;min-width:50px;max-width:100%' />").attr('src',this.data.graph.data.icon));
+		} else {
+			content.text( "<null>" );
+		}	
+		return content;
+	}
 
-		this.dom = {};
-
-		this.dom.id = "link_"+uuid();
- 		var line = document.createElementNS("http://www.w3.org/2000/svg","line");
-		line.id = this.dom.id;
-		line.setAttribute( "class", "lqs_link" );
-		line.setAttribute( "marker-end", "url(#arrow)" );
-		arrowsG.appendChild( line );
-
-		this.dom.label_id = "link_from_"+uuid();
- 		var fromText = document.createElementNS("http://www.w3.org/2000/svg","text");
-		fromText.setAttribute( "class", "lqs_link_from_text" );
-		fromText.id = this.dom.label_id;
-		fromText.appendChild( document.createTextNode( linkData.label ));
-		labelsG.appendChild( fromText );
-
-/*
-		this.dom.to_id = "link_to_"+linkData.id;
- 		var toText = document.createElementNS("http://www.w3.org/2000/svg","text");
-		toText.setAttribute( "class", "lqs_link_to_text" );
-		toText.id = this.dom.to_id;
-		toText.appendChild( document.createTextNode( "is "+linkData.label+" of" ));
-		labelsG.appendChild( toText );
-*/
-
-		// methods 
-
-		this.updatePosition = function() {
-			var subjectNode = nodes[this.data.subject.node];
-			var objectNode = nodes[this.data.object.node];
-			var c1 = objectNode.centrePoint();
-			var c2 = subjectNode.centrePoint();
-			var pt1 = subjectNode.nearestPointTo( c1 );
-			var pt2 = objectNode.nearestPointTo( c2 );
-			if( pt1 && pt2 ) {
-				$("#"+this.dom.id).attr('x1',pt1.x);	
-				$("#"+this.dom.id).attr('y1',pt1.y);	
-				$("#"+this.dom.id).attr('x2',pt2.x);	
-				$("#"+this.dom.id).attr('y2',pt2.y);	
-				$("#"+this.dom.label_id).attr('x',(pt1.x+(pt2.x-pt1.x)/4));
-				$("#"+this.dom.label_id).attr('y',(pt1.y+(pt2.y-pt1.y)/4));
-				$("#"+this.dom.label_id).css('font-size',(10*layoutScale)+"px"); 
-/*
-				$("#"+this.dom.to_id).attr('x',pt2.x);
-				$("#"+this.dom.to_id).attr('y',pt2.y);
-*/
+	manifestGraphNode(apiNode,relation,forwards) {
+		var id = "graph/"+this.data.endpoint+"/node/"+apiNode.id;
+		if( this.lqs.nodes[id] ) {
+			this.lqs.nodes[id].reveal();
+		} else {
+			var pt = toVirtual(screenMiddle());
+			addNode({
+				id: id,
+				x: pt.x,
+ 				y: pt.y,	
+				title: apiNode.title,
+				width:  ((winWidth() /2))/this.lqs.layoutScale,
+				height: ((winHeight()/2))/this.lqs.layoutScale,
+				type: "graph-node",
+				link: true,
+				nodeID: apiNode.id,
+				endpoint: this.data.endpoint,
+				meta: {}
+			});
+		}
+		if( forwards ) {
+			var link_id = "graph/link/"+relation+"/"+id+"/"+this.data.id;
+			if( !this.lqs.links[link_id] ){ 
+				addLink({
+					subject: {node: id},
+					object: {node: this.data.id},
+					label: relation,
+					id: link_id
+				});
+			}
+		} else {
+			var link_id = "graph/link/"+relation+"/"+this.data.id+"/"+id;
+			if( !this.lqs.links[link_id] ){ 
+				addLink({
+					subject: {node: this.data.id},
+					object: {node: id},
+					label: relation,
+					id: link_id
+				});
 			}
 		}
+	}
 
-		this.remove = function() {
-			var subjectNode = nodes[this.data.subject.node];
-			var objectNode = nodes[this.data.object.node];
-			subjectNode.deRegisterLink(this);
-			objectNode.deRegisterLink(this);
-			delete links[this.data.id];
-			$("#"+this.dom.id).remove();
-			$("#"+this.dom.label_id).remove();
-			$("#"+this.dom.to_id).remove();
+	manifestGraphType(type) {
+		var id = "graph/"+this.data.endpoint+"/type/"+type;
+		if( this.lqs.nodes[id] ) {
+			this.lqs.nodes[id].reveal();
+		} else {
+			var pt = toVirtual(screenMiddle());
+			addNode({
+				id: id,
+				x: pt.x,
+ 				y: pt.y,	
+				title: "Graph API: "+type+" nodes",
+				width:  ((winWidth() /2))/this.lqs.layoutScale,
+				height: ((winHeight()/2))/this.lqs.layoutScale,
+				type: "graph-type",
+				nodeType: type,
+				endpoint: this.data.endpoint,
+				gizmo: true,
+				graphIdent: this.data.graphIdent,
+				meta: {}
+			});
+		}
+		var link_id = "graph/link/"+id+"/"+this.data.id;
+		if( !this.lqs.links[link_id] ) {
+			addLink({
+				object: {node: id},
+				subject: {node: this.data.id},
+				label: "belongs to",
+				id: link_id
+			});
 		}
 	}
-	// End Link
+
+	showGraphNodeLinks() {
+		this.reset();
+		this.dom.content.html("Loading...");
+		var node = this;
+		$.ajax({
+			method: "GET",
+			data: { action: 'nodes', ids: this.data.nodeID, followLinks: '*' },
+			url: node.data.endpoint
+		}).done(function(data){
+			this.dom.content.html("");
+			//this.dom.content.append( dataToHTML( data ));
+			this.dom.content.append( $('<div>This endpoint has the following links:</div>'));
+			for( var i=0;i<data.links.length; ++i ) {
+				apiLink = data.links[i];
+				if( apiLink.subject == this.data.nodeID && data.nodes[apiLink.object] ) {
+					var apiNode = data.nodes[apiLink.object];
+					var row = $('<div class="lqs_seed" > '+apiLink.type+' link to  '+apiNode.title+' ('+apiNode.type+') </div>');
+					this.dom.content.append(row);
+					row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,true); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
+				}
+				if( apiLink.object == this.data.nodeID && data.nodes[apiLink.subject] ) {
+					var apiNode = data.nodes[apiLink.subject];
+					var row = $('<div class="lqs_seed" > '+apiLink.type+' link from  '+apiNode.title+' ('+apiNode.type+') </div>');
+					this.dom.content.append(row);
+					row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,false); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
+				}
+			}
+			this.fitSize();
+		}.bind(this)).fail(function(){
+			this.dom.content.html( "API Call failed" );
+			this.fitSize();
+		}.bind(this))
+	}
+
+	showLink() {
+		this.reset();
+		this.data.view = "link";
+		if( this.data.type == 'graph-node' ) {
+			this.showGraphNodeLinks();
+			return;
+		}
+		this.dom.content.html("This node does not have a link editing interface");
+	}
+
+	showGraphSelect() {	
+		this.reset();
+		this.setTitleText(this.data.title);
+		var input = $("<input class='normal-paste' value='https://www.southampton.ac.uk/~totl/wordpress-graph-demo/' />");
+		var button = $("<button>CONNECT</button>");
+		button.click( function() {
+			manifestGraphBase( input.val() );
+			this.remove();
+		}.bind(this));
+		this.dom.content.html("");
+		this.dom.content.append( input );
+		this.dom.content.append( button );
+		this.fitSize();
+	}
+
+	showDot() {
+		this.dom.outer.hide();
+		this.dom.dot.show();
+		this.dom.dotText.show();
+		this.data.view = "dot";
+		this.updatePosition();
+		this.updateLinksPosition();
+	}
+	hideDot() {
+		this.dom.outer.show();
+		this.dom.dot.hide();
+		this.dom.dotText.hide();
+		this.showFullContent();
+		this.updatePosition();
+		this.updateLinksPosition();
+	}
+	showIcon() {
+		this.dom.outer.hide();
+		this.dom.icon.show();
+		this.dom.dotText.show();
+		this.data.view = "icon";
+		this.updatePosition();
+		this.updateLinksPosition();
+	}
+	hideIcon() {
+		this.dom.outer.show();
+		this.dom.icon.hide();
+		this.dom.dotText.hide();
+		this.showFullContent();
+		this.updatePosition();
+		this.updateLinksPosition();
+	}
+
+
+	showFullContent() {
+		this.reset();
+		this.data.view = "full-content";
+		// this should clearly be plugin based eventually
+		if( this.data.type == 'graph-select' ) {
+			this.showGraphSelect();
+			return;
+		}
+		if( this.data.type == 'graph-base' ) {
+			this.showGraphBase();
+			return;
+		}
+		if( this.data.type == 'graph-type' ) {
+			this.showGraphType();
+			return;
+		}
+		if( this.data.type == 'graph-node' ) {
+			this.showGraphNode();
+			return;
+		}
+
+		// html, text, or using metadata
+		this.setTitleText( this.data.title );
+		var hasContent = false;
+		if( this.data.html ) {
+			this.dom.content.html( LQS.sanitiseHtml(this.data.html) );
+		} else if( this.data.text ) {
+			this.dom.content.text( this.data.text );	
+		} else {
+			this.dom.content.text("");
+			if( this.data.source ) {
+				if( this.data.source.URL ) {
+					this.dom.content.append( $('<div></div>').append( $('<a></a>').attr('href',this.data.source.URL).text(this.data.source.URL)));
+					hasContent = true;
+				}
+				if( this.data.source.image && this.data.source.image.URL ) {
+					this.dom.content.append( $('<img style="float:right; padding: 0 0 5px 5px;width:50%" />').attr('src',this.data.source.image.URL));;
+					hasContent = true;
+				}
+			}
+			if( this.data.description ) {
+				this.dom.content.append( $('<div></div>').text( this.data.description ));
+				hasContent = true;
+			}
+			if( !hasContent ) {	
+	 			this.dom.content.text( "<no content>" );
+			}
+		}
+		if( this.data.meta && this.data.meta.source && this.data.meta.source.URL ) {
+			var span = $('<div style="text-align:right">- </div>');
+			this.dom.content.append( span );
+			span.append( $('<a>Source</a>').attr( 'href',this.data.meta.source.URL));
+		}
+		this.dom.content.find( 'a' ).attr("target","_blank");
+		this.dom.content.find( 'img,iframe' ).css("max-width","100%");
+		//this.dom.content.find( 'img,iframe' ).css("max-height","100%");
+	}
+
+	showMeta() {
+		this.reset();
+		this.dom.content.html( dataToHTML( this.data ) );
+		this.data.view = "meta";
+	}
+
+	reset() {
+		this.dom.outer.removeClass('lqs_node_notitle');
+		this.dom.content.html( '' );
+	}
+
+	showEdit() {
+		this.reset();
+		this.dom.outer.addClass('lqs_node_notitle');
+		this.dom.edit = {};
+		this.dom.edit.div = $('<div class="lqs_node_edit"></div>');
+		this.dom.content.append( this.dom.edit.div );
+		this.dom.edit.textarea = $('<textarea class="normal-paste" style="width:99%; height: 80%;"></textarea>');
+		var buttons = $('<div style="margin-top:3%;text-align:right"></div>');
+		this.dom.edit.save = $('<button style="max-height:10%">OK</button>');	
+		this.dom.edit.cancel = $('<button style="float:right; max-height:10%">Cancel</button>');	
+		this.dom.edit.div.append( this.dom.edit.textarea  );	
+		this.dom.edit.div.append( buttons );
+		buttons.append( this.dom.edit.save  );	
+		buttons.append( this.dom.edit.cancel  );	
+		this.dom.edit.textarea.focus();
+		this.dom.edit.textarea.keyup(function(event){
+			if( event.which==13 && !event.shiftKey) {
+				this.dom.edit.save.click();
+			}	
+			if( event.which==27 ) {
+				this.dom.edit.cancel.click();
+			}	
+		}.bind(this));
+		if( this.data.html ) {
+				this.dom.edit.textarea.text( this.data.html );
+			this.dom.edit.save.click( function() {
+				var v = this.dom.edit.textarea.val().trim();
+				if( v == "" ) { this.remove(); return; }
+				this.data.html = v;
+				this.showFullContent();
+			}.bind(this));
+			this.dom.edit.cancel.click( function() {
+				var v = this.dom.edit.textarea.val().trim();
+				if( v == "" ) { this.remove(); return; }
+				this.showFullContent();
+			}.bind(this));
+		} else {
+			this.dom.edit.textarea.text( this.data.text );
+			this.dom.edit.save.click( function() {
+				var v = this.dom.edit.textarea.val().trim();
+				if( v == "" ) { this.remove(); return; }
+				this.data.text = v;
+				this.showFullContent();
+				this.fitSize();
+			}.bind(this));
+			this.dom.edit.cancel.click( function() {
+				var v = this.dom.edit.textarea.val().trim();
+				if( v == "" ) { this.remove(); return; }
+				this.showFullContent();
+			}.bind(this));
+		} 
+		this.fitSize();
+	}
+
+	reveal() {
+		focusPage( new LQSPoint( this.data.x, this.data.y ) );
+	}
+
+	resized(event, ui) { 
+
+		var wDelta  = ui.size.width  - ui.originalSize.width;
+		var adjustedWidth  = ui.originalSize.width  + 2*wDelta;
+		this.data.width  = Math.max(50,adjustedWidth/this.lqs.layoutScale);
+
+		var hDelta  = ui.size.height - ui.originalSize.height;
+		var adjustedHeight =  ui.originalSize.height + 2*hDelta;
+		this.data.height = Math.max(50,adjustedHeight/this.lqs.layoutScale);
+
+		this.updatePosition();
+		this.updateLinksPosition();
+	}
+
+	dragged(event, ui) { 
+		ui.position.left = Math.max(10, ui.position.left );
+		ui.position.top = Math.max( 10, ui.position.top );
+		this.data.x = (ui.position.left+this.realWidth()/2 -this.lqs.offsetX) /this.lqs.layoutScale;
+		this.data.y = (ui.position.top +this.realHeight()/2-this.lqs.offsetY) /this.lqs.layoutScale;
+		this.updatePosition();
+		this.updateLinksPosition();
+	}
+
+	updatePosition() {
+		var baseFontSize = 10;
+		if( this.data.view == 'icon' || this.data.view == 'dot' ) {
+			this.dom.dotText.attr('x',this.realX() );
+			this.dom.dotText.attr('y', this.realY()+this.realHeight()/2+baseFontSize*this.lqs.layoutScale);
+			this.dom.dotText.css('font-size',(baseFontSize*this.lqs.layoutScale)+"px"); 
+		}
+		if( this.data.view == 'icon' ) {
+			this.dom.icon.css('left',this.realX()-this.realWidth()/2);
+			this.dom.icon.css('top', this.realY()-this.realHeight()/2);
+			return;
+		}
+		if( this.data.view == 'dot' ) {
+			this.dom.dot.attr('cx',this.realX()-this.realWidth()/2);
+			this.dom.dot.attr('cy', this.realY()-this.realHeight()/2);
+			this.dom.dot.attr('r', this.dotSize*this.lqs.layoutScale);
+			return;
+		}
+		this.dom.outer.css('left',this.realX()-this.realWidth()/2);
+		this.dom.outer.css('top', this.realY()-this.realHeight()/2);
+		this.dom.outer.css('width', this.data.width *this.lqs.layoutScale);
+		this.dom.outer.css('height',this.data.height*this.lqs.layoutScale);
+		var titleHeight = (18*this.lqs.layoutScale);
+		var fontHeight = (16*this.lqs.layoutScale);
+		this.dom.content.css('height',this.data.height*this.lqs.layoutScale-titleHeight ); // height of box minus borders and title
+		this.dom.title.css('font-size',fontHeight+"px");
+		this.dom.title.css('height',   titleHeight+"px" );
+	}
+
+	updateLinksPosition() {
+		var  linkIds = Object.keys(this.lqs.links);
+		for( var i=0; i<linkIds.length; ++i ) {
+			this.lqs.links[linkIds[i]].updatePosition();
+		}
+	}
+
+	fitSize() {
+		this.dom.outer.css('width','auto');
+		this.dom.outer.css('height','auto');
+		this.dom.content.css('height','auto');
+		this.dom.outer.css('max-width',(winWidth()/2)+"px");
+		this.dom.outer.css('max-height',(winHeight()*3/4)+"px");
+		this.dom.outer.find( '.lqs_tool' ).addClass('noTools');
+		this.data.width =  (this.dom.outer.width() )/this.lqs.layoutScale+10;
+		this.data.height = (this.dom.outer.height())/this.lqs.layoutScale+10;
+		this.dom.outer.find( '.lqs_tool' ).removeClass('noTools');
+		this.dom.outer.css('max-width','none');
+		this.dom.outer.css('max-height','none');
+		this.updatePosition();
+		this.updateLinksPosition();
+	}
+
+	centrePoint() {
+		return new LQSPoint( this.realX(), this.realY() );
+	}
+
+	// real means actual pixels not the place on the conceptual layout
+	realX() {
+		return this.data.x*this.lqs.layoutScale+this.lqs.offsetX;
+	}
+	realY() {
+		return this.data.y*this.lqs.layoutScale+this.lqs.offsetY;
+	}
+	// the width of the node in pixels in the current scale
+	realWidth() {
+		if( this.data.view == 'icon' ) {
+			return this.data.iconWidth;
+		}
+		if( this.data.view == 'dot' ) {
+			return this.dotSize*this.lqs.layoutScale;
+		}
+		return this.data.width*this.lqs.layoutScale;
+	}
+	// the height of the node in pixels in the current scale
+	realHeight() {
+		if( this.data.view == 'icon' ) {
+			return this.data.iconHeight;
+		}
+		if( this.data.view == 'dot' ) {
+			return this.dotSize*this.lqs.layoutScale;
+		}
+		return this.data.height*this.lqs.layoutScale;
+	}
+	realWidthFull() {
+		return this.realWidth()+this.borderSize*2;
+	}
+	realHeightFull() {
+		return this.realHeight()+this.borderSize*2;
+	}
+
+	// find the point in a block nearest to the given point
+	nearestPointTo( pt ) {
+		// find the intersection with each edge
+		var tl = new LQSPoint( this.realX()-this.realWidthFull()/2+1, this.realY()-this.realHeightFull()/2+1 );
+		var tr = new LQSPoint( this.realX()+this.realWidthFull()/2  , this.realY()-this.realHeightFull()/2+1 );
+		var bl = new LQSPoint( this.realX()-this.realWidthFull()/2+1, this.realY()+this.realHeightFull()/2   );
+		var br = new LQSPoint( this.realX()+this.realWidthFull()/2  , this.realY()+this.realHeightFull()/2   );
+		var lines = [
+			new LQSLine( tl, tr ),
+			new LQSLine( tr, br ),
+			new LQSLine( bl, br ),
+			new LQSLine( tl, bl )
+		];
+		var pokeyLine = new LQSLine( pt, this.centrePoint() );
+		var rPt = null;
+		var distance = 99999999;
+		var line = null;
+		for(var i=0;i<4;++i) {
+			var iPt = pokeyLine.intersect( lines[i] );
+			if( iPt ) {
+				var iDist = pt.distance( iPt );
+				if( iDist<distance ) {
+					rPt = iPt;
+					distance = iDist;
+					rPt.edge =i;
+				}		
+			}
+		}
+		return rPt;
+	}
+
+	registerLink( link ) {
+		this.links[link.data.id] = link;
+	}
+
+	deRegisterLink( link ) {
+		delete this.links[link.data.id];
+	}
+
+	remove() {
+		var link_ids = Object.keys(this.links);
+		for( var i=0;i<link_ids.length;++i ) {
+			this.links[link_ids[i]].remove();
+		}
+		delete this.lqs.nodes[this.data.id];
+		this.dom.outer.remove();
+		this.dom.icon.remove();
+		this.dom.dot.remove();
+		this.dom.dotText.remove();
+	}
+} // End Node
+
+
+function liquidSpaceInit( layout ) {
+
+	var lqs = {};
+	lqs.nodesLayer = null;
+	lqs.nodes = {};
+	lqs.links = {};
+	lqs.layoutScale = 1;
+	lqs.mouse = screenMiddle();
+	lqs.offsetX = 5000;
+	lqs.offsetY = 5000;
+	lqs.curYPos = 0;
+	lqs.curXPos = 0;
+	lqs.curDown = false;
+	lqs.layoutScaleSlider = null;
+	lqs.defaultInspectorProxy = 'https://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
+	lqs.inspectorProxy = lqs.defaultInspectorProxy;
+
+
+	function screenMiddle() {
+		return new LQSPoint( winLeft()+winWidth()/2, winTop()+winHeight()/2 );
+	}
+
+	function toVirtual(realpt) {
+		return new LQSPoint( 
+			(realpt.x-lqs.offsetX)/lqs.layoutScale,
+			(realpt.y-lqs.offsetY)/lqs.layoutScale
+		);
+	}
+
+	function toReal(virtpt) {
+		return new LQSPoint( 
+			virtpt.x*lqs.layoutScale+lqs.offsetX,
+			virtpt.y*lqs.layoutScale+lqs.offsetY
+		);
+	}
+
+	function winHeight() {
+		var w = window;
+    		var d = document;
+    		var e = d.documentElement;
+    		var g = d.getElementsByTagName('body')[0];
+    		return w.innerHeight || e.clientHeight || g.clientHeight;
+	}
+	function winWidth() {
+		var w = window;
+    		var d = document;
+    		var e = d.documentElement;
+    		var g = d.getElementsByTagName('body')[0];
+    		return w.innerWidth || e.clientWidth || g.clientWidth;
+	}
+	function winLeft() {
+		var d = document.documentElement;
+		return (window.pageXOffset || d.scrollLeft) - (d.clientLeft || 0);
+	}
+	function winTop() {
+		var d = document.documentElement;
+		return (window.pageYOffset || d.scrollTop)  - (d.clientTop || 0);
+	}
+
+	
+	function manifestGraphBase(endpoint) {
+		var id = "graph/"+endpoint;
+		var node;
+		if( lqs.nodes[id] ) {
+			node = lqs.nodes[id];
+			node.reveal();
+		} else {
+			var pt = toVirtual(screenMiddle());
+			node = addNode({
+				id: id,
+				x: pt.x,
+ 				y: pt.y,	
+				title: "Data connection",
+				width:  ((winWidth() /2))/lqs.layoutScale,
+				height: ((winHeight()/2))/lqs.layoutScale,
+				type: "graph-base",
+				endpoint: endpoint,
+				gizmo: true,
+				meta: {}
+			});
+		}
+		return node;
+	}
+
+	function manifestGraphSelect() {
+		var pt = toVirtual(screenMiddle());
+		var node = addNode({
+			id: LQS.uuid(),
+			x: pt.x,
+ 			y: pt.y,	
+			title: "Data connector",
+			width:  ((winWidth() /2))/lqs.layoutScale,
+			height: ((winHeight()/2))/lqs.layoutScale,
+			type: "graph-select",
+			gizmo: true,
+			meta: {}
+		});
+		return node;
+	}
+
 
 	function getLayout() {
 		var layout = { nodes: [], links: [] };
 		var linkKeys = Object.keys( links );
 		for( var i=0;i<linkKeys.length;++i ) {
-			layout.links.push( links[linkKeys[i]].data );
+			layout.links.push( lqs.links[linkKeys[i]].data );
 		}
 
-		var nodeKeys = Object.keys( nodes );
+		var nodeKeys = Object.keys( lqs.nodes );
 		for( var i=0;i<nodeKeys.length;++i ) {
-			layout.nodes.push( nodes[nodeKeys[i]].data );
+			layout.nodes.push( lqs.nodes[nodeKeys[i]].data );
 		}
 
 		layout.inspectorProxy = inspectorProxy;
@@ -1090,13 +1108,13 @@ function liquidSpaceInit( layout ) {
 
 	function setLayout(layout) {
 		// erase all stuff
-		linkKeys = Object.keys(links);
+		linkKeys = Object.keys(lqs.links);
 		for( var i=0; i<linkKeys.length; ++i ) {
-			links[linkKeys[i]].remove();
+			lqs.links[linkKeys[i]].remove();
 		}
-		nodeKeys = Object.keys(nodes);
+		nodeKeys = Object.keys(lqs.nodes);
 		for( var i=0; i<nodeKeys.length; ++i ) {
-			nodes[nodeKeys[i]].remove();
+			lqs.nodes[nodeKeys[i]].remove();
 		}
 
 		for( var i=0; i<layout.nodes.length; ++i ) {
@@ -1106,7 +1124,7 @@ function liquidSpaceInit( layout ) {
 			addLink( layout.links[i] );
 		}
 
-		inspectorProxy = defaultInspectorProxy;
+		var inspectorProxy = lqs.defaultInspectorProxy;
 		if( layout.inspectorProxy ) {
 			inspectorProxy = layout.inspectorProxy;
 		}
@@ -1129,11 +1147,11 @@ function liquidSpaceInit( layout ) {
 		var bgsvg = $('<svg class="lqs_bgsvg"><g id="axis"><line id="vaxis" /><line id="haxis" /></g></svg>');
 		$('body').append(bgsvg);
 		bgsvg.html( bgsvg.html() ); // reset SVG layer 
-		$('#vaxis').attr('x1',offsetX).attr('y1',0).attr('x2',offsetX).attr('y2',offsetY*2);
-		$('#haxis').attr('x1',0).attr('y1',offsetY).attr('x2',offsetX*2).attr('y2',offsetY);
+		$('#vaxis').attr('x1',lqs.offsetX).attr('y1',0).attr('x2',lqs.offsetX).attr('y2',lqs.offsetY*2);
+		$('#haxis').attr('x1',0).attr('y1',lqs.offsetY).attr('x2',lqs.offsetX*2).attr('y2',lqs.offsetY);
 
-		nodesLayer = $('<div class="lqs_nodes"></div>');
-		$('body').append(nodesLayer);
+		lqs.nodesLayer = $('<div class="lqs_nodes"></div>');
+		$('body').append(lqs.nodesLayer);
 
 		var svg = $('<svg class="lqs_svg"><defs><marker id="arrow" markerWidth="11" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs><g id="svg_arrows"></g><g id="svg_labels"></g></svg>');
 		$('body').append(svg);
@@ -1142,15 +1160,15 @@ function liquidSpaceInit( layout ) {
 		var rpt = toReal(new LQSPoint(0,0));
 		window.scrollTo( rpt.x-winWidth()/2, rpt.y-winHeight()/2 );
 
-		nodesLayer.dblclick(function() {
+		lqs.nodesLayer.dblclick(function() {
 			var pt = toVirtual( mouse );
 			var nodeData = {
-				id: uuid(),
+				id: LQS.uuid(),
 				x: pt.x,
  				y: pt.y,	
 				title: "",
-				width:  winWidth() /2/layoutScale,
-				height: winHeight()/2/layoutScale,
+				width:  winWidth() /2/lqs.layoutScale,
+				height: winHeight()/2/lqs.layoutScale,
 				text: "",
 				edit: true,
 				meta: {}
@@ -1170,19 +1188,19 @@ function liquidSpaceInit( layout ) {
 
 		/* CONTROLS: sliders */
 
-		layoutScaleSlider = $('<input type="range" value="1" min="0.05" max="2" step="0.001" />');
+		lqs.layoutScaleSlider = $('<input type="range" value="1" min="0.05" max="2" step="0.001" />');
 		var layoutScaleDisplay = $('<span>100%</span>');
 		controls.append( $('<div>Layout scale: </div>' ).append(layoutScaleDisplay));
-		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(layoutScaleSlider) );
-		controls.append( layoutScaleSlider );
+		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(lqs.layoutScaleSlider) );
+		controls.append( lqs.layoutScaleSlider );
 		//controls.append( contentToggle );
-		layoutScaleSlider.on('propertychange input', function(event) {
+		lqs.layoutScaleSlider.on('propertychange input', function(event) {
 			// find coords of screen centre
 			var screenMiddleVirt = toVirtual(screenMiddle());
-			layoutScale = layoutScaleSlider.val();
-			var perc = Math.round( layoutScale*100000 ) / 1000;
+			lqs.layoutScale = lqs.layoutScaleSlider.val();
+			var perc = Math.round( lqs.layoutScale*100000 ) / 1000;
 			layoutScaleDisplay.text( ""+perc+"%" );
-			nodesLayer.css( 'font-size',perc+"%" );
+			lqs.nodesLayer.css( 'font-size',perc+"%" );
 			var screenMiddleReal = toReal(screenMiddleVirt);
 			window.scrollTo( screenMiddleReal.x-winWidth()/2, screenMiddleReal.y-winHeight()/2 );
 			updateAllPositions();
@@ -1199,9 +1217,9 @@ function liquidSpaceInit( layout ) {
 		var rightsizeTool = $('<div title="rightsize" class="lqs_tool">+</div>');
 		controlTools.append( rightsizeTool );
 		rightsizeTool.click( function() {
-			nodeKeys = Object.keys(nodes);
+			nodeKeys = Object.keys(lqs.nodes);
 			for( var i=0; i<nodeKeys.length; ++i ) {
-				nodes[nodeKeys[i]].fitSize();
+				lqs.nodes[nodeKeys[i]].fitSize();
 			}
 		});
 */
@@ -1210,7 +1228,7 @@ function liquidSpaceInit( layout ) {
 		var resetTool = $('<div title="reset" class="lqs_tool">R</div>');
 		controlTools.append( resetTool );
 		resetTool.click( function() {
-			layoutScaleSlider.val(1).trigger('input');
+			lqs.layoutScaleSlider.val(1).trigger('input');
 			centrePage();
 			updateAllPositions();
 		});
@@ -1295,13 +1313,13 @@ function liquidSpaceInit( layout ) {
 
 
 	function updateAllPositions() {
-		nodeKeys = Object.keys(nodes);
+		nodeKeys = Object.keys(lqs.nodes);
 		for( var i=0; i<nodeKeys.length; ++i ) {
-			nodes[nodeKeys[i]].updatePosition();
+			lqs.nodes[nodeKeys[i]].updatePosition();
 		}
-		linkKeys = Object.keys(links);
+		linkKeys = Object.keys(lqs.links);
 		for( var i=0; i<linkKeys.length; ++i ) {
-			links[linkKeys[i]].updatePosition();
+			lqs.links[linkKeys[i]].updatePosition();
 		}
 	}
 
@@ -1310,18 +1328,18 @@ function liquidSpaceInit( layout ) {
 		// validate link TODO
 		
 		// create link
-		links[linkData.id] = new Link( linkData );
-		links[linkData.id].updatePosition();
-		return links[linkData.id];
+		lqs.links[linkData.id] = new LQSLink( linkData, lqs );
+		lqs.links[linkData.id].updatePosition();
+		return lqs.links[linkData.id];
 	}
 
 	function addNode( nodeData ) {
 		// validate node TODO
 
 		// create node
-		nodes[nodeData.id] = new Node( nodeData );
-		nodes[nodeData.id].updatePosition();
-		return nodes[nodeData.id];
+		lqs.nodes[nodeData.id] = new Node( nodeData, lqs );
+		lqs.nodes[nodeData.id].updatePosition();
+		return lqs.nodes[nodeData.id];
 	}
 
 	// from http://forums.devshed.com/javascript-development-115/regexp-match-url-pattern-493764.html	
@@ -1344,20 +1362,6 @@ function liquidSpaceInit( layout ) {
 		}
 		return arr1.join('');
    	}
-
-	function uuid() {
-		function randomDigit() {
-			if (crypto && crypto.getRandomValues) {
-				var rands = new Uint8Array(1);
-				crypto.getRandomValues(rands);
-				return (rands[0] % 16).toString(16);
-			} else {
-				return ((Math.random() * 16) | 0).toString(16);
-			}
-		}
-		var crypto = window.crypto || window.msCrypto;
-		return 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, randomDigit);
-	}
 
 	function dataToHTML(value) {
 		if( value && typeof value === 'object' && value.constructor === Array ) {
@@ -1386,22 +1390,16 @@ function liquidSpaceInit( layout ) {
 		}
 	}
 
-	// remove the obvious secruity issues from 3rd party html
-	function sanitiseHtml( html ) {
-		html = html.replace( /<script>.*?<\/script>/, '' );
-		return html;
-	}
-
 	function pasteToBackground(event) {
 		var clipboardData = event.clipboardData || window.clipboardData || event.originalEvent.clipboardData;
 		var json = clipboardData.getData('application/json');
 		var pt = toVirtual(mouse);
 		var nodeData = {
-			id: uuid(),
+			id: LQS.uuid(),
 			x: pt.x,
  			y: pt.y,
-			width:  winWidth() /2/layoutScale,
-			height: winHeight()/2/layoutScale,
+			width:  winWidth() /2/lqs.layoutScale,
+			height: winHeight()/2/lqs.layoutScale,
 			meta: {}
 		};
 		if( json ) {
@@ -1491,7 +1489,7 @@ function liquidSpaceInit( layout ) {
 
 
 	/* fancy stuff with paste */
-	nodesLayer.focus();
+	lqs.nodesLayer.focus();
 	$('body').on('paste', function(event) {
 		// if we are focused on a normal-paste element just skip this handler
 		if( $('.normal-paste:focus').length ) { return; }
@@ -1507,27 +1505,27 @@ function liquidSpaceInit( layout ) {
 		} else {
 			delta = e.originalEvent.deltaY * -1;
 		}
-		layoutScaleSlider.val( parseFloat(layoutScaleSlider.val())+delta*0.001 );
-		layoutScaleSlider.trigger('propertychange');
+		lqs.layoutScaleSlider.val( parseFloat(lqs.layoutScaleSlider.val())+delta*0.001 );
+		lqs.layoutScaleSlider.trigger('propertychange');
 		return false;
 	});
 
 	/* drag background to scroll */
 
 	$(document).on("mousemove", function (event) {
-		if (curDown === true) {
-			$(document).scrollTop(parseInt($(document).scrollTop() + (curYPos - event.pageY)));
-			$(document).scrollLeft(parseInt($(document).scrollLeft() + (curXPos - event.pageX)));
+		if (lqs.curDown === true) {
+			$(document).scrollTop(parseInt($(document).scrollTop() + (lqs.curYPos - event.pageY)));
+			$(document).scrollLeft(parseInt($(document).scrollLeft() + (lqs.curXPos - event.pageX)));
 		}
 	});
 	
 	$(document).on("mousedown", function (e) { 
 		if( $(e.target).hasClass( "lqs_nodes" ) ) {
-			curDown = true; curYPos = e.pageY; curXPos = e.pageX; e.preventDefault(); 
+			lqs.curDown = true; lqs.curYPos = e.pageY; lqs.curXPos = e.pageX; e.preventDefault(); 
 		}
 	});
-	$(window).on("mouseup", function (e) { curDown = false; });
-	$(window).on("mouseout", function (e) { curDown = false; });
+	$(window).on("mouseup", function (e) { lqs.curDown = false; });
+	$(window).on("mouseout", function (e) { lqs.curDown = false; });
 
 	/* install the layout */
 
