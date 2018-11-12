@@ -20,7 +20,9 @@ readfile("css/liquid-space.css");
   </head>
   <body></body>
   <script>
-$(document).ready(function(){ liquidSpaceInit({
+$(document).ready(function(){ 
+	var lqs = new LQS();
+	lqs.setLayout( {
 		inspectorProxy: 'https://www.southampton.ac.uk/~totl/lqs-inspector-v1/',
 		nodes: [
 			{
