@@ -3,14 +3,35 @@
   <head>
     <meta charset="utf-8">
     <meta content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" name="viewport">
-    <script id='all_js'>
+
 <?php
-readfile("js/jquery-1.12.4.min.js");
-readfile("js/jquery-ui.js");
-readfile("js/jquery.ui.touch-punch.min.js");
-readfile("js/webleau.js");
+$scripts = [
+  "js/jquery-1.12.4.min.js",
+  "js/jquery-ui.js",
+  "js/jquery.ui.touch-punch.min.js",
+  "js/lqs/core.js",
+  "js/lqs/point.js",
+  "js/lqs/line.js",
+  "js/lqs/node.js",
+  "js/lqs/link.js",
+  "js/lqs/node-text.js",
+  "js/lqs/node-html.js",
+  "js/lqs/node-error.js",
+  "js/lqs/node-graph.js"
+
+];
+if( $_GET["debug"] ) {
+	foreach( $scripts as $script ) {
+		print "<script src='$script'></script>";
+	}
+} else {
+	print "<script id='all_js'>\n";
+	foreach( $scripts as $script ) {
+		readfile( $script );
+	}
+	print "</script>\n";
+}
 ?>
-    </script>
     <style id='all_css'>
 <?php
 readfile("css/jquery-ui.css");
@@ -32,8 +53,8 @@ $(document).ready(function(){
 				width: 200,
 				height: 200,
 				title: '',
+				type: 'text',
 				text: 'Try pasting URLs from media sites. Try double clicking on the background. Use the spanner to save state (to a text string for now). Drag nodes to touch to make a link.',
-				edit: true
 			},
 			{
 				id: 'welcome',
@@ -43,7 +64,6 @@ $(document).ready(function(){
 				height: 200,
 				title: 'Welcome',
 				html: '<p>Welcome to Liquid Space.</p><p>To get started, for now all we have is an <a href="https://jrnl.global/2018/10/30/webleau-progress/">Introduction blog post</a></p>',
-				edit: true
 			}
 		],
 		links: [
