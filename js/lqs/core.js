@@ -277,6 +277,18 @@ class LQS {
 			}
 		}
 
+		if( seed.fromAfterOpen && seed.from ) {
+			if( seed.fromAfterOpen == 'dot' ) {
+				seed.from.showDot();
+			}
+			if( seed.fromAfterOpen == 'icon' ) {
+				seed.from.showIcon();
+			}
+			if( seed.fromAfterOpen == 'close' ) {
+				seed.from.remove();
+			}
+		}
+
 		return node;
 	}
 

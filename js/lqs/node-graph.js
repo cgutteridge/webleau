@@ -70,6 +70,7 @@ LQS_NodeTypes['graph-connection'] = class LQS_Node_Graph_Connection extends LQS_
 						endpoint: node.data.graph.endpoint,
 						ident: node.data.graph.ident,
 						nodeType: type,
+						fromAfterOpen: 'icon',
 						from: node
 					}) ); 
 				}
@@ -96,6 +97,8 @@ LQS_NodeTypes['graph-type'] = class LQS_Node_Graph_Type extends LQS_Node {
 				ident: opts.ident,
 				endpoint: opts.endpoint
 			},
+			fromAfterOpen: opts.fromAfterOpen,
+			from: opts.from,
 			links: []
 		};
 		if( opts.from ) {
@@ -130,7 +133,8 @@ LQS_NodeTypes['graph-type'] = class LQS_Node_Graph_Type extends LQS_Node {
 					endpoint: this.data.graph.endpoint,
 					ident: this.data.graph.ident,
 					nodeID: keys[i],
-					from: this
+					fromAfterOpen: 'icon',
+					from: node
 				}) ); 
 			}
 			this.fitSize();
@@ -154,6 +158,8 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 				ident: opts.ident,
 				endpoint: opts.endpoint
 			},
+			from: opts.from,
+			fromAfterOpen: opts.fromAfterOpen,
 			links: []
 		};
 		if( opts.from ) {
