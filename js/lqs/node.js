@@ -48,11 +48,6 @@ class LQS_Node {
 		labelsG.appendChild( dotText );
 		this.dom.dotText = $(dotText);
 
-
-		if( nodeData.gizmo ) {
-			this.dom.outer.addClass( 'lqs_gizmo' );
-		}
-
 		if( nodeData.link ) {
 			this.dom.toolLink = $('<div class="lqs_tool">L</div>');
 			this.dom.titleLeft.append( this.dom.toolLink );
@@ -127,11 +122,10 @@ class LQS_Node {
 				this.updateAllPositions();
 			}
 		}.bind(this)); 
-		
 		this.dom.titleRight.append( this.dom.toolRemove );
-		//this.dom.toolResize = $('<div class="lqs_node_resize lqs_tool"><span class="glyphicon glyphicon-resize-small" aria-hidden="true"></span></div>');
-		//this.dom.outer.append( this.dom.toolResize );
-			
+
+
+
 	
 		this.dom.outer.append( this.dom.title );
 		this.dom.title.append( this.dom.titleLeft );
