@@ -197,6 +197,7 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 			this.dom.content.empty();
 			this.dom.content.append( this.renderGraphNodeContent() );
 			this.fitSize();
+			this.setTitleText( this.data.graph.node.title );
 			if(  this.data.graph.node.data && this.data.graph.node.data.icon )  {
 				this.data.icon = this.data.graph.node.data.icon;
 			}

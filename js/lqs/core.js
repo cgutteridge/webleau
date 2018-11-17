@@ -247,6 +247,9 @@ class LQS {
 
 	// geometry is things that are decided when the seed is grown like x,y 
 	growSeed( seed, geometry ) {
+		var from = seed.from;
+		var fromAfterOpen = seed.fromAfterOpen;
+
 		var nodeData = $.extend(true, {}, seed);
 		nodeData = Object.assign( nodeData, geometry );
 		if( nodeData.id && this.nodes[nodeData.id] ) {
@@ -254,6 +257,8 @@ class LQS {
 			this.nodes[nodeData.id].reveal();
 			return;
 		}
+		delete nodeData.from;
+		delete nodeData.fromAfterOpen;
 
 		var pt = this.toVirtual( LQS.screenMiddle() );
 		// nb. testing if property exists as "0" is a valid option
@@ -277,16 +282,10 @@ class LQS {
 			}
 		}
 
-		if( seed.fromAfterOpen && seed.from ) {
-			if( seed.fromAfterOpen == 'dot' ) {
-				seed.from.showDot();
-			}
-			if( seed.fromAfterOpen == 'icon' ) {
-				seed.from.showIcon();
-			}
-			if( seed.fromAfterOpen == 'close' ) {
-				seed.from.remove();
-			}
+		if( fromAfterOpen && from ) {
+			if( fromAfterOpen == 'dot' ) { from.showDot(); }
+			if( fromAfterOpen == 'icon' ) { from.showIcon(); }
+			if( fromAfterOpen == 'close' ) { from.remove(); }
 		}
 
 		return node;
