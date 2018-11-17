@@ -379,7 +379,6 @@ class LQS {
 
 	pasteToBackground(event) {
 		var clipboardData = event.clipboardData || window.clipboardData || event.originalEvent.clipboardData;
-		var json = clipboardData.getData('application/json');
 		var pt = this.toVirtual(this.mouse);
 		var nodeData = {
 			id: LQS.uuid(),
@@ -389,7 +388,11 @@ class LQS {
 			height: LQS.winHeight()/2/this.layoutScale,
 			meta: {}
 		};
-		if( json ) {
+		
+
+		// detect citation html
+
+		if( false&&json ) {
 			//nb this can throw a syntax error, it really should be handled
 			var jsonData = JSON.parse( json );
 			// assume object
@@ -397,7 +400,6 @@ class LQS {
 			if( jsonData.jrnlCitation ) {
 				nodeData.title = jsonData.citation.title;
 				nodeData.html = jsonData.citation.html; // or text
-				nodeData.edit = false;
 				nodeData.meta.source = {};
 				nodeData.meta.source.URL = jsonData.citation.url;
 				nodeData.meta.source.copiedTime = jsonData.citation.timestamp;
@@ -415,6 +417,7 @@ class LQS {
 
 		var text = clipboardData.getData( 'text/plain' );
 		if( LQS.validURL(text) ) {
+			nodeData.type = "url";
 			nodeData.title = "Pasted URL";
 			nodeData.text = text+"\n(will lookup metadata in a mo...)";
 			nodeData.edit = false;
@@ -423,7 +426,7 @@ class LQS {
 			$.ajax({
 				method: "GET",
 				data: { url: text },
-				url: inspectorProxy
+				url: this.inspectorProxy
 			}).done(function(data){
 				nodeData.text=null;
 				nodeData.html=null;
@@ -452,7 +455,7 @@ class LQS {
 		if( html ) {
 			nodeData.title = "Pasted HTML";
 			nodeData.html = html;
-			nodeData.edit = true;
+			nodeData.type = "html";
 			var newNode = this.addNode(nodeData);
 			newNode.fitSize();
 			return;
@@ -460,7 +463,7 @@ class LQS {
 
 		nodeData.title = "Pasted text";
 		nodeData.text = text;
-		nodeData.edit = true;
+		nodeData.type = "text";
 		var newNode = this.addNode(nodeData);
 		newNode.fitSize();
 	}	

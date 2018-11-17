@@ -9,6 +9,16 @@ body {
 a {
 	color: #fff !important;
 }
+.ui-icon-gripsmall-diagonal-se {
+	background-color: red;
+	width: 16px;
+	height: 16px;
+	right: 1px;
+	bottom: 1px;
+	position: absolute;
+	display: block;
+	background-image: none !important;
+}
 .lqs_nodes {
 	cursor: crosshair;
 	position: absolute;
@@ -115,9 +125,6 @@ a {
 	padding: 3px;
 	display: inline-block;
 }
-.weblau_node .ui-icon {
-	display: none !important;
-}
 .ui-resizable-handle {
 	opacity: 0;
 }
@@ -144,7 +151,13 @@ a {
 	margin: 0;
 	padding: 0px;
 	overflow: hidden;
+	background-size: cover;
   	box-shadow:         2px 6px 20px 2px rgba(0,0,0,0.2);
+	
+}
+.lqs_dot {
+	position: absolute;
+	cursor: move;
 }
 .lqs_cached {
 	background-color: #dbd;
@@ -207,12 +220,14 @@ a {
 	padding: 0px 3px;
 	display: inline-block;
 }
+/*
 .lqs_node .ui-icon {
 	display: none !important;
 }
 .lqs_node:hover .ui-icon {
 	display: block;
 }
+*/
 .lqs_node .lqs_tool:hover {
 	color: #666;
 }
@@ -235,14 +250,14 @@ a {
 	stroke:#666;
 	stroke-width:2;
 	opacity: 0.2;
-	pointer-events: auto; 
+	//pointer-events: auto; 
 }
 .lqs_link_from_text {
         opacity: 0.6;
 	text-anchor: middle;
-	pointer-events: auto; 
+	//pointer-events: auto; 
 }
-.lqs_dot {
+.lqs_dot circle {
 	fill: #666;
         opacity: 0.6;
 	pointer-events: auto; 

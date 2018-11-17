@@ -188,13 +188,18 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 		}).done(function(data){
 			console.log(data);
 			this.data.graph.node = data.nodes[this.data.graph.nodeID];
-			this.dom.outer.empty();
-			this.dom.outer.append( this.renderGraphNodeContent() );
+			this.dom.content.empty();
+			this.dom.content.append( this.renderGraphNodeContent() );
+			this.fitSize();
+			if(  this.data.graph.node.data && this.data.graph.node.data.icon )  {
+				this.data.icon = this.data.graph.node.data.icon;
+			}
 		}.bind(this)).fail(function(){
 			var r = $("<div>Failed to get data (TODO: add a 'retry' icon). Using cached version.</div>" );
 			r.append( $("<div class='lqs_cached'></div>").append(this.renderGraphNodeContent()));
-			this.dom.outer.empty();
-			this.dom.outer.append( r );
+			this.dom.content.empty();
+			this.dom.content.append( r );
+			this.fitSize();
 		}.bind(this))
 	}
 	// this uses the cached data to generate a the actual HTML for either the cached or live view

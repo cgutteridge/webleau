@@ -22,7 +22,7 @@ class LQS_Node {
 		this.dom.titleText = $('<div class="lqs_node_title_text"></div>');
 		this.dom.content = $('<div class="lqs_node_content"></div>');
 
-		this.dom.icon = $("<div class='lqs_node_icon'></div>");
+		this.dom.icon = $("<div class='lqs_node_icon'></div>").attr("data-node",this.data.id);
 		this.data.iconWidth = 32;
 		this.data.iconHeight = 32;
 		this.dom.icon.width( this.data.iconWidth );
@@ -30,15 +30,14 @@ class LQS_Node {
 		this.dom.icon.hide();
 		this.lqs.nodesLayer.append( this.dom.icon );
 
-		this.dotSize = 5;
+		this.dotRadius = 5;
 		this.dom.dot_id = "dot_"+LQS.uuid();
- 		var dot = document.createElementNS("http://www.w3.org/2000/svg","circle");
-		dot.id = this.dom.dot_id;
-		dot.setAttribute( "class", "lqs_dot" );
-		dot.setAttribute( "r", this.dotSize );
-		var arrowsG = document.getElementById('svg_arrows');
-		arrowsG.appendChild( dot );
-		this.dom.dot = $(dot);
+ 		this.dom.dot = $(document.createElementNS("http://www.w3.org/2000/svg","circle"));
+		this.dom.dot.attr("id",this.dom.dot_id);
+		this.dom.dot.attr( "r", this.dotRadius );
+		this.dom.dotsvg = $(document.createElementNS("http://www.w3.org/2000/svg","svg")).addClass('lqs_dot').attr("data-node",this.data.id);
+		this.dom.dotsvg.append( this.dom.dot );
+		this.lqs.nodesLayer.append( this.dom.dotsvg );
 
 		this.dom.dot_label_id = "link_from_"+LQS.uuid();
  		var dotText = document.createElementNS("http://www.w3.org/2000/svg","text");
@@ -96,12 +95,9 @@ class LQS_Node {
 		this.dom.tooldot.click( function() {
 			this.showDot();
 		}.bind(this));
-		/*
-		LQS.noDragClick( this.dom.dot, function() {
+		LQS.noDragClick( this.dom.dotsvg, function() {
 			this.hideDot();
 		}.bind(this) );
-		*/
-		this.dom.dot.click( function() { this.hideDot(); }.bind(this) );
 
 
 
@@ -111,8 +107,16 @@ class LQS_Node {
 		this.dom.toolinfo.click( function() {
 			if( this.data.view != 'meta' ) {
 				this.showMeta();
+				this.mainWidth = this.data.width;
+				this.mainHeight = this.data.height;
+				this.fitSize();
 			} else {
 				this.showMain();
+				// revert size
+				this.data.width =  this.mainWidth;
+				this.data.height = this.mainHeight;
+				this.updatePosition();
+				this.updateLinksPosition();
 			}
 		}.bind(this));
 
@@ -184,7 +188,6 @@ class LQS_Node {
 			handle: ".lqs_node_title",
 			opacity: 0.8,
 			scroll: true,
-		//	scrollSensitivity: 100,
 			drag: this.dragged.bind(this),
 			start: function() {
 				this.dragStartX = this.data.x;
@@ -193,34 +196,41 @@ class LQS_Node {
 		});
 		this.dom.icon.draggable( { 
 			containment: $('.lqs_nodes'),
-			//handle: ".lqs_node_title",
 			opacity: 0.8,
 			scroll: true,
-		//	scrollSensitivity: 100,
 			drag: this.dragged.bind(this),
 			start: function() {
 				this.dragStartX = this.data.x;
 				this.dragStartY = this.data.y;
 			}.bind(this)
 		});
+		this.dom.dotsvg.draggable( { 
+			containment: $('.lqs_nodes'),
+			opacity: 0.8,
+			scroll: true,
+			drag: this.dragged.bind(this),
+			start: function() {
+				this.dragStartX = this.data.x;
+				this.dragStartY = this.data.y;
+			}.bind(this)
+		});
+
 		this.dom.outer.droppable( {
 			hoverClass: "drop-hover",
 			tolerance: "pointer",
-			drop: function( event , ui ) {
-				var subjectNode = this.lqs.nodes[ui.draggable.attr('data-node')];
-				var linkData = {
-					subject: { node: ui.draggable.attr('data-node') },
-					object: { node: this.data.id },
-					label: "",
-					id: LQS.uuid() 
-				};
-				var newLink = addLink( linkData );
-				subjectNode.data.x = subjectNode.dragStartX;
-				subjectNode.data.y = subjectNode.dragStartY;
-				subjectNode.updatePosition();
-				subjectNode.updateLinksPosition();
-			}.bind(this)
+			drop: (event,ui)=>{ this.linkDrop(event,ui) }
 		});
+		this.dom.icon.droppable( {
+			hoverClass: "drop-hover",
+			tolerance: "pointer",
+			drop: (event,ui)=>{ this.linkDrop(event,ui) }
+		});
+		this.dom.dotsvg.droppable( {
+			hoverClass: "drop-hover",
+			tolerance: "pointer",
+			drop: (event,ui)=>{ this.linkDrop(event,ui) }
+		});
+
 		// don't do the zoom inside one of these
 		/*
 		this.dom.outer.bind('wheel mousewheel', function(e){
@@ -229,6 +239,21 @@ class LQS_Node {
 */
 	} // end Node constructor
 
+	// handle another node being dropped onto this node.
+	linkDrop(event,ui) {
+		var subjectNode = this.lqs.nodes[ui.draggable.attr('data-node')];
+		var linkData = {
+			subject: { node: ui.draggable.attr('data-node') },
+			object: { node: this.data.id },
+			label: "",
+			id: LQS.uuid() 
+		};
+		var newLink = this.lqs.addLink( linkData );
+		subjectNode.data.x = subjectNode.dragStartX;
+		subjectNode.data.y = subjectNode.dragStartY;
+		subjectNode.updatePosition();
+		subjectNode.updateLinksPosition();
+	}
 
 	setTitleText( text ) {
 		this.dom.dotText.text( text );
@@ -286,7 +311,7 @@ class LQS_Node {
 
 	showDot() {
 		this.dom.outer.hide();
-		this.dom.dot.show();
+		this.dom.dotsvg.show();
 		this.dom.dotText.show();
 		this.data.view = "dot";
 		this.updatePosition();
@@ -294,7 +319,7 @@ class LQS_Node {
 	}
 	hideDot() {
 		this.dom.outer.show();
-		this.dom.dot.hide();
+		this.dom.dotsvg.hide();
 		this.dom.dotText.hide();
 		this.showMain();
 		this.updatePosition();
@@ -307,6 +332,9 @@ class LQS_Node {
 		this.data.view = "icon";
 		this.updatePosition();
 		this.updateLinksPosition();
+		if( this.data.icon ) {
+			this.dom.icon.css('background-image', `url(${this.data.icon})` );
+		}
 	}
 	hideIcon() {
 		this.dom.outer.show();
@@ -470,9 +498,13 @@ class LQS_Node {
 			return;
 		}
 		if( this.data.view == 'dot' ) {
-			this.dom.dot.attr('cx',this.realX()-this.realWidth()/2);
-			this.dom.dot.attr('cy', this.realY()-this.realHeight()/2);
-			this.dom.dot.attr('r', this.dotSize*this.lqs.layoutScale);
+			this.dom.dotsvg.css('left',this.realX()-(this.dotRadius*this.lqs.layoutScale));
+			this.dom.dotsvg.css('top', this.realY()-(this.dotRadius*this.lqs.layoutScale));
+			this.dom.dot.attr('r', this.dotRadius*this.lqs.layoutScale);
+			this.dom.dot.attr('cx', this.dotRadius*this.lqs.layoutScale);
+			this.dom.dot.attr('cy', this.dotRadius*this.lqs.layoutScale);
+			this.dom.dotsvg.attr('width', this.dotRadius*this.lqs.layoutScale*2);
+			this.dom.dotsvg.attr('height', this.dotRadius*this.lqs.layoutScale*2);
 			return;
 		}
 		this.dom.outer.css('left',this.realX()-this.realWidth()/2);
@@ -526,7 +558,7 @@ class LQS_Node {
 			return this.data.iconWidth;
 		}
 		if( this.data.view == 'dot' ) {
-			return this.dotSize*this.lqs.layoutScale;
+			return this.dotRadius*2*this.lqs.layoutScale;
 		}
 		return this.data.width*this.lqs.layoutScale;
 	}
@@ -536,7 +568,7 @@ class LQS_Node {
 			return this.data.iconHeight;
 		}
 		if( this.data.view == 'dot' ) {
-			return this.dotSize*this.lqs.layoutScale;
+			return this.dotRadius*2*this.lqs.layoutScale;
 		}
 		return this.data.height*this.lqs.layoutScale;
 	}
@@ -594,7 +626,7 @@ class LQS_Node {
 		delete this.lqs.nodes[this.data.id];
 		this.dom.outer.remove();
 		this.dom.icon.remove();
-		this.dom.dot.remove();
+		this.dom.dotsvg.remove();
 		this.dom.dotText.remove();
 	}
 
