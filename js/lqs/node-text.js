@@ -70,20 +70,5 @@ LQS_NodeTypes['text'] = class LQS_Node_Text extends LQS_Node {
 		this.reveal();
 	}
 
-/*
-			this.dom.edit.textarea.text( this.data.html );
-			this.dom.edit.save.click( function() {
-				var v = this.dom.edit.textarea.val().trim();
-				if( v == "" ) { this.remove(); return; }
-				this.data.html = v;
-				this.showMain();
-			}.bind(this));
-			this.dom.edit.cancel.click( function() {
-				var v = this.dom.edit.textarea.val().trim();
-				if( v == "" ) { this.remove(); return; }
-				this.showMain();
-			}.bind(this));
-*/
-
 
 }

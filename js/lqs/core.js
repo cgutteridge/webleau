@@ -247,45 +247,45 @@ class LQS {
 
 	// geometry is things that are decided when the seed is grown like x,y 
 	growSeed( seed, geometry ) {
-		var from = seed.from;
-		var fromAfterOpen = seed.fromAfterOpen;
+		var sourceCard = seed.sourceCard;
+		var sourceCardAction = seed.sourceCardAction;
 
 		var nodeData = $.extend(true, {}, seed);
 		nodeData = Object.assign( nodeData, geometry );
 		if( nodeData.id && this.nodes[nodeData.id] ) {
 			// already exists, lets just bring it into view
+			// but we'll still crate links if they are needed
 			this.nodes[nodeData.id].reveal();
-			return;
-		}
-		delete nodeData.from;
-		delete nodeData.fromAfterOpen;
+		} else {
+			delete nodeData.sourceCard;
+			delete nodeData.sourceCardAction;
 
-		var pt = this.toVirtual( LQS.screenMiddle() );
-		// nb. testing if property exists as "0" is a valid option
-		if( !nodeData.hasOwnProperty("x") ) {	
-			nodeData.x=pt.x;
+			var pt = this.toVirtual( LQS.screenMiddle() );
+			// nb. testing if property exists as "0" is a valid option
+			if( !nodeData.hasOwnProperty("x") ) {	
+				nodeData.x=pt.x;
+			}
+			if( !nodeData.hasOwnProperty("y") ) {	
+				nodeData.y=pt.y;
+			}
+			if( !nodeData.hasOwnProperty("id") ) {	
+				nodeData.id = LQS.uuid();
+			}
+			var node = this.addNode( nodeData );	
+			if( !nodeData.hasOwnProperty("width") ) {	
+				node.fitSize();
+			}
 		}
-		if( !nodeData.hasOwnProperty("y") ) {	
-			nodeData.y=pt.y;
-		}
-		if( !nodeData.hasOwnProperty("id") ) {	
-			nodeData.id = LQS.uuid();
-		}
-		var node = this.addNode( nodeData );	
-		if( !nodeData.hasOwnProperty("width") ) {	
-			node.fitSize();
-		}
-
+	
 		if( seed.links ) {
 			for( var i=0; i<seed.links.length; ++i ) {
 				this.addLink( seed.links[i] );
 			}
 		}
 
-		if( fromAfterOpen && from ) {
-			if( fromAfterOpen == 'dot' ) { from.setView('dot'); }
-			if( fromAfterOpen == 'icon' ) { from.setView('icon'); }
-			if( fromAfterOpen == 'close' ) { from.remove(); }
+		if( sourceCardAction && sourceCard ) {
+			var action = sourceCard.actionsByID[sourceCardAction];
+			action.fn();
 		}
 
 		return node;

@@ -557,7 +557,10 @@ class LQS_Node {
 	}
 
 	static makeSeed(opts) {
-		alert( "makeSeed function should be subclassed" );		
+		var seed = {};
+		seed.sourceCard = opts.sourceCard;
+		seed.sourceCardAction = opts.sourceCardAction;
+		return seed;
 	}
 
 	reveal() {
@@ -567,43 +570,6 @@ class LQS_Node {
 } // End Node
 
 /*
-
-	showGraphNodeLinks() {
-		this.reset();
-		this.dom.content.html("Loading...");
-		var node = this;
-		$.ajax({
-			method: "GET",
-			data: { action: 'nodes', ids: this.data.nodeID, followLinks: '*' },
-			url: node.data.endpoint
-		}).done(function(data){
-			this.dom.content.empty();
-			//this.dom.content.append( LQS.dataToHTML( data ));
-			this.dom.content.append( $('<div>This endpoint has the following links:</div>'));
-			for( var i=0;i<data.links.length; ++i ) {
-				apiLink = data.links[i];
-				if( apiLink.subject == this.data.nodeID && data.nodes[apiLink.object] ) {
-					var apiNode = data.nodes[apiLink.object];
-					var row = $('<div class="lqs_seed" > '+apiLink.type+' link to  '+apiNode.title+' ('+apiNode.type+') </div>');
-					this.dom.content.append(row);
-					row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,true); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
-				}
-				if( apiLink.object == this.data.nodeID && data.nodes[apiLink.subject] ) {
-					var apiNode = data.nodes[apiLink.subject];
-					var row = $('<div class="lqs_seed" > '+apiLink.type+' link from  '+apiNode.title+' ('+apiNode.type+') </div>');
-					this.dom.content.append(row);
-					row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,false); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
-				}
-			}
-			this.fitSize();
-		}.bind(this)).fail(function(){
-			this.dom.content.html( "API Call failed" );
-			this.fitSize();
-		}.bind(this))
-	}
-
-
-
 
 
 
