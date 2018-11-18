@@ -71,6 +71,7 @@ a {
 	font-size: 200%;
 	color: #000;
 	background-color: #999;
+	border-bottom-left-radius: 5px;
 }
 .controls_wrapper {
 	z-index: 1000; // higher the resizeable handles
@@ -85,6 +86,9 @@ a {
 	background-color: #ccc;
 	padding: 10px;
 	display: none;
+	border-bottom-left-radius: 5px;
+	border-left: solid 1px #f8f0dc;
+	border-bottom: solid 1px #f8f0dc;
 }
 .controls_wrapper:hover .controls_icon {
 	display: none;
@@ -102,12 +106,11 @@ a {
 	background-color: #999;
 	color: white;
 	cursor: pointer;
-/*
 	font-size: 200%;
 	padding: 3px;
 	margin: 3px;
 	display: inline-block;
-*/
+	border-radius: 3px;
 }
 .controls .lqs_tool:hover {
 	background-color: #666;
