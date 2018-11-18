@@ -54,8 +54,8 @@ class LQS_Link {
 	updatePosition() {
 		var subjectNode = this.lqs.nodes[this.data.subject.node];
 		var objectNode = this.lqs.nodes[this.data.object.node];
-		var c1 = objectNode.centrePoint();
-		var c2 = subjectNode.centrePoint();
+		var c1 = objectNode.realPos();
+		var c2 = subjectNode.realPos();
 		var pt1 = subjectNode.nearestPointTo( c1 );
 		var pt2 = objectNode.nearestPointTo( c2 );
 		if( pt1 && pt2 ) {

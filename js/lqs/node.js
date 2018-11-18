@@ -6,15 +6,18 @@ class LQS_Node {
 	constructor( nodeData, lqs ) {
 
 		this.lqs = lqs;
-		this.borderSize = 4;
 		this.data = nodeData;
-
-		// links
-		// TODO should this distinguish incoming and outgoing?
 		this.links = {};
+		this.dom = {};
+		this.actions = [];
+		this.actionsByID = {};
+		this.views = {};
+		this.dragStart;
+		if( !this.data.size ) { this.data.size = {}; }
+		if( !this.data.pos ) { this.data.pos = {}; }
 
 		// dom
-		this.dom = {};
+		this.borderSize = 4;
 		this.dom.outer = $('<div class="lqs_node"></div>').attr("data-node",this.data.id);
 		this.dom.title = $('<div class="lqs_node_title"></div>');
 		this.dom.titleLeft = $('<div class="lqs_node_title_left"></div>');
@@ -22,118 +25,36 @@ class LQS_Node {
 		this.dom.titleText = $('<div class="lqs_node_title_text"></div>');
 		this.dom.content = $('<div class="lqs_node_content"></div>');
 
-		this.dom.icon = $("<div class='lqs_node_icon'></div>").attr("data-node",this.data.id);
-		this.data.iconWidth = 32;
-		this.data.iconHeight = 32;
-		this.dom.icon.width( this.data.iconWidth );
-		this.dom.icon.height( this.data.iconHeight );
-		this.dom.icon.hide();
-		this.lqs.nodesLayer.append( this.dom.icon );
-
-		this.dotRadius = 5;
-		this.dom.dot_id = "dot_"+LQS.uuid();
- 		this.dom.dot = $(document.createElementNS("http://www.w3.org/2000/svg","circle"));
-		this.dom.dot.attr("id",this.dom.dot_id);
-		this.dom.dot.attr( "r", this.dotRadius );
-		this.dom.dotsvg = $(document.createElementNS("http://www.w3.org/2000/svg","svg")).addClass('lqs_dot').attr("data-node",this.data.id);
-		this.dom.dotsvg.append( this.dom.dot );
-		this.lqs.nodesLayer.append( this.dom.dotsvg );
-
-		this.dom.dot_label_id = "link_from_"+LQS.uuid();
- 		var dotText = document.createElementNS("http://www.w3.org/2000/svg","text");
-		dotText.setAttribute( "class", "lqs_dot_text" );
-		dotText.id = this.dom.dot_label_id;
-		dotText.appendChild( document.createTextNode( "XXX" ));
-		var labelsG = document.getElementById('svg_labels');
-		labelsG.appendChild( dotText );
-		this.dom.dotText = $(dotText);
-
-		this.views = {};
 		this.registerView( 
 			"main",
 			() => { // enter
 				// revert size
-				if( this.data.mainWidth ) {
-					this.data.width =  this.data.mainWidth;
-					this.data.height = this.data.mainHeight;
+				if( this.data.mainsize && this.data.mainsize.width !== undefined ) {
+					this.data.size = { width: this.data.mainsize.width, height: this.data.mainsize.height }
 				}
 				this.setTitleText( this.data.title );
 				this.dom.content.empty();
 				this.dom.content.append(this.render());
 				this.update();  // anything async for this card?
-				if( !this.data.width ) {
+				if( !this.data.size ||  this.data.size.width === undefined ) {
+					this.data.size = {};
 					this.fitSize();
 				}
 				this.hideAction( 'main' );
 			},
 			() => { // leave
 				// cache the main width & height for when we come back
-				this.data.mainWidth = this.data.width;
-				this.data.mainHeight = this.data.height;
+				this.data.mainsize = {
+					width: this.data.size.width,
+					height: this.data.size.height }
 				this.showAction( 'main' );
 			}
 		);
-		this.registerView( 
-			"dot",
-			() => { // enter
-				this.dom.outer.hide();
-				this.dom.dotsvg.show();
-				this.dom.dotText.show();
-			},
-			() => { // leave
-				this.dom.outer.show();
-				this.dom.dotsvg.hide();
-				this.dom.dotText.hide();
-			}
-		);
-		this.registerView(
-			"meta", 
-			() => { // enter
-				this.dom.content.html( LQS.dataToHTML( this.data ) );
-				this.fitSize();
-				this.hideAction( 'meta' );
-			},
-			() => {
-				this.showAction( 'meta' );
-			}
-		);
-		this.registerView( 
-			"icon",
-			() => { // enter
-				this.dom.outer.hide();
-				this.dom.icon.show();
-				this.dom.dotText.show();
-				if( this.data.icon ) {
-					this.dom.icon.css('background-image', `url(${this.data.icon})` );
-				}
-			},
-			() => { // leave
-				this.dom.outer.show();
-				this.dom.icon.hide();
-				this.dom.dotText.hide();
-			}
-		);
-
-
-		this.actions = [];
-		this.actionsByID = {};
 
 		this.registerAction(
 			"autosize",
 			"AUTOSIZE",
 			()=>{ this.fitSize(); } );
-		this.registerAction(
-			"icon",
-			"ICONIFY",
-			()=>{ this.setView( "icon" ); } );
-		this.registerAction(
-			"dot",
-			"MINIFY",
-			()=>{ this.setView( "dot" ); } );
-		this.registerAction(
-			"meta",
-			"METADATA",
-			()=>{ this.setView( "meta" ); } );
 		this.registerAction(
 			"main",
 			"CONTENT",
@@ -159,32 +80,23 @@ class LQS_Node {
 		this.dom.menu = $('<div class="lqs_card_menu"></div>').hide();
 		this.lqs.nodesLayer.append( this.dom.menu );
 
-
-		LQS.noDragClick( this.dom.icon, function() {
-			this.setView('main');
-		}.bind(this) );
-
-		LQS.noDragClick( this.dom.dotsvg, function() {
-			this.setView('main');
-		}.bind(this) );
-
-
-	
 		this.dom.outer.append( this.dom.title );
 		this.dom.title.append( this.dom.titleLeft );
 		this.dom.title.append( this.dom.titleRight );
 		this.dom.title.append( this.dom.titleText );
 		this.dom.outer.append( this.dom.content );
 		this.lqs.nodesLayer.append( this.dom.outer );
+
+		// double click on node to add a comment
 		this.dom.outer.dblclick(function() {
 			var pt = this.lqs.toVirtual( this.lqs.mouse );
 			var nodeData = {
 				id: LQS.uuid(),
-				x: this.data.x+(this.data.width/2)+width/2,
- 				y: pt.y,	
+				pos: {
+					x: this.data.pos.x + this.data.size.width/2,
+ 					y: pt.y
+				},
 				title: "",
-				width: width,
-				height: height,
 				text: "",
 				type: 'text',
 				meta: {}
@@ -203,11 +115,6 @@ class LQS_Node {
 			return false; // don't also run on background
 		}.bind(this));
 
-		// ensure we're in a view
-		this.views["main"]["enter"]();
-		if( !this.data.view ) { this.data.view = 'main'; }
-		this.setView( this.data.view );
-
 		// register UI hooks
 		this.dom.outer.resizable({
 			resize: this.resized.bind(this),
@@ -220,42 +127,11 @@ class LQS_Node {
 			scroll: true,
 			drag: this.dragged.bind(this),
 			start: function() {
-				this.dragStartX = this.data.x;
-				this.dragStartY = this.data.y;
-			}.bind(this)
-		});
-		this.dom.icon.draggable( { 
-			containment: $('.lqs_nodes'),
-			opacity: 0.8,
-			scroll: true,
-			drag: this.dragged.bind(this),
-			start: function() {
-				this.dragStartX = this.data.x;
-				this.dragStartY = this.data.y;
-			}.bind(this)
-		});
-		this.dom.dotsvg.draggable( { 
-			containment: $('.lqs_nodes'),
-			opacity: 0.8,
-			scroll: true,
-			drag: this.dragged.bind(this),
-			start: function() {
-				this.dragStartX = this.data.x;
-				this.dragStartY = this.data.y;
+				this.dragStart = new LQSPoint( this.data.pos.x, this.data.pos.y );
 			}.bind(this)
 		});
 
 		this.dom.outer.droppable( {
-			hoverClass: "drop-hover",
-			tolerance: "pointer",
-			drop: (event,ui)=>{ this.linkDrop(event,ui) }
-		});
-		this.dom.icon.droppable( {
-			hoverClass: "drop-hover",
-			tolerance: "pointer",
-			drop: (event,ui)=>{ this.linkDrop(event,ui) }
-		});
-		this.dom.dotsvg.droppable( {
 			hoverClass: "drop-hover",
 			tolerance: "pointer",
 			drop: (event,ui)=>{ this.linkDrop(event,ui) }
@@ -267,7 +143,154 @@ class LQS_Node {
 			e.stopPropagation();
 		});
 */
+		this.addDotFeature();
+		this.addIconFeature();
+		this.addMetadataFeature();
 	} // end Node constructor
+
+	// this runs after the constructor, once all the views are loaded
+	init() {
+		// ensure we're in a view
+		this.views["main"]["enter"]();
+		if( !this.data.view ) { this.data.view = 'main'; }
+		this.setView( this.data.view );
+	}
+
+	addMetadataFeature() {
+
+		this.registerView(
+			"meta", 
+			() => { // enter
+				this.dom.content.html( LQS.dataToHTML( this.data ) );
+				this.fitSize();
+				this.hideAction( 'meta' );
+			},
+			() => {
+				this.showAction( 'meta' );
+			}
+		);
+
+		this.registerAction(
+			"meta",
+			"METADATA",
+			()=>{ this.setView( "meta" ); } );
+
+	}
+
+	addIconFeature() {
+		this.data.icon = {};
+
+		this.data.icon.size = { width: 32, height: 32 };
+
+		this.dom.icon = $("<div class='lqs_node_icon'></div>").attr("data-node",this.data.id);
+		this.dom.icon.width( this.data.icon.size.width );
+		this.dom.icon.height( this.data.icon.size.height );
+		this.dom.icon.hide();
+		this.lqs.nodesLayer.append( this.dom.icon );
+
+		this.registerView( 
+			"icon",
+			() => { // enter
+				this.dom.outer.hide();
+				this.dom.icon.show();
+				this.dom.dotText.show();
+				if( this.data.icon.url ) {
+					this.dom.icon.css('background-image', `url(${this.data.icon.url})` );
+				}
+			},
+			() => { // leave
+				this.dom.outer.show();
+				this.dom.icon.hide();
+				this.dom.dotText.hide();
+			}
+		);
+
+		this.registerAction(
+			"icon",
+			"ICONIFY",
+			()=>{ this.setView( "icon" ); } );
+
+		LQS.noDragClick( this.dom.icon, function() {
+			this.setView('main');
+		}.bind(this) );
+
+		this.dom.icon.draggable( { 
+			containment: $('.lqs_nodes'),
+			opacity: 0.8,
+			scroll: true,
+			drag: this.dragged.bind(this),
+			start: function() {
+				this.dragStart = new LQSPoint( this.data.pos.x, this.data.pos.y );
+			}.bind(this)
+		});
+
+		this.dom.icon.droppable( {
+			hoverClass: "drop-hover",
+			tolerance: "pointer",
+			drop: (event,ui)=>{ this.linkDrop(event,ui) }
+		});
+	}
+
+	addDotFeature() {
+		this.data.dot = {};
+		this.data.dot.radius = 5;
+
+		this.dom.dot_id = "dot_"+LQS.uuid();
+ 		this.dom.dot = $(document.createElementNS("http://www.w3.org/2000/svg","circle"));
+		this.dom.dot.attr("id",this.dom.dot_id);
+		this.dom.dot.attr( "r", this.data.dot.radius );
+		this.dom.dotsvg = $(document.createElementNS("http://www.w3.org/2000/svg","svg")).addClass('lqs_dot').attr("data-node",this.data.id);
+		this.dom.dotsvg.append( this.dom.dot );
+		this.lqs.nodesLayer.append( this.dom.dotsvg );
+
+		this.dom.dot_label_id = "link_from_"+LQS.uuid();
+ 		var dotText = document.createElementNS("http://www.w3.org/2000/svg","text");
+		dotText.setAttribute( "class", "lqs_dot_text" );
+		dotText.id = this.dom.dot_label_id;
+		dotText.appendChild( document.createTextNode( "XXX" ));
+		var labelsG = document.getElementById('svg_labels');
+		labelsG.appendChild( dotText );
+		this.dom.dotText = $(dotText);
+
+		this.registerView( 
+			"dot",
+			() => { // enter
+				this.dom.outer.hide();
+				this.dom.dotsvg.show();
+				this.dom.dotText.show();
+			},
+			() => { // leave
+				this.dom.outer.show();
+				this.dom.dotsvg.hide();
+				this.dom.dotText.hide();
+			}
+		);
+
+		this.registerAction(
+			"dot",
+			"MINIFY",
+			()=>{ this.setView( "dot" ); } );
+
+		this.dom.dotsvg.draggable( { 
+			containment: $('.lqs_nodes'),
+			opacity: 0.8,
+			scroll: true,
+			drag: this.dragged.bind(this),
+			start: function() {
+				this.dragStart = new LQSPoint( this.data.pos.x, this.data.pos.y );
+			}.bind(this)
+		});
+
+		LQS.noDragClick( this.dom.dotsvg, function() {
+			this.setView('main');
+		}.bind(this) );
+
+		this.dom.dotsvg.droppable( {
+			hoverClass: "drop-hover",
+			tolerance: "pointer",
+			drop: (event,ui)=>{ this.linkDrop(event,ui) }
+		});
+	}
 
 	// handle another node being dropped onto this node.
 	linkDrop(event,ui) {
@@ -279,8 +302,8 @@ class LQS_Node {
 			id: LQS.uuid() 
 		};
 		var newLink = this.lqs.addLink( linkData );
-		subjectNode.data.x = subjectNode.dragStartX;
-		subjectNode.data.y = subjectNode.dragStartY;
+		subjectNode.data.pos.x = subjectNode.dragStart.x;
+		subjectNode.data.pos.y = subjectNode.dragStart.y;
 		subjectNode.updatePosition();
 		subjectNode.updateLinksPosition();
 	}
@@ -357,53 +380,61 @@ class LQS_Node {
 
 		var wDelta  = ui.size.width  - ui.originalSize.width;
 		var adjustedWidth  = ui.originalSize.width  + 2*wDelta;
-		this.data.width  = Math.max(50,adjustedWidth/this.lqs.layoutScale);
+		this.data.size.width  = Math.max(50,adjustedWidth/this.lqs.layoutScale);
 
 		var hDelta  = ui.size.height - ui.originalSize.height;
 		var adjustedHeight =  ui.originalSize.height + 2*hDelta;
-		this.data.height = Math.max(50,adjustedHeight/this.lqs.layoutScale);
+		this.data.size.height = Math.max(50,adjustedHeight/this.lqs.layoutScale);
 
 		this.updatePosition();
 		this.updateLinksPosition();
 	}
 
 	dragged(event, ui) { 
-		ui.position.left = Math.max(10, ui.position.left );
-		ui.position.top = Math.max( 10, ui.position.top );
-		this.data.x = (ui.position.left+this.realWidth()/2 -this.lqs.offsetX) /this.lqs.layoutScale;
-		this.data.y = (ui.position.top +this.realHeight()/2-this.lqs.offsetY) /this.lqs.layoutScale;
+		ui.position.left = Math.max( 10, ui.position.left );
+		ui.position.top =  Math.max( 10, ui.position.top );
+
+		var realSize = this.realSize();
+		var realTopLeft = new LQSPoint( 
+			(ui.position.left + realSize.width/2 ),
+			(ui.position.top  + realSize.height/2 ) );
+		this.data.pos = this.lqs.toVirtual( realTopLeft );
+
 		this.updatePosition();
 		this.updateLinksPosition();
 	}
 
 	updatePosition() {
 		var baseFontSize = 10;
+		var realPos = this.realPos();
+		var realSize = this.realSize();
 		if( this.data.view == 'icon' || this.data.view == 'dot' ) {
-			this.dom.dotText.attr('x',this.realX() );
-			this.dom.dotText.attr('y', this.realY()+this.realHeight()/2+baseFontSize*this.lqs.layoutScale);
+			this.dom.dotText.attr('x', realPos.x );
+			this.dom.dotText.attr('y', realPos.y + realSize.height/2+baseFontSize*this.lqs.layoutScale);
 			this.dom.dotText.css('font-size',(baseFontSize*this.lqs.layoutScale)+"px"); 
 		}
 		if( this.data.view == 'icon' ) {
-			this.dom.icon.css('left',this.realX()-this.realWidth()/2);
-			this.dom.icon.css('top', this.realY()-this.realHeight()/2);
+			this.dom.icon.css('left',realPos.x-realSize.width/2 );
+			this.dom.icon.css('top', realPos.y-realSize.height/2 );
 			return;
 		}
 		if( this.data.view == 'dot' ) {
-			this.dom.dotsvg.css('left',this.realX()-(this.dotRadius*this.lqs.layoutScale));
-			this.dom.dotsvg.css('top', this.realY()-(this.dotRadius*this.lqs.layoutScale));
-			this.dom.dot.attr('r', this.dotRadius*this.lqs.layoutScale);
-			this.dom.dot.attr('cx', this.dotRadius*this.lqs.layoutScale);
-			this.dom.dot.attr('cy', this.dotRadius*this.lqs.layoutScale);
-			this.dom.dotsvg.attr('width', this.dotRadius*this.lqs.layoutScale*2);
-			this.dom.dotsvg.attr('height', this.dotRadius*this.lqs.layoutScale*2);
+			let realRadius = this.data.dot.radius*this.lqs.layoutScale
+			this.dom.dotsvg.css('left', realPos.x-realRadius );
+			this.dom.dotsvg.css('top',  realPos.y-realRadius );
+			this.dom.dot.attr('r',  realRadius );
+			this.dom.dot.attr('cx', realRadius );
+			this.dom.dot.attr('cy', realRadius );
+			this.dom.dotsvg.attr('width',  realRadius*2 );
+			this.dom.dotsvg.attr('height', realRadius*2 );
 			return;
 		}
-		this.dom.outer.css('left',this.realX()-this.realWidth()/2);
-		this.dom.outer.css('top', this.realY()-this.realHeight()/2);
-		this.dom.outer.css('width', this.data.width *this.lqs.layoutScale);
-		this.dom.outer.css('height',this.data.height*this.lqs.layoutScale);
+		this.dom.outer.css('left',realPos.x-realSize.width/2 );
+		this.dom.outer.css('top', realPos.y-realSize.height/2 );
+		this.dom.outer.css('width', realSize.width );
+		this.dom.outer.css('height',realSize.height );
 		var titleHeight = (18*this.lqs.layoutScale);
-		var fontHeight = (16*this.lqs.layoutScale);
+		var fontHeight  = (16*this.lqs.layoutScale);
 		this.dom.content.css('height',this.data.height*this.lqs.layoutScale-titleHeight ); // height of box minus borders and title
 		this.dom.title.css('font-size',fontHeight+"px");
 		this.dom.title.css('height',   titleHeight+"px" );
@@ -420,11 +451,11 @@ class LQS_Node {
 		this.dom.outer.css('width','auto');
 		this.dom.outer.css('height','auto');
 		this.dom.content.css('height','auto');
-		this.dom.outer.css('max-width',(LQS.winWidth()/2)+"px");
+		this.dom.outer.css('max-width', (LQS.winWidth()/2)+"px");
 		this.dom.outer.css('max-height',(LQS.winHeight()*3/4)+"px");
 		this.dom.outer.find( '.lqs_tool' ).addClass('noTools');
-		this.data.width =  (this.dom.outer.width() )/this.lqs.layoutScale+10;
-		this.data.height = (this.dom.outer.height())/this.lqs.layoutScale+10;
+		this.data.size.width =  (this.dom.outer.width() )/this.lqs.layoutScale+10;
+		this.data.size.height = (this.dom.outer.height())/this.lqs.layoutScale+10;
 		this.dom.outer.find( '.lqs_tool' ).removeClass('noTools');
 		this.dom.outer.css('max-width','none');
 		this.dom.outer.css('max-height','none');
@@ -432,58 +463,53 @@ class LQS_Node {
 		this.updateLinksPosition();
 	}
 
-	centrePoint() {
-		return new LQSPoint( this.realX(), this.realY() );
+	// real means actual pixels not the place on the conceptual layout
+	realPos() {
+		return new LQSPoint(
+			this.data.pos.x*this.lqs.layoutScale+this.lqs.offset.x,
+			this.data.pos.y*this.lqs.layoutScale+this.lqs.offset.y );
 	}
 
-	// real means actual pixels not the place on the conceptual layout
-	realX() {
-		return this.data.x*this.lqs.layoutScale+this.lqs.offsetX;
-	}
-	realY() {
-		return this.data.y*this.lqs.layoutScale+this.lqs.offsetY;
-	}
-	// the width of the node in pixels in the current scale
-	realWidth() {
+	// the size of the node in pixels in the current scale
+	realSize() {
 		if( this.data.view == 'icon' ) {
-			return this.data.iconWidth;
+			return { width: this.data.icon.size.width, height: this.data.icon.size.height };
 		}
 		if( this.data.view == 'dot' ) {
-			return this.dotRadius*2*this.lqs.layoutScale;
+			return {
+				width:  this.data.dot.radius*2*this.lqs.layoutScale,
+				height: this.data.dot.radius*2*this.lqs.layoutScale };
 		}
-		return this.data.width*this.lqs.layoutScale;
+		return {
+			width:  this.data.size.width *this.lqs.layoutScale,
+			height: this.data.size.height*this.lqs.layoutScale };
 	}
-	// the height of the node in pixels in the current scale
-	realHeight() {
-		if( this.data.view == 'icon' ) {
-			return this.data.iconHeight;
-		}
-		if( this.data.view == 'dot' ) {
-			return this.dotRadius*2*this.lqs.layoutScale;
-		}
-		return this.data.height*this.lqs.layoutScale;
-	}
-	realWidthFull() {
-		return this.realWidth()+this.borderSize*2;
-	}
-	realHeightFull() {
-		return this.realHeight()+this.borderSize*2;
+
+	realFullSize() {
+		var realSize = this.realSize();
+		realSize.width  += this.borderSize*2;
+		realSize.height += this.borderSize*2;
+		return realSize;
 	}
 
 	// find the point in a block nearest to the given point
 	nearestPointTo( pt ) {
 		// find the intersection with each edge
-		var tl = new LQSPoint( this.realX()-this.realWidthFull()/2+1, this.realY()-this.realHeightFull()/2+1 );
-		var tr = new LQSPoint( this.realX()+this.realWidthFull()/2  , this.realY()-this.realHeightFull()/2+1 );
-		var bl = new LQSPoint( this.realX()-this.realWidthFull()/2+1, this.realY()+this.realHeightFull()/2   );
-		var br = new LQSPoint( this.realX()+this.realWidthFull()/2  , this.realY()+this.realHeightFull()/2   );
+		var realPos = this.realPos();
+		var realFullSize = this.realFullSize();
+
+		var tl = new LQSPoint( realPos.x - realFullSize.width/2, realPos.y - realFullSize.height/2 )
+		var tr = new LQSPoint( realPos.x + realFullSize.width/2, realPos.y - realFullSize.height/2 )
+		var bl = new LQSPoint( realPos.x - realFullSize.width/2, realPos.y + realFullSize.height/2 )
+		var br = new LQSPoint( realPos.x + realFullSize.width/2, realPos.y + realFullSize.height/2 )
+
 		var lines = [
 			new LQS_Line( tl, tr ),
 			new LQS_Line( tr, br ),
 			new LQS_Line( bl, br ),
 			new LQS_Line( tl, bl )
 		];
-		var pokeyLine = new LQS_Line( pt, this.centrePoint() );
+		var pokeyLine = new LQS_Line( pt, this.realPos() );
 		var rPt = null;
 		var distance = 99999999;
 		var line = null;
@@ -564,7 +590,7 @@ class LQS_Node {
 	}
 
 	reveal() {
-		this.lqs.focusPage( new LQSPoint( this.data.x, this.data.y ) );
+		this.lqs.focusPage( this.data.pos );
 	}
 
 } // End Node

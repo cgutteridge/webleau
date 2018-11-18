@@ -8,7 +8,7 @@ LQS_NodeTypes['graph-connect'] = class LQS_Node_Graph_Connect extends LQS_Node {
 		button.click( function() {
 			var seed = LQS_NodeTypes['graph-connection'].makeSeed({endpoint:input.val()});
 			// make the new connection appear in place of this node
-			this.lqs.growSeed( seed, { x: this.data.x, y: this.data.y } );
+			this.lqs.growSeed( seed, this.data.pos );
 			this.remove();
 		}.bind(this));
 		var r = $("<div>Enter the endpoint URL for a service which supports graph query API. If in doubt, just use our example.</div>");

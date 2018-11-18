@@ -9,22 +9,20 @@ class LQS {
 		this.nodes = {};
 		this.links = {};
 		this.layoutScale = 1;
-		this.offsetX = 5000;
-		this.offsetY = 5000;
-		this.curYPos = 0;
-		this.curXPos = 0;
+		this.offset = new LQSPoint(5000,5000);
+		this.clickstart = null;
 		this.curDown = false;
 		this.layoutScaleSlider = null;
 		this.defaultInspectorProxy = 'https://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
 		this.inspectorProxy = this.defaultInspectorProxy;
-		this.mouse = new LQSPoint( this.offsetX, this.offsetY );
+		this.mouse = new LQSPoint( this.offset.x, this.offset.y );
 		this.mouseOverBackground = true;
 
 		var bgsvg = $('<svg class="lqs_bgsvg"><g id="axis"><line id="vaxis" /><line id="haxis" /></g></svg>');
 		$('body').append(bgsvg);
 		bgsvg.html( bgsvg.html() ); // reset SVG layer 
-		$('#vaxis').attr('x1',this.offsetX).attr('y1',0).attr('x2',this.offsetX).attr('y2',this.offsetY*2);
-		$('#haxis').attr('x1',0).attr('y1',this.offsetY).attr('x2',this.offsetX*2).attr('y2',this.offsetY);
+		$('#vaxis').attr('x1',this.offset.x).attr('y1',0).attr('x2',this.offset.x).attr('y2',this.offset.y*2);
+		$('#haxis').attr('x1',0).attr('y1',this.offset.y).attr('x2',this.offset.x*2).attr('y2',this.offset.y);
 
 		this.nodesLayer = $('<div class="lqs_nodes"></div>');
 		$('body').append(this.nodesLayer);
@@ -36,21 +34,18 @@ class LQS {
 		var rpt = this.toReal(new LQSPoint(0,0));
 		window.scrollTo( rpt.x-LQS.winWidth()/2, rpt.y-LQS.winHeight()/2 );
 
-		this.nodesLayer.dblclick(function() {
-			var pt = this.toVirtual( this.mouse );
+		this.nodesLayer.dblclick(function(event) {
 			var nodeData = {
 				id: LQS.uuid(),
-				x: pt.x,
- 				y: pt.y,	
+				pos: this.toVirtual( { x: event.pageX, y: event.pageY } ),
 				title: "",
-				width:  LQS.winWidth() /2/this.layoutScale,
-				height: LQS.winHeight()/2/this.layoutScale,
 				text: "",
 				type: 'text',
 				meta: {}
 			};
 			var comment = this.addNode(nodeData);
 			comment.setView('edit');
+			comment.reveal();
 		}.bind(this));
 
 		$('body').append( $('<div class="ident">liquid space</div>'));
@@ -88,18 +83,6 @@ class LQS {
 		controls.append( $("<div style='margin-top:1em'>Tools</div>"));
 		controls.append(controlTools);
 
-/*	 I've gone off this idea
-		// rightsize
-		var rightsizeTool = $('<div title="rightsize" class="this">+</div>');
-		controlTools.append( rightsizeTool );
-		rightsizeTool.click( function() {
-			nodeKeys = Object.keys(this.nodes);
-			for( var i=0; i<nodeKeys.length; ++i ) {
-				this.nodes[nodeKeys[i]].fitSize();
-			}
-		});
-*/
-
 		// reset
 		var resetTool = $('<div title="reset" class="lqs_tool">R</div>');
 		controlTools.append( resetTool );
@@ -120,19 +103,6 @@ class LQS {
 			var filename = "liquid-space."+Date.now()+".html";
 			LQS.download( filename, page, "text/html" );
 		}.bind(this));
-
-/*
-		// screenshot
-		var screenshotTool = $('<div title="screenshot" class="lqs_tool">S</div>');
-		controlTools.append( screenshotTool );
-		screenshotTool.click( function() {
-			html2canvas(window).then(function(canvas){
-				console.log(23);
-				console.log(canvas.toDataURL("image/png"));
-			});
-		});
-*/
-
 
 
 
@@ -209,17 +179,19 @@ class LQS {
 	
 		$(document).on("mousemove", function (event) {
 			if (this.curDown === true) {
-				$(document).scrollTop(parseInt($(document).scrollTop() + (this.curYPos - event.pageY)));
-				$(document).scrollLeft(parseInt($(document).scrollLeft() + (this.curXPos - event.pageX)));
+				$(document).scrollLeft(parseInt($(document).scrollLeft() + (this.clickstart.x - event.pageX)));
+				$(document).scrollTop( parseInt($(document).scrollTop()  + (this.clickstart.y - event.pageY)));
 			}
 		}.bind(this));
 		
 		$(document).on("mousedown", function (e) { 
 			if( $(e.target).hasClass( "lqs_nodes" ) ) {
-				this.curDown = true; this.curYPos = e.pageY; this.curXPos = e.pageX; e.preventDefault(); 
+				this.curDown = true; 
+				this.clickstart = { x: e.pageX, y: e.pageY };
+				e.preventDefault(); 
 			}
 		}.bind(this));
-		$(window).on("mouseup", function (e) { this.curDown = false; }.bind(this));
+		$(window).on("mouseup",  function (e) { this.curDown = false; }.bind(this));
 		$(window).on("mouseout", function (e) { this.curDown = false; }.bind(this));
 		
 	}
@@ -227,15 +199,15 @@ class LQS {
 
 	toVirtual(realpt) {
 		return new LQSPoint( 
-			(realpt.x-this.offsetX)/this.layoutScale,
-			(realpt.y-this.offsetY)/this.layoutScale
+			(realpt.x-this.offset.x)/this.layoutScale,
+			(realpt.y-this.offset.y)/this.layoutScale
 		);
 	}
 
 	toReal(virtpt) {
 		return new LQSPoint( 
-			virtpt.x*this.layoutScale+this.offsetX,
-			virtpt.y*this.layoutScale+this.offsetY
+			virtpt.x*this.layoutScale+this.offset.x,
+			virtpt.y*this.layoutScale+this.offset.y
 		);
 	}
 
@@ -260,19 +232,15 @@ class LQS {
 			delete nodeData.sourceCard;
 			delete nodeData.sourceCardAction;
 
-			var pt = this.toVirtual( LQS.screenMiddle() );
-			// nb. testing if property exists as "0" is a valid option
-			if( !nodeData.hasOwnProperty("x") ) {	
-				nodeData.x=pt.x;
-			}
-			if( !nodeData.hasOwnProperty("y") ) {	
-				nodeData.y=pt.y;
+			if( !nodeData.pos ) {
+				nodeData.pos = this.toVirtual( LQS.screenMiddle() );
 			}
 			if( !nodeData.hasOwnProperty("id") ) {	
 				nodeData.id = LQS.uuid();
 			}
 			var node = this.addNode( nodeData );	
-			if( !nodeData.hasOwnProperty("width") ) {	
+			if( !nodeData.hasOwnProperty("size") ) {	
+				node.data.size = {};
 				node.fitSize();
 			}
 		}
@@ -340,7 +308,7 @@ class LQS {
 		var rpt = this.toReal(vpt);
 		$('html,body').animate({
 			'scrollLeft': rpt.x-LQS.winWidth()/2,
-			'scrollTop': rpt.y-LQS.winHeight()/2
+			'scrollTop':  rpt.y-LQS.winHeight()/2
 		},1000);
 	}
 		
@@ -384,6 +352,7 @@ class LQS {
 		// create node
 		const NC = nodeClass;
 		this.nodes[nodeData.id] = new NC( nodeData, this );
+		this.nodes[nodeData.id].init(); // things to do after the constructor
 		this.nodes[nodeData.id].updatePosition();
 		return this.nodes[nodeData.id];
 	}
@@ -393,10 +362,11 @@ class LQS {
 		var pt = this.toVirtual(this.mouse);
 		var nodeData = {
 			id: LQS.uuid(),
-			x: pt.x,
- 			y: pt.y,
-			width:  LQS.winWidth() /2/this.layoutScale,
-			height: LQS.winHeight()/2/this.layoutScale,
+			pos: this.toVirtual(this.mouse),
+			size: {
+				width:  LQS.winWidth() /2/this.layoutScale,
+				height: LQS.winHeight()/2/this.layoutScale
+			},
 			meta: {}
 		};
 		
@@ -505,18 +475,6 @@ class LQS {
 			return true;
 		}
 	}
-
-	/* not currently used!? 
-	static ascii2hex(str) {
-		var arr1 = [];
-		for (var n = 0, l = str.length; n < l; n ++) 
-     		{
-			var hex = Number(str.charCodeAt(n)).toString(16);
-			arr1.push(hex);
-		}
-		return arr1.join('');
-   	}
-	*/
 
 	static dataToHTML(value) {
 		if( value && typeof value === 'object' && value.constructor === Array ) {
