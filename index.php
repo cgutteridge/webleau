@@ -5,7 +5,7 @@
     <meta content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" name="viewport">
 
 <?php
-$scripts = [
+$scripts = array(
   "js/jquery-1.12.4.min.js",
   "js/jquery-ui.js",
   "js/jquery.ui.touch-punch.min.js",
@@ -19,7 +19,7 @@ $scripts = [
   "js/lqs/node-error.js",
   "js/lqs/node-graph.js"
 
-];
+);
 if( $_GET["debug"] ) {
 	foreach( $scripts as $script ) {
 		print "<script src='$script'></script>";
