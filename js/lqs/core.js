@@ -48,7 +48,7 @@ class LQS {
 			comment.reveal();
 		}.bind(this));
 
-		$('body').append( $('<div class="ident">liquid space</div>'));
+		//$('body').append( $('<div class="ident">liquid space</div>'));
 
 		/* CONTROLS */
 
