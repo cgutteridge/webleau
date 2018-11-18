@@ -48,82 +48,120 @@ class LQS_Node {
 		labelsG.appendChild( dotText );
 		this.dom.dotText = $(dotText);
 
-		if( nodeData.link ) {
-			this.dom.toolLink = $('<div class="lqs_tool">L</div>');
-			this.dom.titleLeft.append( this.dom.toolLink );
-			this.dom.toolLink.click( function() {
-				if( this.data.view != 'link' ) {
-					this.showLink();
-				} else {
-					this.showMain();
-				}
-			}.bind(this));
-		}
-
-		if( nodeData.edit ) {
-			this.dom.toolEdit = $('<div class="lqs_tool">E</div>');
-			this.dom.titleLeft.append( this.dom.toolEdit );
-			this.dom.toolEdit.click( function() {
-				this.showEdit();
-			}.bind(this));
-		}
-
-		this.dom.toolfit = $('<div class="lqs_tool">+</div>');
-		this.dom.titleLeft.append( this.dom.toolfit );
-		this.dom.toolfit.click( function() {
-			this.fitSize();
-		}.bind(this));
-
-
-		this.dom.toolicon = $('<div class="lqs_tool">-</div>');
-		this.dom.titleLeft.append( this.dom.toolicon );
-		this.dom.toolicon.click( function() {
-			this.showIcon();
-		}.bind(this));
-		LQS.noDragClick( this.dom.icon, function() {
-			this.hideIcon();
-		}.bind(this) );
-
-
-		this.dom.tooldot = $('<div class="lqs_tool">o</div>');
-		this.dom.titleLeft.append( this.dom.tooldot );
-		this.dom.tooldot.click( function() {
-			this.showDot();
-		}.bind(this));
-		LQS.noDragClick( this.dom.dotsvg, function() {
-			this.hideDot();
-		}.bind(this) );
-
-
-
-
-		this.dom.toolinfo = $('<div class="lqs_tool">M</div>');
-		this.dom.titleLeft.append( this.dom.toolinfo );
-		this.dom.toolinfo.click( function() {
-			if( this.data.view != 'meta' ) {
-				this.showMeta();
-				this.mainWidth = this.data.width;
-				this.mainHeight = this.data.height;
-				this.fitSize();
-			} else {
-				this.showMain();
+		this.views = {};
+		this.registerView( 
+			"main",
+			() => { // enter
 				// revert size
-				this.data.width =  this.mainWidth;
-				this.data.height = this.mainHeight;
-				this.updatePosition();
-				this.updateLinksPosition();
+				if( this.data.mainWidth ) {
+					this.data.width =  this.data.mainWidth;
+					this.data.height = this.data.mainHeight;
+				}
+				this.setTitleText( this.data.title );
+				this.dom.content.empty();
+				this.dom.content.append(this.render());
+				this.update();  // anything async for this card?
+				if( !this.data.width ) {
+					this.fitSize();
+				}
+				this.hideAction( 'main' );
+			},
+			() => { // leave
+				// cache the main width & height for when we come back
+				this.data.mainWidth = this.data.width;
+				this.data.mainHeight = this.data.height;
+				this.showAction( 'main' );
 			}
-		}.bind(this));
-
-		this.dom.toolRemove = $('<div class="lqs_tool">X</div>');
-		this.dom.toolRemove.click( function() {
-			if( confirm( "Really delete?" ) ) {
-				this.remove();
-				this.updateAllPositions();
+		);
+		this.registerView( 
+			"dot",
+			() => { // enter
+				this.dom.outer.hide();
+				this.dom.dotsvg.show();
+				this.dom.dotText.show();
+			},
+			() => { // leave
+				this.dom.outer.show();
+				this.dom.dotsvg.hide();
+				this.dom.dotText.hide();
 			}
-		}.bind(this)); 
-		this.dom.titleRight.append( this.dom.toolRemove );
+		);
+		this.registerView(
+			"meta", 
+			() => { // enter
+				this.dom.content.html( LQS.dataToHTML( this.data ) );
+				this.fitSize();
+				this.hideAction( 'meta' );
+			},
+			() => {
+				this.showAction( 'meta' );
+			}
+		);
+		this.registerView( 
+			"icon",
+			() => { // enter
+				this.dom.outer.hide();
+				this.dom.icon.show();
+				this.dom.dotText.show();
+				if( this.data.icon ) {
+					this.dom.icon.css('background-image', `url(${this.data.icon})` );
+				}
+			},
+			() => { // leave
+				this.dom.outer.show();
+				this.dom.icon.hide();
+				this.dom.dotText.hide();
+			}
+		);
 
+
+		this.actions = [];
+		this.actionsByID = {};
+
+		this.registerAction(
+			"autosize",
+			"AUTOSIZE",
+			()=>{ this.fitSize(); } );
+		this.registerAction(
+			"icon",
+			"ICONIFY",
+			()=>{ this.setView( "icon" ); } );
+		this.registerAction(
+			"dot",
+			"MINIFY",
+			()=>{ this.setView( "dot" ); } );
+		this.registerAction(
+			"meta",
+			"METADATA",
+			()=>{ this.setView( "meta" ); } );
+		this.registerAction(
+			"main",
+			"CONTENT",
+			()=>{ this.setView( "main" ); } );
+		this.registerAction(
+			"remove",
+			"REMOVE",
+			()=>{ 
+				if( confirm( "Really delete?" ) ) {
+					this.remove();
+					this.lqs.updateAllPositions();
+				}
+			} );
+
+		this.dom.menuTool = $('<div class="lqs_tool">☰</div>');
+		this.dom.titleLeft.append( this.dom.menuTool );
+		this.dom.menuTool.mouseover( function() { this.showMenu(); }.bind(this));
+		this.dom.menu = $('<div class="lqs_card_menu"></div>').hide();
+		this.lqs.nodesLayer.append( this.dom.menu );
+
+
+		LQS.noDragClick( this.dom.icon, function() {
+			this.setView('main');
+		}.bind(this) );
+
+		LQS.noDragClick( this.dom.dotsvg, function() {
+			this.setView('main');
+		}.bind(this) );
 
 
 	
@@ -135,8 +173,6 @@ class LQS_Node {
 		this.lqs.nodesLayer.append( this.dom.outer );
 		this.dom.outer.dblclick(function() {
 			var pt = this.lqs.toVirtual( this.lqs.mouse );
-			var width = ((LQS.winWidth() /4))/this.lqs.layoutScale;
-			var height= ((LQS.winHeight()/4))/this.lqs.layoutScale;
 			var nodeData = {
 				id: LQS.uuid(),
 				x: this.data.x+(this.data.width/2)+width/2,
@@ -158,24 +194,19 @@ class LQS_Node {
 			};
 			var newLink = this.lqs.addLink( linkData );
 			//subjectNode.updateLinksPosition();
-			comment.showEdit();
+			comment.setView('edit');
 			return false; // don't also run on background
 		}.bind(this));
 
-		// state
-		var view = this.data.view;
-		this.showMain();
-		if( view == "icon" ) {
-			this.showIcon();
-		} 
-		if( view == "dot" ) {
-			this.showDot();
-		}
+		// ensure we're in a view
+		this.views["main"]["enter"]();
+		if( !this.data.view ) { this.data.view = 'main'; }
+		this.setView( this.data.view );
 
 		// register UI hooks
 		this.dom.outer.resizable({
-			resize: this.resized.bind(this)
-			//handles: "all"
+			resize: this.resized.bind(this),
+			handles: "w,sw,s,se,e"
 		});
 		this.dom.outer.draggable( { 
 			containment: $('.lqs_nodes'),
@@ -259,123 +290,47 @@ class LQS_Node {
 		}
 	}
 
-	showGraphNodeLinks() {
-		this.reset();
-		this.dom.content.html("Loading...");
-		var node = this;
-		$.ajax({
-			method: "GET",
-			data: { action: 'nodes', ids: this.data.nodeID, followLinks: '*' },
-			url: node.data.endpoint
-		}).done(function(data){
-			this.dom.content.empty();
-			//this.dom.content.append( LQS.dataToHTML( data ));
-			this.dom.content.append( $('<div>This endpoint has the following links:</div>'));
-			for( var i=0;i<data.links.length; ++i ) {
-				apiLink = data.links[i];
-				if( apiLink.subject == this.data.nodeID && data.nodes[apiLink.object] ) {
-					var apiNode = data.nodes[apiLink.object];
-					var row = $('<div class="lqs_seed" > '+apiLink.type+' link to  '+apiNode.title+' ('+apiNode.type+') </div>');
-					this.dom.content.append(row);
-					row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,true); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
-				}
-				if( apiLink.object == this.data.nodeID && data.nodes[apiLink.subject] ) {
-					var apiNode = data.nodes[apiLink.subject];
-					var row = $('<div class="lqs_seed" > '+apiLink.type+' link from  '+apiNode.title+' ('+apiNode.type+') </div>');
-					this.dom.content.append(row);
-					row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,false); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
-				}
-			}
-			this.fitSize();
-		}.bind(this)).fail(function(){
-			this.dom.content.html( "API Call failed" );
-			this.fitSize();
-		}.bind(this))
+	registerView( id, enter, leave ) {
+		this.views[id] = { enter: enter, leave: leave };
 	}
 
-	showLink() {
-		this.reset();
-		this.data.view = "link";
-		if( this.data.type == 'graph-node' ) {
-			this.showGraphNodeLinks();
+	setView( view ) {
+		if( !this.views[view] ) {
+			console.log( "UNKNOWN CARD VIEW: "+view );
 			return;
 		}
-		this.dom.content.html("This node does not have a link editing interface");
-	}
-
-	showDot() {
-		this.dom.outer.hide();
-		this.dom.dotsvg.show();
-		this.dom.dotText.show();
-		this.data.view = "dot";
-		this.updatePosition();
-		this.updateLinksPosition();
-	}
-	hideDot() {
-		this.dom.outer.show();
-		this.dom.dotsvg.hide();
-		this.dom.dotText.hide();
-		this.showMain();
-		this.updatePosition();
-		this.updateLinksPosition();
-	}
-	showIcon() {
-		this.dom.outer.hide();
-		this.dom.icon.show();
-		this.dom.dotText.show();
-		this.data.view = "icon";
-		this.updatePosition();
-		this.updateLinksPosition();
-		if( this.data.icon ) {
-			this.dom.icon.css('background-image', `url(${this.data.icon})` );
-		}
-	}
-	hideIcon() {
-		this.dom.outer.show();
-		this.dom.icon.hide();
-		this.dom.dotText.hide();
-		this.showMain();
-		this.updatePosition();
-		this.updateLinksPosition();
-	}
-
-
-	showMain() {
 		this.reset();
-		this.data.view = "main";
-		this.setTitleText( this.data.title );
-		this.dom.content.empty();
-		this.dom.content.append(this.render());
-		this.update();  // anything async for this card?
+		this.views[this.data.view].leave();
+		this.data.view = view;
+		this.views[view].enter();
+		this.updatePosition();
+		this.updateLinksPosition();
 	}
 
-/*
-		if( this.data.html ) {
-			this.dom.content.empty();
-			if( this.data.source ) {
-				if( this.data.source.URL ) {
-					this.dom.content.append( $('<div></div>').append( $('<a></a>').attr('href',this.data.source.URL).text(this.data.source.URL)));
-					hasContent = true;
+	showMenu() {
+		this.dom.menu.show();
+		var p = this.dom.outer.position();
+		this.dom.menu.css( 'left', p.left-10 );
+		this.dom.menu.css( 'top', p.top-10 );
+		this.dom.menu.empty();
+
+		for( var i=0; i<this.actions.length; ++i ) {
+			let action= this.actions[i];
+			if( action.visible ) {
+				let item = $('<div></div>').text(action.label).addClass( "lqs_card_menu_item" );
+				if( action.active ) {
+					item.click( (e) => {
+						action.fn(); 
+						this.dom.menu.hide();
+					} );
+				} else {
+					item.addClass( "lqs_card_menu_item_disabled" );
 				}
-				if( this.data.source.image && this.data.source.image.URL ) {
-					this.dom.content.append( $('<img style="float:right; padding: 0 0 5px 5px;width:50%" />').attr('src',this.data.source.image.URL));;
-					hasContent = true;
-				}
-			}
-			if( this.data.description ) {
-				this.dom.content.append( $('<div></div>').text( this.data.description ));
-				hasContent = true;
+				this.dom.menu.append( item );
 			}
 		}
-		if( this.data.meta && this.data.meta.source && this.data.meta.source.URL ) {
-			var span = $('<div style="text-align:right">- </div>');
-			this.dom.content.append( span );
-			span.append( $('<a>Source</a>').attr( 'href',this.data.meta.source.URL));
-		}
-		this.dom.content.find( 'a' ).attr("target","_blank");
-		this.dom.content.find( 'img,iframe' ).css("max-width","100%");
-		//this.dom.content.find( 'img,iframe' ).css("max-height","100%");
-*/
+		this.dom.menu.mouseleave( (e)=>{ this.dom.menu.hide(); } );
+	}
 
 	render() {
 		return $("<div>This node has no type. Can't render content.</div>");
@@ -387,73 +342,10 @@ class LQS_Node {
 	update() {
 	}
 
-	showMeta() {
-		this.reset();
-		this.dom.content.html( LQS.dataToHTML( this.data ) );
-		this.data.view = "meta";
-	}
 
 	reset() {
 		this.dom.outer.removeClass('lqs_node_notitle');
 		this.dom.content.html( '' );
-	}
-
-	showEdit() {
-		this.reset();
-		this.dom.outer.addClass('lqs_node_notitle');
-		this.dom.edit = {};
-		this.dom.edit.div = $('<div class="lqs_node_edit"></div>');
-		this.dom.content.append( this.dom.edit.div );
-		this.dom.edit.textarea = $('<textarea class="normal-paste" style="width:99%; height: 80%;"></textarea>');
-		var buttons = $('<div style="margin-top:3%;text-align:right"></div>');
-		this.dom.edit.save = $('<button style="max-height:10%">OK</button>');	
-		this.dom.edit.cancel = $('<button style="float:right; max-height:10%">Cancel</button>');	
-		this.dom.edit.div.append( this.dom.edit.textarea  );	
-		this.dom.edit.div.append( buttons );
-		buttons.append( this.dom.edit.save  );	
-		buttons.append( this.dom.edit.cancel  );	
-		this.dom.edit.textarea.focus();
-		this.dom.edit.textarea.keyup(function(event){
-			if( event.which==13 && !event.shiftKey) {
-				this.dom.edit.save.click();
-			}	
-			if( event.which==27 ) {
-				this.dom.edit.cancel.click();
-			}	
-		}.bind(this));
-		if( this.data.html ) {
-				this.dom.edit.textarea.text( this.data.html );
-			this.dom.edit.save.click( function() {
-				var v = this.dom.edit.textarea.val().trim();
-				if( v == "" ) { this.remove(); return; }
-				this.data.html = v;
-				this.showMain();
-			}.bind(this));
-			this.dom.edit.cancel.click( function() {
-				var v = this.dom.edit.textarea.val().trim();
-				if( v == "" ) { this.remove(); return; }
-				this.showMain();
-			}.bind(this));
-		} else {
-			this.dom.edit.textarea.text( this.data.text );
-			this.dom.edit.save.click( function() {
-				var v = this.dom.edit.textarea.val().trim();
-				if( v == "" ) { this.remove(); return; }
-				this.data.text = v;
-				this.showMain();
-				this.fitSize();
-			}.bind(this));
-			this.dom.edit.cancel.click( function() {
-				var v = this.dom.edit.textarea.val().trim();
-				if( v == "" ) { this.remove(); return; }
-				this.showMain();
-			}.bind(this));
-		} 
-		this.fitSize();
-	}
-
-	reveal() {
-		this.lqs.focusPage( new LQSPoint( this.data.x, this.data.y ) );
 	}
 
 	resized(event, ui) { 
@@ -604,6 +496,40 @@ class LQS_Node {
 		return rPt;
 	}
 
+	registerAction( id, label, fn ) {
+		var action = { id: id, label: label, fn: fn, active: true, visible: true };
+		this.actions.push( action );
+		this.actionsByID[id] = action;
+	}
+	showAction( id ) {
+		if( this.actionsByID[id] ) {
+			this.actionsByID[id].visible = true;
+		} else {
+			console.log( "attempted to show undefined action "+id );
+		}
+	}
+	hideAction( id ) {
+		if( this.actionsByID[id] ) {
+			this.actionsByID[id].visible = false;
+		} else {
+			console.log( "attempted to hide undefined action "+id );
+		}
+	}
+	enableAction( id ) {
+		if( this.actionsByID[id] ) {
+			this.actionsByID[id].active = true;
+		} else {
+			console.log( "attempted to enable undefined action "+id );
+		}
+	}
+	disableAction( id ) {
+		if( this.actionsByID[id] ) {
+			this.actionsByID[id].active = false;
+		} else {
+			console.log( "attempted to disable undefined action "+id );
+		}
+	}
+
 	registerLink( link ) {
 		this.links[link.data.id] = link;
 	}
@@ -622,9 +548,89 @@ class LQS_Node {
 		this.dom.icon.remove();
 		this.dom.dotsvg.remove();
 		this.dom.dotText.remove();
+		this.dom.menu.remove();
 	}
 
 	static makeSeed(opts) {
 		alert( "makeSeed function should be subclassed" );		
 	}
+
+	reveal() {
+		this.lqs.focusPage( new LQSPoint( this.data.x, this.data.y ) );
+	}
+
 } // End Node
+
+/*
+
+	showGraphNodeLinks() {
+		this.reset();
+		this.dom.content.html("Loading...");
+		var node = this;
+		$.ajax({
+			method: "GET",
+			data: { action: 'nodes', ids: this.data.nodeID, followLinks: '*' },
+			url: node.data.endpoint
+		}).done(function(data){
+			this.dom.content.empty();
+			//this.dom.content.append( LQS.dataToHTML( data ));
+			this.dom.content.append( $('<div>This endpoint has the following links:</div>'));
+			for( var i=0;i<data.links.length; ++i ) {
+				apiLink = data.links[i];
+				if( apiLink.subject == this.data.nodeID && data.nodes[apiLink.object] ) {
+					var apiNode = data.nodes[apiLink.object];
+					var row = $('<div class="lqs_seed" > '+apiLink.type+' link to  '+apiNode.title+' ('+apiNode.type+') </div>');
+					this.dom.content.append(row);
+					row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,true); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
+				}
+				if( apiLink.object == this.data.nodeID && data.nodes[apiLink.subject] ) {
+					var apiNode = data.nodes[apiLink.subject];
+					var row = $('<div class="lqs_seed" > '+apiLink.type+' link from  '+apiNode.title+' ('+apiNode.type+') </div>');
+					this.dom.content.append(row);
+					row.click( function() { this.node.manifestGraphNode(this.apiNode,this.apiLink.type,false); }.bind({node:this,apiNode:apiNode,apiLink:apiLink}) );
+				}
+			}
+			this.fitSize();
+		}.bind(this)).fail(function(){
+			this.dom.content.html( "API Call failed" );
+			this.fitSize();
+		}.bind(this))
+	}
+
+
+
+
+
+
+
+
+
+
+
+		if( this.data.html ) {
+			this.dom.content.empty();
+			if( this.data.source ) {
+				if( this.data.source.URL ) {
+					this.dom.content.append( $('<div></div>').append( $('<a></a>').attr('href',this.data.source.URL).text(this.data.source.URL)));
+					hasContent = true;
+				}
+				if( this.data.source.image && this.data.source.image.URL ) {
+					this.dom.content.append( $('<img style="float:right; padding: 0 0 5px 5px;width:50%" />').attr('src',this.data.source.image.URL));;
+					hasContent = true;
+				}
+			}
+			if( this.data.description ) {
+				this.dom.content.append( $('<div></div>').text( this.data.description ));
+				hasContent = true;
+			}
+		}
+		if( this.data.meta && this.data.meta.source && this.data.meta.source.URL ) {
+			var span = $('<div style="text-align:right">- </div>');
+			this.dom.content.append( span );
+			span.append( $('<a>Source</a>').attr( 'href',this.data.meta.source.URL));
+		}
+		this.dom.content.find( 'a' ).attr("target","_blank");
+		this.dom.content.find( 'img,iframe' ).css("max-width","100%");
+		//this.dom.content.find( 'img,iframe' ).css("max-height","100%");
+*/
+

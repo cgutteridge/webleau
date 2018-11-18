@@ -50,7 +50,7 @@ class LQS {
 				meta: {}
 			};
 			var comment = this.addNode(nodeData);
-			comment.showEdit();
+			comment.setView('edit');
 		}.bind(this));
 
 		$('body').append( $('<div class="ident">liquid space</div>'));
@@ -283,8 +283,8 @@ class LQS {
 		}
 
 		if( fromAfterOpen && from ) {
-			if( fromAfterOpen == 'dot' ) { from.showDot(); }
-			if( fromAfterOpen == 'icon' ) { from.showIcon(); }
+			if( fromAfterOpen == 'dot' ) { from.setView('dot'); }
+			if( fromAfterOpen == 'icon' ) { from.setView('icon'); }
 			if( fromAfterOpen == 'close' ) { from.remove(); }
 		}
 
@@ -453,11 +453,9 @@ class LQS {
 					newNode.data.height = data.source.height;
 				}
 				newNode.showMain();
-				newNode.fitSize();
 			}).fail(function(){
 				nodeData.text = text+"\n(metadata query failed)";
 				newNode.showMain();
-				newNode.fitSize();
 			})
 			return;
 		}

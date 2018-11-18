@@ -63,6 +63,7 @@ $(document).ready(function(){
 				width: 200,
 				height: 200,
 				title: 'Welcome',
+				type: 'html',
 				html: '<p>Welcome to Liquid Space.</p><p>To get started, for now all we have is an <a href="https://jrnl.global/2018/10/30/webleau-progress/">Introduction blog post</a></p>',
 			}
 		],
