@@ -25,6 +25,10 @@ LQS_NodeTypes['graph-connect'] = class LQS_Node_Graph_Connect extends LQS_Node {
 }
 
 LQS_NodeTypes['graph-connection'] = class LQS_Node_Graph_Connection extends LQS_Node {
+	constructor( nodeData, lqs ) {
+		super(nodeData,lqs);
+		this.showAction("reload");
+	}
 	static makeSeed(opts) {
 		// opts: endpoint
 		return {
@@ -85,6 +89,10 @@ LQS_NodeTypes['graph-connection'] = class LQS_Node_Graph_Connection extends LQS_
 
 
 LQS_NodeTypes['graph-type'] = class LQS_Node_Graph_Type extends LQS_Node {
+	constructor( nodeData, lqs ) {
+		super(nodeData,lqs);
+		this.showAction("reload");
+	}
 	static makeSeed(opts) {
 		// check opts: ident,nodeType,endpoint,from?
 		var id = "graph|"+opts.endpoint+"|type|"+opts.nodeType;
@@ -146,6 +154,10 @@ LQS_NodeTypes['graph-type'] = class LQS_Node_Graph_Type extends LQS_Node {
 }
 
 LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
+	constructor( nodeData, lqs ) {
+		super(nodeData,lqs);
+		this.showAction("reload");
+	}
 	static makeSeed(opts) {
 		// check opts: ident,nodeID,endpoint,from?,to?
 		var id = "graph|"+opts.endpoint+"|node|"+opts.nodeID;

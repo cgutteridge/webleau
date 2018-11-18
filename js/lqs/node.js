@@ -139,6 +139,11 @@ class LQS_Node {
 			"CONTENT",
 			()=>{ this.setView( "main" ); } );
 		this.registerAction(
+			"reload",
+			"RELOAD",
+			()=>{ this.update(); } );
+		this.hideAction("reload");
+		this.registerAction(
 			"remove",
 			"REMOVE",
 			()=>{ 
