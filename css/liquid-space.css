@@ -268,6 +268,11 @@ a {
 	text-anchor: middle;
 	pointer-events: auto; 
 }
+.lqs_icon_text {
+        opacity: 0.6;
+	text-anchor: middle;
+	pointer-events: auto; 
+}
 #axis line {
 	stroke:#666;
 	stroke-width:1;

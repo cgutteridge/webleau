@@ -14,6 +14,7 @@ $scripts = array(
   "js/lqs/line.js",
   "js/lqs/node.js",
   "js/lqs/link.js",
+  "js/lqs/viewspec.js",
   "js/lqs/node-text.js",
   "js/lqs/node-html.js",
   "js/lqs/node-error.js",

@@ -18,51 +18,41 @@ class LQS_Node {
 
 		// dom
 		this.borderSize = 4;
-		this.dom.outer = $('<div class="lqs_node"></div>').attr("data-node",this.data.id);
-		this.dom.title = $('<div class="lqs_node_title"></div>');
-		this.dom.titleLeft = $('<div class="lqs_node_title_left"></div>');
-		this.dom.titleRight = $('<div class="lqs_node_title_right"></div>');
-		this.dom.titleText = $('<div class="lqs_node_title_text"></div>');
-		this.dom.content = $('<div class="lqs_node_content"></div>');
 
-		this.registerView( 
-			"main",
-			() => { // enter
+		this.registerView({
+			id: "main",
+			enter: (node) => { // enter
 				// revert size
-				if( this.data.mainsize && this.data.mainsize.width !== undefined ) {
-					this.data.size = { width: this.data.mainsize.width, height: this.data.mainsize.height }
+				if( node.data.mainsize && node.data.mainsize.width !== undefined ) {
+					node.data.size = { width: node.data.mainsize.width, height: node.data.mainsize.height }
 				}
-				this.setTitleText( this.data.title );
-				this.dom.content.empty();
-				this.dom.content.append(this.render());
-				this.update();  // anything async for this card?
-				if( !this.data.size ||  this.data.size.width === undefined ) {
-					this.data.size = {};
-					this.fitSize();
-				}
-				this.hideAction( 'main' );
+				node.hideAction( 'main' );
 			},
-			() => { // leave
+			leave: (node) => { // leave
 				// cache the main width & height for when we come back
-				this.data.mainsize = {
-					width: this.data.size.width,
-					height: this.data.size.height }
-				this.showAction( 'main' );
-			}
-		);
+				node.data.mainsize = {
+					width: node.data.size.width,
+					height: node.data.size.height }
+				node.showAction( 'main' );
+			},
+			render: (node) => { return node.render() },
+			init: (node) => { node.addCardToDisplay() },
+			destroy: (node) => { node.removeCardFromDisplay() },
+			update: (node) => { node.update(); }
+		});
 
+		this.registerAction(
+			"main",
+			"DEFAULT VIEW",
+			()=>{ this.setView( "main" ); } );
 		this.registerAction(
 			"autosize",
 			"AUTOSIZE",
 			()=>{ this.fitSize(); } );
 		this.registerAction(
-			"main",
-			"CONTENT",
-			()=>{ this.setView( "main" ); } );
-		this.registerAction(
 			"reload",
 			"RELOAD",
-			()=>{ this.update(); } );
+			()=>{ this.viewSpec().update(this); } );
 		this.hideAction("reload");
 		this.registerAction(
 			"remove",
@@ -73,6 +63,19 @@ class LQS_Node {
 					this.lqs.updateAllPositions();
 				}
 			} );
+		this.addDotFeature();
+		this.addIconFeature();
+		this.addMetadataFeature();
+	} // end Node constructor
+
+	addCardToDisplay() {
+
+		this.dom.outer = $('<div class="lqs_node"></div>').attr("data-node",this.data.id);
+		this.dom.title = $('<div class="lqs_node_title"></div>');
+		this.dom.titleLeft = $('<div class="lqs_node_title_left"></div>');
+		this.dom.titleRight = $('<div class="lqs_node_title_right"></div>');
+		this.dom.titleText = $('<div class="lqs_node_title_text"></div>');
+		this.dom.content = $('<div class="lqs_node_content"></div>');
 
 		this.dom.menuTool = $('<div class="lqs_tool">☰</div>');
 		this.dom.titleLeft.append( this.dom.menuTool );
@@ -88,32 +91,7 @@ class LQS_Node {
 		this.lqs.nodesLayer.append( this.dom.outer );
 
 		// double click on node to add a comment
-		this.dom.outer.dblclick(function() {
-			var pt = this.lqs.toVirtual( this.lqs.mouse );
-			var nodeData = {
-				id: LQS.uuid(),
-				pos: {
-					x: this.data.pos.x + this.data.size.width/2,
- 					y: pt.y
-				},
-				title: "",
-				text: "",
-				type: 'text',
-				meta: {}
-			};
-			var comment = this.lqs.addNode(nodeData);
-			comment.reveal();
-			var linkData = {
-				subject: { node: comment.data.id },
-				object: { node: this.data.id },
-				label: "comments",
-				id: LQS.uuid() 
-			};
-			var newLink = this.lqs.addLink( linkData );
-			//subjectNode.updateLinksPosition();
-			comment.setView('edit');
-			return false; // don't also run on background
-		}.bind(this));
+		this.dom.outer.dblclick( ()=>{ this.addLinkedComment() } );
 
 		// register UI hooks
 		this.dom.outer.resizable({
@@ -136,159 +114,205 @@ class LQS_Node {
 			tolerance: "pointer",
 			drop: (event,ui)=>{ this.linkDrop(event,ui) }
 		});
+	}
 
-		// don't do the zoom inside one of these
-		/*
-		this.dom.outer.bind('wheel mousewheel', function(e){
-			e.stopPropagation();
-		});
-*/
-		this.addDotFeature();
-		this.addIconFeature();
-		this.addMetadataFeature();
-	} // end Node constructor
+	removeCardFromDisplay() {
+		this.dom.outer.remove();
+		this.dom.menu.remove();
+	}
 
 	// this runs after the constructor, once all the views are loaded
 	init() {
-		// ensure we're in a view
-		this.views["main"]["enter"]();
 		if( !this.data.view ) { this.data.view = 'main'; }
-		this.setView( this.data.view );
+		this.setView( this.data.view, false );
 	}
 
 	addMetadataFeature() {
 
-		this.registerView(
-			"meta", 
-			() => { // enter
-				this.dom.content.html( LQS.dataToHTML( this.data ) );
-				this.fitSize();
-				this.hideAction( 'meta' );
+		this.registerView({
+			id: "meta", 
+			init: (node) => {
+				node.registerAction(
+					"meta",
+					"METADATA",
+					()=>{ node.setView( "meta" ); } );
 			},
-			() => {
-				this.showAction( 'meta' );
-			}
-		);
+			enter: (node) => { // enter
+				delete node.data.size;
+				node.hideAction( 'meta' );
+			},
+			leave: (node) => {
+				node.showAction( 'meta' );
+			},
+			render: (node) => { return LQS.dataToHTML( node.data ); }
+		});
 
-		this.registerAction(
-			"meta",
-			"METADATA",
-			()=>{ this.setView( "meta" ); } );
 
 	}
 
 	addIconFeature() {
-		this.data.icon = {};
+		this.registerView({
+			id: "icon",
+			init: (node) => {
+				node.data.icon = {};
+				node.data.icon.size = { width: 32, height: 32 };
+		
+				node.dom.icon = $("<div class='lqs_node_icon'></div>").attr("data-node",node.data.id);
+				node.dom.icon.width( node.data.icon.size.width );
+				node.dom.icon.height( node.data.icon.size.height );
+				node.dom.icon.hide();
+				node.lqs.nodesLayer.append( node.dom.icon );
+		
+				node.dom.icon_label_id = "icon_label_"+LQS.uuid();
+ 				node.dom.icon_text = $(document.createElementNS("http://www.w3.org/2000/svg","text"))
+					.addClass( "lqs_icon_text" )
+					.attr( "id", node.dom.icon_label_id )
+				var labelsG = $(document.getElementById('svg_labels'));
+				labelsG.append( node.dom.icon_text );
 
-		this.data.icon.size = { width: 32, height: 32 };
-
-		this.dom.icon = $("<div class='lqs_node_icon'></div>").attr("data-node",this.data.id);
-		this.dom.icon.width( this.data.icon.size.width );
-		this.dom.icon.height( this.data.icon.size.height );
-		this.dom.icon.hide();
-		this.lqs.nodesLayer.append( this.dom.icon );
-
-		this.registerView( 
-			"icon",
-			() => { // enter
-				this.dom.outer.hide();
-				this.dom.icon.show();
-				this.dom.dotText.show();
-				if( this.data.icon.url ) {
-					this.dom.icon.css('background-image', `url(${this.data.icon.url})` );
+				LQS.noDragClick( node.dom.icon, function() {
+					node.setView('main');
+				}.bind(node) );
+		
+				node.dom.icon.draggable( { 
+					containment: $('.lqs_nodes'),
+					opacity: 0.8,
+					scroll: true,
+					drag: node.dragged.bind(node),
+					start: function() {
+						node.dragStart = new LQSPoint( node.data.pos.x, node.data.pos.y );
+					}.bind(node)
+				});
+		
+				node.dom.icon.droppable( {
+					hoverClass: "drop-hover",
+					tolerance: "pointer",
+					drop: (event,ui)=>{ node.linkDrop(event,ui) }
+				});
+		
+				node.registerAction(
+					"icon",
+					"ICON",
+					()=>{ node.setView( "icon" ); } );
+			},
+			destroy: (node) => {
+				node.dom.icon.remove();
+				node.dom.icon_text.remove();
+			},
+			setTitle: (node,title ) => { node.dom.icon_text.text( title ); },
+			enter: (node) => { 
+				node.dom.outer.hide();
+				node.dom.icon.show();
+				node.dom.icon_text.show();
+				if( node.data.icon.url ) {
+					node.dom.icon.css('background-image', `url(${node.data.icon.url})` );
 				}
 			},
-			() => { // leave
-				this.dom.outer.show();
-				this.dom.icon.hide();
-				this.dom.dotText.hide();
+			leave: (node) => { 
+				node.dom.outer.show();
+				node.dom.icon.hide();
+				node.dom.icon_text.hide();
+			},
+			updatePosition: (node) => {
+				var baseFontSize = 10;
+				var realPos = node.realPos();
+				var realSize = node.realSize();
+				node.dom.icon_text.attr('x', realPos.x );
+				node.dom.icon_text.attr('y', realPos.y + realSize.height/2+baseFontSize*node.lqs.layoutScale);
+				node.dom.icon_text.css('font-size',(baseFontSize*node.lqs.layoutScale)+"px"); 
+				node.dom.icon.css('left',realPos.x-realSize.width/2 );
+				node.dom.icon.css('top', realPos.y-realSize.height/2 );
+			},
+			realSize: (node) => {
+				return { width: node.data.icon.size.width, height: node.data.icon.size.height };
 			}
-		);
-
-		this.registerAction(
-			"icon",
-			"ICONIFY",
-			()=>{ this.setView( "icon" ); } );
-
-		LQS.noDragClick( this.dom.icon, function() {
-			this.setView('main');
-		}.bind(this) );
-
-		this.dom.icon.draggable( { 
-			containment: $('.lqs_nodes'),
-			opacity: 0.8,
-			scroll: true,
-			drag: this.dragged.bind(this),
-			start: function() {
-				this.dragStart = new LQSPoint( this.data.pos.x, this.data.pos.y );
-			}.bind(this)
 		});
 
-		this.dom.icon.droppable( {
-			hoverClass: "drop-hover",
-			tolerance: "pointer",
-			drop: (event,ui)=>{ this.linkDrop(event,ui) }
-		});
 	}
 
 	addDotFeature() {
-		this.data.dot = {};
-		this.data.dot.radius = 5;
+		this.registerView( {
+			id: "dot",
+			init: (node) => {
+				node.data.dot = {};
+				node.data.dot.radius = 5;
+		
+				node.dom.dot_id = "dot_"+LQS.uuid();
+ 				node.dom.dot = $(document.createElementNS("http://www.w3.org/2000/svg","circle"));
+				node.dom.dot.attr("id",node.dom.dot_id);
+				node.dom.dot.attr( "r", node.data.dot.radius );
+				node.dom.dot_svg = $(document.createElementNS("http://www.w3.org/2000/svg","svg")).addClass('lqs_dot').attr("data-node",node.data.id);
+				node.dom.dot_svg.append( node.dom.dot );
+				node.lqs.nodesLayer.append( node.dom.dot_svg );
+		
+				node.dom.dot_label_id = "dot_label_"+LQS.uuid();
+ 				node.dom.dot_text = $(document.createElementNS("http://www.w3.org/2000/svg","text"))
+					.addClass( "lqs_dot_text" )
+					.attr( "id", node.dom.dot_label_id )
+				var labelsG = $(document.getElementById('svg_labels'));
+				labelsG.append( node.dom.dot_text );
 
-		this.dom.dot_id = "dot_"+LQS.uuid();
- 		this.dom.dot = $(document.createElementNS("http://www.w3.org/2000/svg","circle"));
-		this.dom.dot.attr("id",this.dom.dot_id);
-		this.dom.dot.attr( "r", this.data.dot.radius );
-		this.dom.dotsvg = $(document.createElementNS("http://www.w3.org/2000/svg","svg")).addClass('lqs_dot').attr("data-node",this.data.id);
-		this.dom.dotsvg.append( this.dom.dot );
-		this.lqs.nodesLayer.append( this.dom.dotsvg );
+				node.dom.dot_svg.draggable( { 
+					containment: $('.lqs_nodes'),
+					opacity: 0.8,
+					scroll: true,
+					drag: node.dragged.bind(node),
+					start: function() {
+						node.dragStart = new LQSPoint( node.data.pos.x, node.data.pos.y );
+					}.bind(node)
+				});
+		
+				LQS.noDragClick( node.dom.dot_svg, function() {
+					node.setView('main');
+				}.bind(node) );
+		
+				node.dom.dot_svg.droppable( {
+					hoverClass: "drop-hover",
+					tolerance: "pointer",
+					drop: (event,ui)=>{ node.linkDrop(event,ui) }
+				});
 
-		this.dom.dot_label_id = "link_from_"+LQS.uuid();
- 		var dotText = document.createElementNS("http://www.w3.org/2000/svg","text");
-		dotText.setAttribute( "class", "lqs_dot_text" );
-		dotText.id = this.dom.dot_label_id;
-		dotText.appendChild( document.createTextNode( "XXX" ));
-		var labelsG = document.getElementById('svg_labels');
-		labelsG.appendChild( dotText );
-		this.dom.dotText = $(dotText);
-
-		this.registerView( 
-			"dot",
-			() => { // enter
-				this.dom.outer.hide();
-				this.dom.dotsvg.show();
-				this.dom.dotText.show();
+				node.registerAction(
+					"dot",
+					"MINIFY",
+					()=>{ node.setView( "dot" ); } );
 			},
-			() => { // leave
-				this.dom.outer.show();
-				this.dom.dotsvg.hide();
-				this.dom.dotText.hide();
+			destroy: (node) => {
+				node.dom.dot_svg.remove();
+				node.dom.dot_text.remove();
+			},
+			setTitle: (node,title ) => { node.dom.dot_text.text( title ); },
+			enter: (node) => {
+				node.dom.outer.hide();
+				node.dom.dot_svg.show();
+				node.dom.dot_text.show();
+			},
+			leave: (node) => {
+				node.dom.outer.show();
+				node.dom.dot_svg.hide();
+				node.dom.dot_text.hide();
+			},
+			updatePosition: (node) => {
+				var baseFontSize = 10;
+				var realPos = this.realPos();
+				var realSize = this.realSize();
+				this.dom.dot_text.attr('x', realPos.x );
+				this.dom.dot_text.attr('y', realPos.y + realSize.height/2+baseFontSize*this.lqs.layoutScale);
+				this.dom.dot_text.css('font-size',(baseFontSize*this.lqs.layoutScale)+"px"); 
+				let realRadius = this.data.dot.radius*this.lqs.layoutScale
+				this.dom.dot_svg.css('left', realPos.x-realRadius );
+				this.dom.dot_svg.css('top',  realPos.y-realRadius );
+				this.dom.dot.attr('r',  realRadius );
+				this.dom.dot.attr('cx', realRadius );
+				this.dom.dot.attr('cy', realRadius );
+				this.dom.dot_svg.attr('width',  realRadius*2 );
+				this.dom.dot_svg.attr('height', realRadius*2 );
+			},
+			realSize: (node) => {
+				return {
+					width:  this.data.dot.radius*2*this.lqs.layoutScale,
+					height: this.data.dot.radius*2*this.lqs.layoutScale };
 			}
-		);
-
-		this.registerAction(
-			"dot",
-			"MINIFY",
-			()=>{ this.setView( "dot" ); } );
-
-		this.dom.dotsvg.draggable( { 
-			containment: $('.lqs_nodes'),
-			opacity: 0.8,
-			scroll: true,
-			drag: this.dragged.bind(this),
-			start: function() {
-				this.dragStart = new LQSPoint( this.data.pos.x, this.data.pos.y );
-			}.bind(this)
-		});
-
-		LQS.noDragClick( this.dom.dotsvg, function() {
-			this.setView('main');
-		}.bind(this) );
-
-		this.dom.dotsvg.droppable( {
-			hoverClass: "drop-hover",
-			tolerance: "pointer",
-			drop: (event,ui)=>{ this.linkDrop(event,ui) }
 		});
 	}
 
@@ -308,30 +332,44 @@ class LQS_Node {
 		subjectNode.updateLinksPosition();
 	}
 
-	setTitleText( text ) {
-		if( text === null || text === undefined ) { text = ''; }
-		this.dom.dotText.text( text );
-		this.dom.titleText.text( text );
-		if( text == "" ) {
-			this.dom.title.addClass("lqs_node_empty_title");
-		} else {
-			this.dom.title.removeClass("lqs_node_empty_title");
-		}
+	registerView( params ) {
+		this.views[params.id] = new LQS_ViewSpec( params );
+		this.views[params.id].init(this); // add any furniture
 	}
 
-	registerView( id, enter, leave ) {
-		this.views[id] = { enter: enter, leave: leave };
-	}
-
-	setView( view ) {
-		if( !this.views[view] ) {
-			console.log( "UNKNOWN CARD VIEW: "+view );
+	viewSpec() {
+		if( !this.views[this.data.view] ) {
+			console.log( "UNKNOWN CARD VIEW: "+this.data.view );
 			return;
 		}
-		this.reset();
-		this.views[this.data.view].leave();
+		return this.views[this.data.view];
+	}
+
+	setView( view, doLeave = true ) {
+		
+		if( doLeave ) {
+			this.viewSpec().leave(this);
+		}
+
 		this.data.view = view;
-		this.views[view].enter();
+
+		var viewSpec = this.viewSpec();
+
+		this.dom.content.empty();
+
+		var title = viewSpec.title(this);
+		if( title === null || title === undefined ) { title = ''; }
+		viewSpec.setTitle( this, title );
+
+		viewSpec.enter(this);
+		this.dom.content.append( viewSpec.render(this));
+
+		if( !this.data.size ||  this.data.size.width === undefined ) {
+			this.data.size = {};
+			this.fitSize();
+		}
+		viewSpec.update(this); // run an async commands
+
 		this.updatePosition();
 		this.updateLinksPosition();
 	}
@@ -361,8 +399,9 @@ class LQS_Node {
 		this.dom.menu.mouseleave( (e)=>{ this.dom.menu.hide(); } );
 	}
 
+	// render the main content of this card
 	render() {
-		return $("<div>This node has no type. Can't render content.</div>");
+		return $("<div>This card has no type. Can't render content.</div>");
 	}
 
 	/* method to subclass. this is called to trigger ajax or other updates and unlike
@@ -371,11 +410,6 @@ class LQS_Node {
 	update() {
 	}
 
-
-	reset() {
-		this.dom.outer.removeClass('lqs_node_notitle');
-		this.dom.content.html( '' );
-	}
 
 	resized(event, ui) { 
 
@@ -406,39 +440,7 @@ class LQS_Node {
 	}
 
 	updatePosition() {
-		var baseFontSize = 10;
-		var realPos = this.realPos();
-		var realSize = this.realSize();
-		if( this.data.view == 'icon' || this.data.view == 'dot' ) {
-			this.dom.dotText.attr('x', realPos.x );
-			this.dom.dotText.attr('y', realPos.y + realSize.height/2+baseFontSize*this.lqs.layoutScale);
-			this.dom.dotText.css('font-size',(baseFontSize*this.lqs.layoutScale)+"px"); 
-		}
-		if( this.data.view == 'icon' ) {
-			this.dom.icon.css('left',realPos.x-realSize.width/2 );
-			this.dom.icon.css('top', realPos.y-realSize.height/2 );
-			return;
-		}
-		if( this.data.view == 'dot' ) {
-			let realRadius = this.data.dot.radius*this.lqs.layoutScale
-			this.dom.dotsvg.css('left', realPos.x-realRadius );
-			this.dom.dotsvg.css('top',  realPos.y-realRadius );
-			this.dom.dot.attr('r',  realRadius );
-			this.dom.dot.attr('cx', realRadius );
-			this.dom.dot.attr('cy', realRadius );
-			this.dom.dotsvg.attr('width',  realRadius*2 );
-			this.dom.dotsvg.attr('height', realRadius*2 );
-			return;
-		}
-		this.dom.outer.css('left',realPos.x-realSize.width/2 );
-		this.dom.outer.css('top', realPos.y-realSize.height/2 );
-		this.dom.outer.css('width', realSize.width );
-		this.dom.outer.css('height',realSize.height );
-		var titleHeight = (18*this.lqs.layoutScale);
-		var fontHeight  = (16*this.lqs.layoutScale);
-		this.dom.content.css('height',this.data.height*this.lqs.layoutScale-titleHeight ); // height of box minus borders and title
-		this.dom.title.css('font-size',fontHeight+"px");
-		this.dom.title.css('height',   titleHeight+"px" );
+		this.viewSpec().updatePosition(this);
 	}
 
 	updateLinksPosition() {
@@ -473,17 +475,7 @@ class LQS_Node {
 
 	// the size of the node in pixels in the current scale
 	realSize() {
-		if( this.data.view == 'icon' ) {
-			return { width: this.data.icon.size.width, height: this.data.icon.size.height };
-		}
-		if( this.data.view == 'dot' ) {
-			return {
-				width:  this.data.dot.radius*2*this.lqs.layoutScale,
-				height: this.data.dot.radius*2*this.lqs.layoutScale };
-		}
-		return {
-			width:  this.data.size.width *this.lqs.layoutScale,
-			height: this.data.size.height*this.lqs.layoutScale };
+		return this.viewSpec().realSize(this);
 	}
 
 	realFullSize() {
@@ -572,15 +564,15 @@ class LQS_Node {
 
 	remove() {
 		var link_ids = Object.keys(this.links);
-		for( var i=0;i<link_ids.length;++i ) {
+		for( let i=0;i<link_ids.length;++i ) {
 			this.links[link_ids[i]].remove();
 		}
+		var view_ids = Object.keys(this.views);
+		for( let i=0;i<view_ids.length;++i ) {
+			let viewSpec = this.views[view_ids[i]];
+			viewSpec.destroy(this);
+		}	
 		delete this.lqs.nodes[this.data.id];
-		this.dom.outer.remove();
-		this.dom.icon.remove();
-		this.dom.dotsvg.remove();
-		this.dom.dotText.remove();
-		this.dom.menu.remove();
 	}
 
 	static makeSeed(opts) {
@@ -594,41 +586,33 @@ class LQS_Node {
 		this.lqs.focusPage( this.data.pos );
 	}
 
+	addLinkedComment() {
+		var pt = this.lqs.toVirtual( this.lqs.mouse );
+		var nodeData = {
+			id: LQS.uuid(),
+			pos: {
+				x: this.data.pos.x + this.data.size.width/2,
+ 				y: pt.y
+			},
+			title: "",
+			text: "",
+			type: 'text',
+			meta: {}
+		};
+		var comment = this.lqs.addNode(nodeData);
+		comment.reveal();
+		var linkData = {
+			subject: { node: comment.data.id },
+			object: { node: this.data.id },
+			label: "comments",
+			id: LQS.uuid() 
+		};
+		var newLink = this.lqs.addLink( linkData );
+		//subjectNode.updateLinksPosition();
+		comment.setView('edit');
+		return false; // don't also run on background
+	}
+
+
 } // End Node
-
-/*
-
-
-
-
-
-
-
-
-		if( this.data.html ) {
-			this.dom.content.empty();
-			if( this.data.source ) {
-				if( this.data.source.URL ) {
-					this.dom.content.append( $('<div></div>').append( $('<a></a>').attr('href',this.data.source.URL).text(this.data.source.URL)));
-					hasContent = true;
-				}
-				if( this.data.source.image && this.data.source.image.URL ) {
-					this.dom.content.append( $('<img style="float:right; padding: 0 0 5px 5px;width:50%" />').attr('src',this.data.source.image.URL));;
-					hasContent = true;
-				}
-			}
-			if( this.data.description ) {
-				this.dom.content.append( $('<div></div>').text( this.data.description ));
-				hasContent = true;
-			}
-		}
-		if( this.data.meta && this.data.meta.source && this.data.meta.source.URL ) {
-			var span = $('<div style="text-align:right">- </div>');
-			this.dom.content.append( span );
-			span.append( $('<a>Source</a>').attr( 'href',this.data.meta.source.URL));
-		}
-		this.dom.content.find( 'a' ).attr("target","_blank");
-		this.dom.content.find( 'img,iframe' ).css("max-width","100%");
-		//this.dom.content.find( 'img,iframe' ).css("max-height","100%");
-*/
 

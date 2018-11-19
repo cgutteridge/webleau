@@ -53,7 +53,7 @@ LQS_NodeTypes['graph-connection'] = class LQS_Node_Graph_Connection extends LQS_
 		}.bind(this)).done(function(ajaxData){
 			node.data.graph.ident = ajaxData;
 			if( node.data.graph.ident && node.data.graph.ident.title ) {
-				node.setTitleText( node.data.graph.ident.title );
+				node.viewSpec().setTitle(node, node.data.graph.ident.title );
 			}
 			$.ajax({
 				method: "GET",
@@ -155,21 +155,24 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 	constructor( nodeData, lqs ) {
 		super(nodeData,lqs);
 		this.showAction("reload");
-		this.registerView(
-			"graph-links", 
-			() => { // enter
-				this.showGraphLinksView();
-				this.hideAction( 'graph-links' );
+		this.registerView({
+			id: "graph-links", 
+			enter: (node) => { // enter
+				node.hideAction( 'graph-links' );
 			},
-			() => {
-				this.showAction( 'graph-links' );
-			}
-		);
+			leave: (node) => {
+				node.showAction( 'graph-links' );
+			},
+			init: (node) => {
+				node.registerAction(
+					"graph-links",
+					"GRAPH LINKS",
+					()=>{ node.setView( "graph-links" ); } );
+			},
+			render: (node) => { return node.dom.content.html("Loading..."); },
+			update: (node) => { node.updateLinksView(); }
+		});
 	
-		this.registerAction(
-			"graph-links",
-			"GRAPH LINKS",
-			()=>{ this.setView( "graph-links" ); } );
 	}
 	static makeSeed(opts) {
 		// check opts: ident,nodeID,endpoint,from?,to?
@@ -218,7 +221,7 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 			this.dom.content.empty();
 			this.dom.content.append( this.renderGraphNodeContent() );
 			this.fitSize();
-			this.setTitleText( this.data.graph.node.title );
+			this.viewSpec().setTitle(node, this.data.graph.node.title );
 			if(  this.data.graph.node.data && this.data.graph.node.data.icon )  {
 				this.data.icon = this.data.graph.node.data.icon;
 			}
@@ -247,9 +250,8 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 		}	
 		return content;
 	}
-	showGraphLinksView() {
-		this.reset();
-		this.dom.content.html("Loading...");
+
+	updateLinksView() {
 		var node = this;
 		$.ajax({
 			method: "GET",

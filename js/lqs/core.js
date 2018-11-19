@@ -5,6 +5,8 @@ var LQS_NodeTypes = {};
 class LQS {
 	constructor() {
 		this.nodesLayer = null;
+		this.bgSvgLayer = null;
+		this.fgSvgLayer = null;
 
 		this.nodes = {};
 		this.links = {};
@@ -18,18 +20,18 @@ class LQS {
 		this.mouse = new LQSPoint( this.offset.x, this.offset.y );
 		this.mouseOverBackground = true;
 
-		var bgsvg = $('<svg class="lqs_bgsvg"><g id="axis"><line id="vaxis" /><line id="haxis" /></g></svg>');
-		$('body').append(bgsvg);
-		bgsvg.html( bgsvg.html() ); // reset SVG layer 
+		this.bgSvgLayer = $('<svg class="lqs_bgsvg"><g id="axis"><line id="vaxis" /><line id="haxis" /></g></svg>');
+		$('body').append(this.bgSvgLayer);
+		this.bgSvgLayer.html( this.bgSvgLayer.html() ); // reset SVG layer 
 		$('#vaxis').attr('x1',this.offset.x).attr('y1',0).attr('x2',this.offset.x).attr('y2',this.offset.y*2);
 		$('#haxis').attr('x1',0).attr('y1',this.offset.y).attr('x2',this.offset.x*2).attr('y2',this.offset.y);
 
 		this.nodesLayer = $('<div class="lqs_nodes"></div>');
 		$('body').append(this.nodesLayer);
 
-		var svg = $('<svg class="lqs_svg"><defs><marker id="arrow" markerWidth="11" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs><g id="svg_arrows"></g><g id="svg_labels"></g></svg>');
-		$('body').append(svg);
-		svg.html( svg.html() ); // reset SVG layer 
+		this.fgSvgLayer = $('<svg class="lqs_svg"><defs><marker id="arrow" markerWidth="11" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs><g id="svg_arrows"></g><g id="svg_labels"></g></svg>');
+		$('body').append(this.fgSvgLayer);
+		this.fgSvgLayer.html( this.fgSvgLayer.html() ); // reset SVG layer 
 	
 		var rpt = this.toReal(new LQSPoint(0,0));
 		window.scrollTo( rpt.x-LQS.winWidth()/2, rpt.y-LQS.winHeight()/2 );
@@ -390,35 +392,9 @@ class LQS {
 		}
 
 		if( LQS.validURL(text) ) {
-			nodeData.type = "url";
-			nodeData.title = "Pasted URL";
-			nodeData.text = text+"\n(will lookup metadata in a mo...)";
-			nodeData.edit = false;
+			nodeData.type = "embed";
+			nodeData.source.url = text;
 			var newNode = this.addNode(nodeData);
-			newNode.fitSize();
-			$.ajax({
-				method: "GET",
-				data: { url: text },
-				url: this.inspectorProxy
-			}).done(function(data){
-				nodeData.text=null;
-				nodeData.html=null;
-				// TOOO any kind of security
-				var keys = Object.keys(data);	
-				for( var i=0;i<keys.length; ++i) {
-					nodeData[keys[i]] = data[keys[i]];
-				}
-				if( data.source && data.source.width ) { 
-					newNode.data.width = data.source.width;
-				}
-				if( data.source && data.source.height ) { 
-					newNode.data.height = data.source.height;
-				}
-				newNode.showMain();
-			}).fail(function(){
-				nodeData.text = text+"\n(metadata query failed)";
-				newNode.showMain();
-			})
 			return;
 		}
 
