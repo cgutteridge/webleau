@@ -274,7 +274,7 @@ class LQS_Node {
 
 				node.registerAction(
 					"dot",
-					"MINIFY",
+					"DOT",
 					()=>{ node.setView( "dot" ); } );
 			},
 			destroy: (node) => {
