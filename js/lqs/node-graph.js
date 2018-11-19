@@ -222,8 +222,11 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 			this.dom.content.append( this.renderGraphNodeContent() );
 			this.fitSize();
 			this.viewSpec().setTitle(node, this.data.graph.node.title );
-			if(  this.data.graph.node.data && this.data.graph.node.data.icon )  {
+			if( this.data.graph.node.data && this.data.graph.node.data.icon )  {
 				this.data.icon.url = this.data.graph.node.data.icon;
+			}
+			if( this.data.graph.node.title )  {
+				this.data.title = this.data.graph.node.title;
 			}
 		}.bind(this)).fail(function(){
 			var r = $("<div>Failed to get data (TODO: add a 'retry' icon). Using cached version.</div>" );

@@ -106,6 +106,16 @@ class LQS {
 			LQS.download( filename, page, "text/html" );
 		}.bind(this));
 
+		// purge everything
+		var purgeTool = $('<div title="purge" class="lqs_tool">X</div>');
+		controlTools.append( purgeTool );
+		purgeTool.click( function() {
+			if( confirm( "Purge layout? This will remove all cards and links from the page." ) ) {
+				this.purgeLayout();
+			}
+			this.layoutScaleSlider.val(1).trigger('input');
+			this.centrePage();
+		}.bind(this));
 
 
 		// graph
@@ -277,8 +287,8 @@ class LQS {
 		return layout;
 	}
 
-	setLayout(layout) {
-		// erase all stuff
+	// erase all stuff
+	purgeLayout() {
 		var linkKeys = Object.keys(this.links);
 		for( var i=0; i<linkKeys.length; ++i ) {
 			this.links[linkKeys[i]].remove();
@@ -287,7 +297,10 @@ class LQS {
 		for( var i=0; i<nodeKeys.length; ++i ) {
 			this.nodes[nodeKeys[i]].remove();
 		}
+	}
 
+	setLayout(layout) {
+		this.purgeLayout();
 		for( var i=0; i<layout.nodes.length; ++i ) {
 			this.addNode( layout.nodes[i] );
 		}

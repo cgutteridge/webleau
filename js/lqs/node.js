@@ -92,6 +92,7 @@ class LQS_Node {
 
 		// double click on node to add a comment
 		this.dom.outer.dblclick( ()=>{ this.addLinkedComment(); return false; } );
+		this.dom.title.dblclick( ()=>{ this.setView("icon"); return false; } );
 
 		// register UI hooks
 		this.dom.outer.resizable({
@@ -154,7 +155,7 @@ class LQS_Node {
 		this.registerView({
 			id: "icon",
 			init: (node) => {
-				node.data.icon = {};
+				if( !node.data.icon ) { node.data.icon = {}; }
 				node.data.icon.size = { width: 32, height: 32 };
 		
 				node.dom.icon = $("<div class='lqs_node_icon'></div>").attr("data-node",node.data.id);
@@ -234,7 +235,7 @@ class LQS_Node {
 		this.registerView( {
 			id: "dot",
 			init: (node) => {
-				node.data.dot = {};
+				if( !node.data.dot ) { node.data.dot = {}; }
 				node.data.dot.radius = 5;
 		
 				node.dom.dot_id = "dot_"+LQS.uuid();
