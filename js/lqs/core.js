@@ -457,7 +457,9 @@ class LQS {
 	}
 
 	static dataToHTML(value) {
-		if( value && typeof value === 'object' && value.constructor === Array ) {
+		if( value === null || value === undefined ) {
+			return $('<span style="text-style: italic" class="meta_value">NULL</span>');
+		} else if( typeof value === 'object' && value.constructor === Array ) {
 			// array
 			var table = $('<table class="meta_array"></table');
 			for( var i=0; i<value.length; ++i ) {
@@ -467,7 +469,7 @@ class LQS {
 				table.append(tr);
 			}
 			return table;
-		} else if( value && typeof value === 'object' && value.constructor === Object ) {
+		} else if( typeof value === 'object' ) {
 			// object
 			var keys = Object.keys(value);
 			var table = $('<table class="meta_object"></table');
