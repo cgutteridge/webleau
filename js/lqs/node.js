@@ -462,6 +462,7 @@ class LQS_Node {
 		this.dom.outer.find( '.lqs_tool' ).removeClass('noTools');
 		this.dom.outer.css('max-width','none');
 		this.dom.outer.css('max-height','none');
+		this.dom.content.css('height','inherit');
 		this.updatePosition();
 		this.updateLinksPosition();
 	}
