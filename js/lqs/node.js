@@ -91,7 +91,7 @@ class LQS_Node {
 		this.lqs.nodesLayer.append( this.dom.outer );
 
 		// double click on node to add a comment
-		this.dom.outer.dblclick( ()=>{ this.addLinkedComment() } );
+		this.dom.outer.dblclick( ()=>{ this.addLinkedComment(); return false; } );
 
 		// register UI hooks
 		this.dom.outer.resizable({
@@ -610,7 +610,6 @@ class LQS_Node {
 		var newLink = this.lqs.addLink( linkData );
 		//subjectNode.updateLinksPosition();
 		comment.setView('edit');
-		return false; // don't also run on background
 	}
 
 
