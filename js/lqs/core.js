@@ -348,55 +348,47 @@ class LQS {
 		} else {
 			nodeClass = LQS_NodeTypes["error"];
 		}
-			
+		
+		var id = nodeData.id || LQS.uuid();
+	
 		// create node
 		const NC = nodeClass;
-		this.nodes[nodeData.id] = new NC( nodeData, this );
-		this.nodes[nodeData.id].init(); // things to do after the constructor
-		this.nodes[nodeData.id].updatePosition();
-		return this.nodes[nodeData.id];
+		this.nodes[id] = new NC( nodeData, this );
+		this.nodes[id].init(); // things to do after the constructor
+		this.nodes[id].updatePosition();
+		return this.nodes[id];
 	}
 
 	pasteToBackground(event) {
 		var clipboardData = event.clipboardData || window.clipboardData || event.originalEvent.clipboardData;
-		var pt = this.toVirtual(this.mouse);
-		var nodeData = {
-			id: LQS.uuid(),
-			pos: this.toVirtual(this.mouse),
-			size: {
-				width:  LQS.winWidth() /2/this.layoutScale,
-				height: LQS.winHeight()/2/this.layoutScale
-			},
-			meta: {}
-		};
 		
+		var text = clipboardData.getData( 'text/plain' );
+		var html = clipboardData.getData( 'text/html' );
+		var nodeData = {};
 
-		// detect citation html
-
-		if( false&&json ) {
-			//nb this can throw a syntax error, it really should be handled
-			var jsonData = JSON.parse( json );
-			// assume object
-			// detect JRNL0.1
-			if( jsonData.jrnlCitation ) {
-				nodeData.title = jsonData.citation.title;
-				nodeData.html = jsonData.citation.html; // or text
-				nodeData.meta.source = {};
-				nodeData.meta.source.URL = jsonData.citation.url;
-				nodeData.meta.source.copiedTime = jsonData.citation.timestamp;
-				nodeData.meta.source.creators = [ 
-					{
-						name: jsonData.citation.author,
-						page: jsonData.citation.authorURL
-					}
-				]
+		if( html ) {	
+			var thtml = html;
+			//  moving html copypasta between major browsers adds these cruft tags which we will 
+			//  trim for looking for special source
+			thtml = thtml.replace( /<\/?(meta|html|head|body)[^>]*>/, '' );
+			var dom = $($.parseHTML(thtml));
+			if( dom.attr( 'data-citation-source' ) ) {
+				nodeData.html   = thtml;
+				nodeData.type   = 'cited';
+				nodeData.source = {};
+				nodeData.source.title  = dom.attr( 'data-citation-title' );
+				nodeData.source.url = dom.attr( 'data-citation-source' );
+				nodeData.source.copyTime  = dom.attr( 'data-citation-timestamp' );
+				nodeData.source.pasteTime = Math.round((new Date()).getTime() / 1000);
+				nodeData.source.creator   = [{}];
+				nodeData.source.creator[0].name = dom.attr( 'data-citation-author-name' );
+				nodeData.source.creator[0].url  = dom.attr( 'data-citation-author-url' );
+				nodeData.pos = this.toVirtual(this.mouse);
 				var newNode = this.addNode(nodeData);
-				newNode.fitSize();
 				return;
 			}
 		}
 
-		var text = clipboardData.getData( 'text/plain' );
 		if( LQS.validURL(text) ) {
 			nodeData.type = "url";
 			nodeData.title = "Pasted URL";
@@ -430,7 +422,6 @@ class LQS {
 			return;
 		}
 
-		var html = clipboardData.getData( 'text/html' );
 		if( html ) {
 			nodeData.title = "Pasted HTML";
 			nodeData.html = html;
@@ -439,7 +430,7 @@ class LQS {
 			newNode.fitSize();
 			return;
 		}
-
+	
 		nodeData.title = "Pasted text";
 		nodeData.text = text;
 		nodeData.type = "text";

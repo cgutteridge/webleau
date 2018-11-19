@@ -309,6 +309,7 @@ class LQS_Node {
 	}
 
 	setTitleText( text ) {
+		if( text === null || text === undefined ) { text = ''; }
 		this.dom.dotText.text( text );
 		this.dom.titleText.text( text );
 		if( text == "" ) {

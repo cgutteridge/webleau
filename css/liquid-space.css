@@ -233,7 +233,7 @@ a {
 	color: #666;
 }
 .lqs_node_content {
-	padding: 5px 10px 10px 10px;
+	padding: 5px 10px 0px 10px;
 	color: black;
 	overflow: auto;
 }

@@ -17,8 +17,8 @@ $scripts = array(
   "js/lqs/node-text.js",
   "js/lqs/node-html.js",
   "js/lqs/node-error.js",
-  "js/lqs/node-graph.js"
-
+  "js/lqs/node-graph.js",
+  "js/lqs/node-cited.js"
 );
 if( $_GET["debug"] ) {
 	foreach( $scripts as $script ) {
