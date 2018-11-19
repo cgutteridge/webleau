@@ -4,17 +4,17 @@ LQS_NodeTypes['cited'] = class LQS_Node_Cited extends LQS_Node {
 
 	constructor( nodeData, lqs ) {
 		super(nodeData,lqs);
-		this.registerView(
-			"no-source", 
-			() => { // enter
-				this.showNoSourceView();
-				this.fitSize();
+		this.registerView({
+			id: "no-source", 
+			enter: (node) => { // enter
+				delete this.data.size;
 				this.hideAction( 'no-source' );
 			},
-			() => {
+			leave: (node) => {
 				this.showAction( 'no-source' );
-			}
-		);
+			},
+			render: (node) => { return LQS.sanitiseHtml(this.data.html); }
+		});
 
 		this.registerAction(
 			"no-source",
@@ -64,9 +64,5 @@ LQS_NodeTypes['cited'] = class LQS_Node_Cited extends LQS_Node {
 	}	
 
 
-	showNoSourceView() {
-		this.dom.content.empty();
-		this.dom.content.append( LQS.sanitiseHtml(this.data.html) );
-	}
 
 }
