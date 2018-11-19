@@ -207,7 +207,9 @@ class LQS_Node {
 				node.dom.icon_text.show();
 				if( node.data.icon.url ) {
 					node.dom.icon.css('background-image', `url(${node.data.icon.url})` );
-				}
+				} else {
+					node.dom.icon.css('background-image', `linear-gradient(to top, rgba(255,255,255,0.7), rgba(127,127,127,0.7)), url(${LQS.logo()})` );
+				} 
 			},
 			leave: (node) => { 
 				node.dom.outer.show();
