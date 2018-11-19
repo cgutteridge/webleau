@@ -52,6 +52,64 @@ class LQS {
 
 		//$('body').append( $('<div class="ident">liquid space</div>'));
 
+		/* MAIN EVENTS */
+
+		// location of mouse on tablau
+		$( document).on( "mousemove", function( event ) {
+			this.mouse = new LQS_Point( event.pageX, event.pageY );
+		}.bind(this));
+		/* each time the mouse enters something, if it's over the background set a flag */
+		this.nodesLayer.on( "mouseover", (event)=>{
+			this.mouseOverBackground = (event.target===this.nodesLayer[0]);
+		});
+	
+	
+		/* fancy stuff with paste */
+		this.nodesLayer.focus();
+		$('body').on('paste', function(event) {
+			// if we are focused on a normal-paste element just skip this handler
+			if( $('.normal-paste:focus').length ) { return; }
+			this.pasteToBackground(event);
+		}.bind(this));
+	
+		/* zoom on mousewheel, only when mouse over background */
+		/* otherwise do nothing, TODO allow scroll in things with a scrollbar other than the background */
+		this.nodesLayer.bind('wheel mousewheel', function(e){
+			if( !this.mouseOverBackground ) { return; }
+			var delta;
+	
+			if (e.originalEvent.wheelDelta !== undefined) {
+				delta = e.originalEvent.wheelDelta;
+			} else {
+				delta = e.originalEvent.deltaY * -1;
+			}
+			this.layoutScaleSlider.val( parseFloat(this.layoutScaleSlider.val())+delta*0.001 );
+			this.layoutScaleSlider.trigger('propertychange');
+		}.bind(this));
+	
+		/* drag background to scroll */
+	
+		$(document).on("mousemove", function (event) {
+			if (this.curDown === true) {
+				$(document).scrollLeft(parseInt($(document).scrollLeft() + (this.clickstart.x - event.pageX)));
+				$(document).scrollTop( parseInt($(document).scrollTop()  + (this.clickstart.y - event.pageY)));
+			}
+		}.bind(this));
+		
+		$(document).on("mousedown", function (e) { 
+			if( $(e.target).hasClass( "lqs_nodes" ) ) {
+				this.curDown = true; 
+				this.clickstart = { x: e.pageX, y: e.pageY };
+				e.preventDefault(); 
+			}
+		}.bind(this));
+		$(window).on("mouseup",  function (e) { this.curDown = false; }.bind(this));
+		$(window).on("mouseout", function (e) { this.curDown = false; }.bind(this));
+	
+		this.addControlPanel();	
+	}
+
+	addControlPanel() {
 		/* CONTROLS */
 
 		var controlsWrapper = $('<div class="controls_wrapper"><div class="controls_icon">TOOLS</div></div>');
@@ -149,64 +207,9 @@ class LQS {
 			this.setLayout(layout);
 		}.bind(this));
 		
-		/* end controls */
+	}	/* end controls */
 
 
-		/* MAIN EVENTS */
-
-		// location of mouse on tablau
-		$( document).on( "mousemove", function( event ) {
-			this.mouse = new LQS_Point( event.pageX, event.pageY );
-		}.bind(this));
-		/* each time the mouse enters something, if it's over the background set a flag */
-		this.nodesLayer.on( "mouseover", (event)=>{
-			this.mouseOverBackground = (event.target===this.nodesLayer[0]);
-		});
-	
-	
-		/* fancy stuff with paste */
-		this.nodesLayer.focus();
-		$('body').on('paste', function(event) {
-			// if we are focused on a normal-paste element just skip this handler
-			if( $('.normal-paste:focus').length ) { return; }
-			this.pasteToBackground(event);
-		}.bind(this));
-	
-		/* zoom on mousewheel, only when mouse over background */
-		/* otherwise do nothing, TODO allow scroll in things with a scrollbar other than the background */
-		this.nodesLayer.bind('wheel mousewheel', function(e){
-			if( !this.mouseOverBackground ) { return; }
-			var delta;
-	
-			if (e.originalEvent.wheelDelta !== undefined) {
-				delta = e.originalEvent.wheelDelta;
-			} else {
-				delta = e.originalEvent.deltaY * -1;
-			}
-			this.layoutScaleSlider.val( parseFloat(this.layoutScaleSlider.val())+delta*0.001 );
-			this.layoutScaleSlider.trigger('propertychange');
-		}.bind(this));
-	
-		/* drag background to scroll */
-	
-		$(document).on("mousemove", function (event) {
-			if (this.curDown === true) {
-				$(document).scrollLeft(parseInt($(document).scrollLeft() + (this.clickstart.x - event.pageX)));
-				$(document).scrollTop( parseInt($(document).scrollTop()  + (this.clickstart.y - event.pageY)));
-			}
-		}.bind(this));
-		
-		$(document).on("mousedown", function (e) { 
-			if( $(e.target).hasClass( "lqs_nodes" ) ) {
-				this.curDown = true; 
-				this.clickstart = { x: e.pageX, y: e.pageY };
-				e.preventDefault(); 
-			}
-		}.bind(this));
-		$(window).on("mouseup",  function (e) { this.curDown = false; }.bind(this));
-		$(window).on("mouseout", function (e) { this.curDown = false; }.bind(this));
-		
-	}
 
 
 	toVirtual(realpt) {
