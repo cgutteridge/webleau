@@ -25,7 +25,7 @@ class LQS_Line {
 		// x= (a-b)/(g2-g1)
 		var x = (a-b)/(g2-g1);
 		var y = this.from.y +  ( x - this.from.x ) * g1;
-		var pt = new LQSPoint( x, y );
+		var pt = new LQS_Point( x, y );
 		if( pt.inBounds( this.from, this.to ) && pt.inBounds( that.from, that.to ) ) {
 			return pt;
 		}

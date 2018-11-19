@@ -11,13 +11,13 @@ class LQS {
 		this.nodes = {};
 		this.links = {};
 		this.layoutScale = 1;
-		this.offset = new LQSPoint(5000,5000);
+		this.offset = new LQS_Point(5000,5000);
 		this.clickstart = null;
 		this.curDown = false;
 		this.layoutScaleSlider = null;
 		this.defaultInspectorProxy = 'https://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
 		this.inspectorProxy = this.defaultInspectorProxy;
-		this.mouse = new LQSPoint( this.offset.x, this.offset.y );
+		this.mouse = new LQS_Point( this.offset.x, this.offset.y );
 		this.mouseOverBackground = true;
 
 		this.bgSvgLayer = $('<svg class="lqs_bgsvg"><g id="axis"><line id="vaxis" /><line id="haxis" /></g></svg>');
@@ -33,7 +33,7 @@ class LQS {
 		$('body').append(this.fgSvgLayer);
 		this.fgSvgLayer.html( this.fgSvgLayer.html() ); // reset SVG layer 
 	
-		var rpt = this.toReal(new LQSPoint(0,0));
+		var rpt = this.toReal(new LQS_Point(0,0));
 		window.scrollTo( rpt.x-LQS.winWidth()/2, rpt.y-LQS.winHeight()/2 );
 
 		this.nodesLayer.dblclick(function(event) {
@@ -156,7 +156,7 @@ class LQS {
 
 		// location of mouse on tablau
 		$( document).on( "mousemove", function( event ) {
-			this.mouse = new LQSPoint( event.pageX, event.pageY );
+			this.mouse = new LQS_Point( event.pageX, event.pageY );
 		}.bind(this));
 		/* each time the mouse enters something, if it's over the background set a flag */
 		this.nodesLayer.on( "mouseover", (event)=>{
@@ -210,14 +210,14 @@ class LQS {
 
 
 	toVirtual(realpt) {
-		return new LQSPoint( 
+		return new LQS_Point( 
 			(realpt.x-this.offset.x)/this.layoutScale,
 			(realpt.y-this.offset.y)/this.layoutScale
 		);
 	}
 
 	toReal(virtpt) {
-		return new LQSPoint( 
+		return new LQS_Point( 
 			virtpt.x*this.layoutScale+this.offset.x,
 			virtpt.y*this.layoutScale+this.offset.y
 		);
@@ -315,7 +315,7 @@ class LQS {
 	}
 
 	centrePage() {
-		this.focusPage( new LQSPoint(0,0) );
+		this.focusPage( new LQS_Point(0,0) );
 	}
 
 	// focus the real scroll window onto a point on the virtual layout
@@ -486,7 +486,7 @@ class LQS {
 	}
 
 	static screenMiddle() {
-		return new LQSPoint( LQS.winLeft()+LQS.winWidth()/2, LQS.winTop()+LQS.winHeight()/2 );
+		return new LQS_Point( LQS.winLeft()+LQS.winWidth()/2, LQS.winTop()+LQS.winHeight()/2 );
 	}
 
 	static winHeight() {

@@ -106,7 +106,7 @@ class LQS_Node {
 			scroll: true,
 			drag: this.dragged.bind(this),
 			start: function() {
-				this.dragStart = new LQSPoint( this.data.pos.x, this.data.pos.y );
+				this.dragStart = new LQS_Point( this.data.pos.x, this.data.pos.y );
 			}.bind(this)
 		});
 
@@ -181,7 +181,7 @@ class LQS_Node {
 					scroll: true,
 					drag: node.dragged.bind(node),
 					start: function() {
-						node.dragStart = new LQSPoint( node.data.pos.x, node.data.pos.y );
+						node.dragStart = new LQS_Point( node.data.pos.x, node.data.pos.y );
 					}.bind(node)
 				});
 		
@@ -259,7 +259,7 @@ class LQS_Node {
 					scroll: true,
 					drag: node.dragged.bind(node),
 					start: function() {
-						node.dragStart = new LQSPoint( node.data.pos.x, node.data.pos.y );
+						node.dragStart = new LQS_Point( node.data.pos.x, node.data.pos.y );
 					}.bind(node)
 				});
 		
@@ -431,7 +431,7 @@ class LQS_Node {
 		ui.position.top =  Math.max( 10, ui.position.top );
 
 		var realSize = this.realSize();
-		var realTopLeft = new LQSPoint( 
+		var realTopLeft = new LQS_Point( 
 			(ui.position.left + realSize.width/2 ),
 			(ui.position.top  + realSize.height/2 ) );
 		this.data.pos = this.lqs.toVirtual( realTopLeft );
@@ -470,7 +470,7 @@ class LQS_Node {
 
 	// real means actual pixels not the place on the conceptual layout
 	realPos() {
-		return new LQSPoint(
+		return new LQS_Point(
 			this.data.pos.x*this.lqs.layoutScale+this.lqs.offset.x,
 			this.data.pos.y*this.lqs.layoutScale+this.lqs.offset.y );
 	}
@@ -493,10 +493,10 @@ class LQS_Node {
 		var realPos = this.realPos();
 		var realFullSize = this.realFullSize();
 
-		var tl = new LQSPoint( realPos.x - realFullSize.width/2, realPos.y - realFullSize.height/2 )
-		var tr = new LQSPoint( realPos.x + realFullSize.width/2, realPos.y - realFullSize.height/2 )
-		var bl = new LQSPoint( realPos.x - realFullSize.width/2, realPos.y + realFullSize.height/2 )
-		var br = new LQSPoint( realPos.x + realFullSize.width/2, realPos.y + realFullSize.height/2 )
+		var tl = new LQS_Point( realPos.x - realFullSize.width/2, realPos.y - realFullSize.height/2 )
+		var tr = new LQS_Point( realPos.x + realFullSize.width/2, realPos.y - realFullSize.height/2 )
+		var bl = new LQS_Point( realPos.x - realFullSize.width/2, realPos.y + realFullSize.height/2 )
+		var br = new LQS_Point( realPos.x + realFullSize.width/2, realPos.y + realFullSize.height/2 )
 
 		var lines = [
 			new LQS_Line( tl, tr ),
