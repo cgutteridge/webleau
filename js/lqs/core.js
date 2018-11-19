@@ -112,10 +112,12 @@ class LQS {
 	addControlPanel() {
 		/* CONTROLS */
 
-		var controlsWrapper = $('<div class="controls_wrapper"><div class="controls_icon">TOOLS</div></div>');
+		var controlsWrapper = $('<div class="controls_wrapper"><div class="controls_icon"><img src="'+LQS.logo()+'" /></div></div>');
 		var controls = $('<div class="controls"></div>');
 		$(controlsWrapper).append(controls);
 		$('body').append(controlsWrapper);
+
+		//controls.append( $('<div style="font-family:fantasy;font-size:120%;margin-bottom:1em;padding-bottom:0.1em;border-bottom: solid 1px #999;">Liquid Space</div>'));
 
 		/* CONTROLS: sliders */
 
@@ -383,6 +385,7 @@ class LQS {
 		var text = clipboardData.getData( 'text/plain' );
 		var html = clipboardData.getData( 'text/html' );
 		var nodeData = {};
+		nodeData.pos = this.toVirtual(this.mouse);
 
 		if( html ) {	
 			var thtml = html;
@@ -401,7 +404,6 @@ class LQS {
 				nodeData.source.creator   = [{}];
 				nodeData.source.creator[0].name = dom.attr( 'data-citation-author-name' );
 				nodeData.source.creator[0].url  = dom.attr( 'data-citation-author-url' );
-				nodeData.pos = this.toVirtual(this.mouse);
 				var newNode = this.addNode(nodeData);
 				return;
 			}
@@ -409,6 +411,7 @@ class LQS {
 
 		if( LQS.validURL(text) ) {
 			nodeData.type = "embed";
+			nodeData.source = {};
 			nodeData.source.url = text;
 			var newNode = this.addNode(nodeData);
 			return;

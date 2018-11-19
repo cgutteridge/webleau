@@ -66,19 +66,25 @@ a {
 	position: fixed;
 	top:0%;
 	right:0%;
-	opacity: 0.3;
+	opacity: 0.2;
 	padding: 10px;
-	font-size: 200%;
 	color: #000;
 	background-color: #999;
 	border-bottom-left-radius: 5px;
+	z-index: 1000;
+}
+.controls_icon img {
+	width: 64px;
+	height: 64px;
+	display: block;
 }
 .controls_wrapper {
-	z-index: 1000; // higher the resizeable handles
+	z-index: 1000; 
+	position: fixed;
 }
 .controls {
-	z-index: 1000; // higher the resizeable handles
-	width:50%;
+	z-index: 1000;
+	width:20%;
 	position: fixed;
 	top:0%;
 	right:0%;
@@ -301,7 +307,7 @@ a {
 .lqs_card_menu {
 	cursor: default;
 	position: absolute;
-	background-color: #000;
+	background-color: #666;
 	color: #fff;
 	z-index: 500;
 	border-radius: 10px;

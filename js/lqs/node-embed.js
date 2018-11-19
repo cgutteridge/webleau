@@ -1,6 +1,6 @@
 
 
-LQS_NodeTypes['cited'] = class LQS_Node_Cited extends LQS_Node {
+LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 
 	constructor( nodeData, lqs ) {
 		super(nodeData,lqs);
@@ -15,32 +15,31 @@ LQS_NodeTypes['cited'] = class LQS_Node_Cited extends LQS_Node {
 	}
 
 	render() {
+		var content = $('<div>Loading...</div>');
+		return content;
 	}	
 
-
-			$.ajax({
-				method: "GET",
-				data: { url: text },
-				url: this.inspectorProxy
-			}).done(function(data){
-				nodeData.text=null;
-				nodeData.html=null;
-				// TOOO any kind of security
-				var keys = Object.keys(data);	
-				for( var i=0;i<keys.length; ++i) {
-					nodeData[keys[i]] = data[keys[i]];
-				}
-				if( data.source && data.source.width ) { 
-					newNode.data.width = data.source.width;
-				}
-				if( data.source && data.source.height ) { 
-					newNode.data.height = data.source.height;
-				}
-				newNode.showMain();
-			}).fail(function(){
-				nodeData.text = text+"\n(metadata query failed)";
-				newNode.showMain();
-			})
+	init() {
+		super.init();
+		$.ajax({
+			method: "GET",
+			data: { url: this.data.source.url },
+			url: this.lqs.inspectorProxy
+		}).done((ajaxData)=>{
+			let url = this.data.source.url;
+			this.data.source = ajaxData;
+			if( this.data.source.size ) {
+				this.data.size = this.data.source.size;
+			}
+			this.data.source.url = url;
+			this.refresh();
+		}).fail(()=>{
+			this.error = text+"\n(metadata query failed)";
+			this.refresh();
+		})
+	}
+}
+/*}
 
 		if( this.data.html ) {
 			this.dom.content.empty();
@@ -70,4 +69,3 @@ LQS_NodeTypes['cited'] = class LQS_Node_Cited extends LQS_Node {
 */
 
 
-}

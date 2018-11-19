@@ -357,24 +357,29 @@ class LQS_Node {
 		this.data.view = view;
 
 		var viewSpec = this.viewSpec();
+		viewSpec.enter(this);
 
+		this.refresh();
+
+		viewSpec.update(this); // run an async commands
+
+		this.updatePosition();
+		this.updateLinksPosition();
+	}
+
+	refresh() {
+		var viewSpec = this.viewSpec();
 		this.dom.content.empty();
+		this.dom.content.append( viewSpec.render(this));
 
 		var title = viewSpec.title(this);
 		if( title === null || title === undefined ) { title = ''; }
 		viewSpec.setTitle( this, title );
 
-		viewSpec.enter(this);
-		this.dom.content.append( viewSpec.render(this));
-
 		if( !this.data.size ||  this.data.size.width === undefined ) {
 			this.data.size = {};
 			this.fitSize();
 		}
-		viewSpec.update(this); // run an async commands
-
-		this.updatePosition();
-		this.updateLinksPosition();
 	}
 
 	showMenu() {
