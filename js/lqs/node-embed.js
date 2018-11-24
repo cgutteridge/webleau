@@ -11,23 +11,46 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 				"VISIT SOURCE",
 				()=>{ window.open( this.data.source.url, "_blank" ); }
 			);
+			this.registerAction(
+				"refersh-embed-info",
+				"REFRESH EMBED",
+				()=>{ 
+					this.dom.content.text( "Refreshing..." ); 
+					this.refreshFromSource();
+				}
+			);
 		}
 	}
 
 	render() {
 		var empty = true;
 		var content = $('<div></div>');
-		if( this.data.source.embed ) {
+		if( this.data.source.error ) {
+			content.text( "ERROR: "+this.data.source.error );
+			empty = false;
+		} else if ( this.data.source.embed ) {
 			content.html( this.data.source.embed );
 			empty = false;
 		} else {
+			let img = null;
 			if( this.data.source.image && this.data.source.image.url ) {
-				content.append( $('<img style="float:right; padding: 0 0 5px 5px;width:50%" />').attr('src',this.data.source.image.url));;
-				empty = false;
-			
+				img = $('<img />')
+					.attr('src',this.data.source.image.url)
+					.click(()=>{this.doAction('visit-source')})
+					.attr('title','Click to visit source')
+					.css('cursor','pointer');
 			}
 			if( this.data.source.description ) {
+				if( this.data.source.image && this.data.source.image.url ) {
+					img.css( 'float','right').css('padding','0 0 5px 5px').css('width','50%');
+					content.append( img ); 
+				}
 				content.append( $('<div></div>').text( this.data.source.description ));
+				empty = false;
+			}
+			else if( this.data.source.image && this.data.source.image.url ) {
+				// image, no description
+				content.append( img ); 
 				empty = false;
 			}
 		}
@@ -40,13 +63,19 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 		}
 */
 		content.find( 'a' ).attr("target","_blank");
-		content.find( 'img,iframe' ).css("max-width","100%");
+		content.find( 'img,iframe' ).css("max-width","100%").css('max-height','100%');
+		content.find( 'img').bind('load', ()=>{ this.fitSize(); } );
+		
 		//content.find( 'img,iframe' ).css("max-height","100%");
 		return content;
 	}	
 
 	init() {
 		super.init();
+		this.refreshFromSource();
+	}
+
+	refreshFromSource() {
 		$.ajax({
 			method: "GET",
 			data: { url: this.data.source.url },
@@ -54,7 +83,10 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 		}).done((ajaxData)=>{
 			let url = this.data.source.url;
 			this.data.source = ajaxData;
-			if( this.data.source.size ) {
+			this.data.source.url = url;
+
+			if( this.data.source.size && this.data.source.size.width && this.data.source.size.height) {
+				console.log( this.data.source.size );
 				this.data.size = {};
 				this.data.size.width = this.data.source.size.width+4;
 				this.data.size.height = this.data.source.size.height+4;
@@ -62,13 +94,22 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 			if( this.data.source.image && this.data.source.image.url) {
 				this.data.icon.url = this.data.source.image.url;
 			}
+			else if( this.data.source.image && this.data.source.image.url) {
+				this.data.icon.url = this.data.source.image.url;
+			}
+			if( this.data.source.title ) {
+				this.data.title = this.data.source.title;
+			} else {
+				this.data.title = this.data.source.url;
+			}
 		
-			this.data.source.url = url;
+			this.rerender();
 			this.updatePosition();
-			this.refresh();
+			this.fitSize();
+			this.setView('icon');
 		}).fail(()=>{
-			this.error = "Metadata query failed";
-			this.refresh();
+			this.data.source.error = "Metadata query failed";
+			this.rerender();
 		})
 	}
 }

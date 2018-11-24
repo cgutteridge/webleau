@@ -359,7 +359,7 @@ class LQS_Node {
 		var viewSpec = this.viewSpec();
 		viewSpec.enter(this);
 
-		this.refresh();
+		this.rerender();
 
 		viewSpec.update(this); // run an async commands
 
@@ -367,7 +367,7 @@ class LQS_Node {
 		this.updateLinksPosition();
 	}
 
-	refresh() {
+	rerender() {
 		var viewSpec = this.viewSpec();
 		this.dom.content.empty();
 		this.dom.content.append( viewSpec.render(this));
@@ -465,8 +465,8 @@ class LQS_Node {
 		this.dom.outer.css('max-width', (LQS.winWidth()/2)+"px");
 		this.dom.outer.css('max-height',(LQS.winHeight()*3/4)+"px");
 		this.dom.outer.find( '.lqs_tool' ).addClass('noTools');
-		this.data.size.width =  (this.dom.outer.width() )/this.lqs.layoutScale+10;
-		this.data.size.height = (this.dom.outer.height())/this.lqs.layoutScale+10;
+		this.data.size.width =  Math.max( 64, (this.dom.outer.width() )/this.lqs.layoutScale+10);
+		this.data.size.height = Math.max( 64, (this.dom.outer.height())/this.lqs.layoutScale+10);
 		this.dom.outer.find( '.lqs_tool' ).removeClass('noTools');
 		this.dom.outer.css('max-width','none');
 		this.dom.outer.css('max-height','none');
@@ -560,6 +560,13 @@ class LQS_Node {
 			this.actionsByID[id].active = false;
 		} else {
 			console.log( "attempted to disable undefined action "+id );
+		}
+	}
+	doAction( id ) {
+		if( this.actionsByID[id] ) {
+			this.actionsByID[id].fn();
+		} else {
+			console.log( "attempted to do undefined action "+id );
 		}
 	}
 
