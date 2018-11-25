@@ -176,7 +176,9 @@ a {
 	border-right: solid 1px #aaa;
 	border-bottom: solid 1px #999;
 	border-left: solid 1px #999;
-	
+}
+.lqs_node_icon.drop-hover {
+	background-color: #666;
 }
 .lqs_dot {
 	position: absolute;
@@ -249,10 +251,10 @@ a {
 	color: black;
 	overflow: auto;
 }
-.drop-hover {
+.lqs_node.drop-hover {
 	background-color: #999;
 }
-.drop-hover .lqs_node_title{
+.lqs_node.drop-hover .lqs_node_title{
 	background-color: #666;
 }
 /* end nodes */

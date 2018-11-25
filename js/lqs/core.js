@@ -1,6 +1,7 @@
 
 // effectively this is a static property
 var LQS_NodeTypes = {};
+var LQS_ClickStart = null;
 
 class LQS {
 	constructor() {
@@ -12,7 +13,6 @@ class LQS {
 		this.links = {};
 		this.layoutScale = 1;
 		this.offset = new LQS_Point(5000,5000);
-		this.clickstart = null;
 		this.curDown = false;
 		this.layoutScaleSlider = null;
 		this.defaultInspectorProxy = 'https://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
@@ -91,15 +91,15 @@ class LQS {
 	
 		$(document).on("mousemove", function (event) {
 			if (this.curDown === true) {
-				$(document).scrollLeft(parseInt($(document).scrollLeft() + (this.clickstart.x - event.pageX)));
-				$(document).scrollTop( parseInt($(document).scrollTop()  + (this.clickstart.y - event.pageY)));
+				$(document).scrollLeft(parseInt($(document).scrollLeft() + (LQS_ClickStart.x - event.pageX)));
+				$(document).scrollTop( parseInt($(document).scrollTop()  + (LQS_ClickStart.y - event.pageY)));
 			}
 		}.bind(this));
 		
 		$(document).on("mousedown", function (e) { 
+			LQS_ClickStart = { x: e.pageX, y: e.pageY };
 			if( $(e.target).hasClass( "lqs_nodes" ) ) {
 				this.curDown = true; 
-				this.clickstart = { x: e.pageX, y: e.pageY };
 				e.preventDefault(); 
 			}
 		}.bind(this));
@@ -352,9 +352,10 @@ class LQS {
 		if( !this.nodes[linkData.object.node] ) { return null; }
 		
 		// create link
-		this.links[linkData.id] = new LQS_Link( linkData, this );
-		this.links[linkData.id].updatePosition();
-		return this.links[linkData.id];
+		var link = new LQS_Link( linkData, this );
+		this.links[link.data.id] = link;
+		this.links[link.data.id].updatePosition();
+		return this.links[link.data.id];
 	}
 
 	addNode( nodeData ) {
@@ -369,14 +370,13 @@ class LQS {
 			nodeClass = LQS_NodeTypes["error"];
 		}
 		
-		var id = nodeData.id || LQS.uuid();
-	
 		// create node
 		const NC = nodeClass;
-		this.nodes[id] = new NC( nodeData, this );
-		this.nodes[id].init(); // things to do after the constructor
-		this.nodes[id].updatePosition();
-		return this.nodes[id];
+		var node = new NC( nodeData, this );
+		this.nodes[node.data.id] = node;
+		this.nodes[node.data.id].init(); // things to do after the constructor
+		this.nodes[node.data.id].updatePosition();
+		return this.nodes[node.data.id];
 	}
 
 	pasteToBackground(event) {
@@ -534,23 +534,11 @@ class LQS {
 	}
 
 	static noDragClick( element, fn ){
-		if( !element.noDragClick ) {
-			element.beingDragged = false;
-			element.mousedown( function() {
-		        	$(window).mousemove(function() {
-            				this.beingDragged = true;
-            				$(window).unbind("mousemove");
-        			}.bind(this ));
-			}.bind(element));
-		}
-		element.mouseup( function() {
-        		var wasDragging = this.beingDragged;
-        		this.beingDragged = false;
-        		$(window).unbind("mousemove");
-        		if (!wasDragging) {
+		element.mouseup( (e) => {
+        		if (e.pageX==LQS_ClickStart.x && e.pageY==LQS_ClickStart.y) {
 				fn();
 			}
-		}.bind(element));		
+		});
 	}
 
 	// remove the obvious secruity issues from 3rd party html

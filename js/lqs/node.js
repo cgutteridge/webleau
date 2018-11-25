@@ -7,6 +7,7 @@ class LQS_Node {
 
 		this.lqs = lqs;
 		this.data = nodeData;
+		if( ! this.data.id ) { this.data.id = LQS.uuid(); }
 		this.links = {};
 		this.dom = {};
 		this.actions = [];
@@ -69,7 +70,6 @@ class LQS_Node {
 	} // end Node constructor
 
 	addCardToDisplay() {
-
 		this.dom.outer = $('<div class="lqs_node"></div>').attr("data-node",this.data.id);
 		this.dom.title = $('<div class="lqs_node_title"></div>');
 		this.dom.titleLeft = $('<div class="lqs_node_title_left"></div>');
@@ -322,6 +322,10 @@ class LQS_Node {
 	// handle another node being dropped onto this node.
 	linkDrop(event,ui) {
 		var subjectNode = this.lqs.nodes[ui.draggable.attr('data-node')];
+		if( ! subjectNode ) {
+			console.log( "Link Drop action failed - unknown node dropped:", ui.draggable.attr('data-node'), ui.draggable );
+			return;
+		}
 		var linkData = {
 			subject: { node: ui.draggable.attr('data-node') },
 			object: { node: this.data.id },
