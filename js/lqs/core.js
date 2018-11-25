@@ -433,7 +433,14 @@ class LQS {
 			nodeData.type = "embed";
 			nodeData.source = {};
 			nodeData.source.url = text;
-			var newNode = this.addNode(nodeData);
+			nodeData.id = text;
+			if( this.nodes[nodeData.id] ) {
+				// already exists, lets just bring it into view
+				// but we'll still crate links if they are needed
+				this.nodes[nodeData.id].reveal();
+			} else {
+				var newNode = this.addNode(nodeData);
+			}
 			return;
 		}
 

@@ -168,8 +168,7 @@ class LQS_Node {
  				node.dom.icon_text = $(document.createElementNS("http://www.w3.org/2000/svg","text"))
 					.addClass( "lqs_icon_text" )
 					.attr( "id", node.dom.icon_label_id )
-				var labelsG = $(document.getElementById('svg_labels'));
-				labelsG.append( node.dom.icon_text );
+				this.lqs.labelsLayer.append( node.dom.icon_text );
 
 				LQS.noDragClick( node.dom.icon, function() {
 					node.setView('main');
@@ -252,8 +251,7 @@ class LQS_Node {
  				node.dom.dot_text = $(document.createElementNS("http://www.w3.org/2000/svg","text"))
 					.addClass( "lqs_dot_text" )
 					.attr( "id", node.dom.dot_label_id )
-				var labelsG = $(document.getElementById('svg_labels'));
-				labelsG.append( node.dom.dot_text );
+				this.lqs.labelsLayer.append( node.dom.dot_text );
 
 				node.dom.dot_svg.draggable( { 
 					containment: $('.lqs_nodes'),
