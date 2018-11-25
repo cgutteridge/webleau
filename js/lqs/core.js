@@ -29,9 +29,29 @@ class LQS {
 		this.nodesLayer = $('<div class="lqs_nodes"></div>');
 		$('body').append(this.nodesLayer);
 
-		this.fgSvgLayer = $('<svg class="lqs_svg"><defs><marker id="arrow" markerWidth="11" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#666" /></marker></defs><g id="svg_arrows"></g><g id="svg_labels"></g></svg>');
+		this.fgSvgLayer  = $(document.createElementNS("http://www.w3.org/2000/svg","svg"));
+		var defs         = $(document.createElementNS("http://www.w3.org/2000/svg","defs"));
+		var marker       = $(document.createElementNS("http://www.w3.org/2000/svg","marker"));
+		var path         = $(document.createElementNS("http://www.w3.org/2000/svg","path"));
+		this.arrowsLayer = $(document.createElementNS("http://www.w3.org/2000/svg","g"));
+		this.labelsLayer = $(document.createElementNS("http://www.w3.org/2000/svg","g"));
+		defs.append(marker);
+		marker.append(path);
+		this.fgSvgLayer.append( defs );
+		this.fgSvgLayer.append( this.arrowsLayer );
+		this.fgSvgLayer.append( this.labelsLayer );
 		$('body').append(this.fgSvgLayer);
-		this.fgSvgLayer.html( this.fgSvgLayer.html() ); // reset SVG layer 
+
+		// svg needs capitals in attrs the jquery chomps 
+		this.fgSvgLayer.attr("class","lqs_svg");
+		marker[0].setAttribute( "markerWidth",11 );
+		marker[0].setAttribute( "markerHeight",10 );
+		marker[0].setAttribute( "refX",8 );
+		marker[0].setAttribute( "refY",3 );
+		marker[0].setAttribute( "markerUnits","strokeWidth" );
+		marker[0].setAttribute( "id","arrow" );
+		marker[0].setAttribute( "orient","auto" );
+		path.attr("d","M0,0 L0,6 L9,3 z").attr("fill","#666");
 	
 		var rpt = this.toReal(new LQS_Point(0,0));
 		window.scrollTo( rpt.x-LQS.winWidth()/2, rpt.y-LQS.winHeight()/2 );

@@ -18,7 +18,7 @@ class LQS_Node {
 		if( !this.data.pos ) { this.data.pos = {}; }
 
 		// dom
-		this.borderSize = 4;
+		this.borderSize = 2;
 
 		this.registerView({
 			id: "main",
@@ -504,10 +504,10 @@ class LQS_Node {
 		var realPos = this.realPos();
 		var realFullSize = this.realFullSize();
 
-		var tl = new LQS_Point( realPos.x - realFullSize.width/2, realPos.y - realFullSize.height/2 )
-		var tr = new LQS_Point( realPos.x + realFullSize.width/2, realPos.y - realFullSize.height/2 )
-		var bl = new LQS_Point( realPos.x - realFullSize.width/2, realPos.y + realFullSize.height/2 )
-		var br = new LQS_Point( realPos.x + realFullSize.width/2, realPos.y + realFullSize.height/2 )
+		var tl = new LQS_Point( realPos.x - realFullSize.width/2+1, realPos.y - realFullSize.height/2 )
+		var tr = new LQS_Point( realPos.x + realFullSize.width/2+1, realPos.y - realFullSize.height/2 )
+		var bl = new LQS_Point( realPos.x - realFullSize.width/2+1, realPos.y + realFullSize.height/2 )
+		var br = new LQS_Point( realPos.x + realFullSize.width/2+1, realPos.y + realFullSize.height/2 )
 
 		var lines = [
 			new LQS_Line( tl, tr ),
