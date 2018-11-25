@@ -23,14 +23,13 @@ class LQS_Link {
 
 		this.dom = {};
 
-		this.style = 'default';
+		this.style = 'curve';
 
  		this.dom.path = $(document.createElementNS("http://www.w3.org/2000/svg","path"));
 		lqs.arrowsLayer.append( this.dom.path );
 		if( this.style == 'curve' ) {
 			this.dom.path.attr( "stroke", "#f00" );
 			this.dom.path.attr( "fill", "transparent" );
-			this.dom.path.attr( "stroke-width", "4" );
 			this.dom.path.attr( "stroke-linecap", "round" );
 		} else {
 			this.dom.path.attr( "class", "lqs_link" );
@@ -56,8 +55,9 @@ class LQS_Link {
 		var pt2 = objectNode.nearestPointTo( c2 );
 		if( pt1 && pt2 ) {
 			if( this.style == 'curve' ) {
-				let dipsize = 50;
+				let dipsize = 50 * this.lqs.layoutScale;
 				this.dom.path.attr('d',`M ${pt1.x} ${pt1.y} C ${pt1.x} ${pt1.y+dipsize}, ${pt2.x} ${pt2.y+dipsize}, ${pt2.x} ${pt2.y}` );
+				this.dom.path.attr( "stroke-width", 4*this.lqs.layoutScale );
 			} else { 
 				this.dom.path.attr('d',`M ${pt1.x} ${pt1.y} L ${pt2.x} ${pt2.y}` );
 			}
