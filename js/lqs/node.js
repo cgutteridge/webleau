@@ -158,7 +158,7 @@ class LQS_Node {
 			id: "icon",
 			init: (node) => {
 				if( !node.data.icon ) { node.data.icon = {}; }
-				node.data.icon.size = { width: 32, height: 32 };
+				node.data.icon.size = { width: 64, height: 64 };
 		
 				node.dom.icon = $("<div class='lqs_node_icon'></div>").attr("data-node",node.data.id);
 				node.dom.icon.width( node.data.icon.size.width );
