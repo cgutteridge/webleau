@@ -171,6 +171,10 @@ a {
 	padding: 0px;
 	overflow: hidden;
   	box-shadow:         2px 6px 20px 2px rgba(0,0,0,0.1);
+	-moz-user-select: contain;
+	-webkit-user-select: contain;
+	-ms-user-select: contain;
+	user-select: contain;
 }
 .lqs_node_icon {
 	position: absolute;
@@ -354,5 +358,26 @@ a {
 /* end card menu */
 
 
-/* custom nodes type */
-lqs_card_class_
+/* custom nodes type: html & text */
+.lqs_card_class_html, .lqs_card_class_text {
+	background-color: rgba(0,0,0,0.01);
+	border: solid 1px transparent;
+  	box-shadow: none;
+}
+.lqs_card_class_html .lqs_node_title, .lqs_card_class_text .lqs_node_title {
+	background-color: transparent;
+	color: #333 !important;
+}
+.lqs_card_class_html a, .lqs_card_class_text a {
+	color: #00f !important;
+}
+.lqs_card_class_html:hover .lqs_node_title, .lqs_card_class_text:hover .lqs_node_title {
+	background-color: #999;
+	color: #fff !important;
+}
+.lqs_card_class_html:hover, .lqs_card_class_text:hover {
+	background-color: #ccc;
+	border: solid 1px #f8f0dc;
+  	box-shadow:         2px 6px 20px 2px rgba(0,0,0,0.1);
+}
+/* end custom nodes type: html & text */
