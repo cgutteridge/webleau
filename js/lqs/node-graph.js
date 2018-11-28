@@ -74,7 +74,7 @@ LQS_NodeTypes['graph-connection'] = class LQS_Node_Graph_Connection extends LQS_
 						endpoint: node.data.graph.endpoint,
 						ident: node.data.graph.ident,
 						nodeType: type,
-						sourceCardAction: 'icon',
+						//sourceCardAction: 'icon',
 						sourceCard: node,
 						from: node
 					}));
@@ -139,7 +139,7 @@ LQS_NodeTypes['graph-type'] = class LQS_Node_Graph_Type extends LQS_Node {
 					nodeID: keys[i],
 					to: node,
 					linkType: 'node type',
-					sourceCardAction: 'icon',
+					//sourceCardAction: 'icon',
 					sourceCard: node
 				}));
 			}

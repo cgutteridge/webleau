@@ -471,6 +471,16 @@ class LQS {
 		this.nodes[node.data.id] = node;
 		this.nodes[node.data.id].init(); // things to do after the constructor
 		this.nodes[node.data.id].updatePosition();
+
+		// denature any visible seeds to this node
+		if( this.seedsByTarget[node.data.id] ) {
+			var ids = Object.keys( this.seedsByTarget[node.data.id] );
+			for( let i=0;i<ids.length;++i ) {
+				this.takeSeed( ids[i] );
+			}
+		}
+
+
 		return this.nodes[node.data.id];
 	}
 

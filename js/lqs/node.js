@@ -70,7 +70,7 @@ class LQS_Node {
 	} // end Node constructor
 
 	addCardToDisplay() {
-		this.dom.outer = $('<div class="lqs_node"></div>').attr("data-node",this.data.id);
+		this.dom.outer = $('<div class="lqs_node"></div>').attr("data-node",this.data.id).addClass('lqs_card_class_'+this.data.type);
 		this.dom.title = $('<div class="lqs_node_title"></div>');
 		this.dom.titleLeft = $('<div class="lqs_node_title_left"></div>');
 		this.dom.titleRight = $('<div class="lqs_node_title_right"></div>');
