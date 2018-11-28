@@ -77,7 +77,7 @@ LQS_NodeTypes['graph-connection'] = class LQS_Node_Graph_Connection extends LQS_
 						sourceCardAction: 'icon',
 						sourceCard: node,
 						from: node
-					}) ); 
+					}));
 				}
 				this.fitSize();
 			}.bind(this)).fail(function(){
@@ -141,7 +141,7 @@ LQS_NodeTypes['graph-type'] = class LQS_Node_Graph_Type extends LQS_Node {
 					linkType: 'node type',
 					sourceCardAction: 'icon',
 					sourceCard: node
-				}) ); 
+				}));
 			}
 			this.fitSize();
 		}.bind(this)).fail(function(){
@@ -279,7 +279,7 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 						sourceCardAction: 'main',
 						sourceCard: node,
 						from: node
-					}) ); 
+					}));
 				}
 				if( apiLink.object == this.data.graph.nodeID && ajaxData.nodes[apiLink.subject] ) {
 					let row = $('<div></div>').text(" "+apiLink.type);
@@ -295,7 +295,7 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 						sourceCardAction: 'main',
 						sourceCard: node,
 						to: node
-					}) ); 
+					}));
 				}
 			}
 			this.fitSize();

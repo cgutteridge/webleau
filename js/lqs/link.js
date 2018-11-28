@@ -23,7 +23,7 @@ class LQS_Link {
 
 		this.dom = {};
 
-		this.style = 'curve';
+		this.style = 'default';
 
  		this.dom.path = $(document.createElementNS("http://www.w3.org/2000/svg","path"));
 		lqs.arrowsLayer.append( this.dom.path );
