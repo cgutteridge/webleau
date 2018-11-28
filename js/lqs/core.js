@@ -19,6 +19,9 @@ class LQS {
 		this.inspectorProxy = this.defaultInspectorProxy;
 		this.mouse = new LQS_Point( this.offset.x, this.offset.y );
 		this.mouseOverBackground = true;
+		this.seedsBySource = {};
+		this.seedsByTarget = {};
+		this.seedsByID = {};
 
 		this.bgSvgLayer = $('<svg class="lqs_bgsvg"><g id="axis"><line id="vaxis" /><line id="haxis" /></g></svg>');
 		$('body').append(this.bgSvgLayer);
@@ -69,7 +72,6 @@ class LQS {
 			comment.setView('edit');
 			comment.reveal();
 		}.bind(this));
-
 		//$('body').append( $('<div class="ident">liquid space</div>'));
 
 		/* MAIN EVENTS */
@@ -85,12 +87,20 @@ class LQS {
 	
 	
 		/* fancy stuff with paste */
-		this.nodesLayer.focus();
 		$('body').on('paste', function(event) {
 			// if we are focused on a normal-paste element just skip this handler
 			if( $('.normal-paste:focus').length ) { return; }
 			this.pasteToBackground(event);
 		}.bind(this));
+
+
+		this.nodesLayer.droppable( {
+			scope: 'seeds',
+			hoverClass: "drop-hover",
+			tolerance: "pointer",
+			drop: (event,ui)=>{ this.seedDrop(event,ui); }
+		});
+
 	
 		/* zoom on mousewheel, only when mouse over background */
 		/* otherwise do nothing, TODO allow scroll in things with a scrollbar other than the background */
@@ -141,7 +151,7 @@ class LQS {
 
 		/* CONTROLS: sliders */
 
-		this.layoutScaleSlider = $('<input type="range" value="1" min="0.05" max="2" step="0.001" />');
+		this.layoutScaleSlider = $('<input type="range" value="0" min="-8" max="2" step="0.001" />');
 		var layoutScaleDisplay = $('<span>100%</span>');
 		controls.append( $('<div>Layout scale: </div>' ).append(layoutScaleDisplay));
 		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(this.layoutScaleSlider) );
@@ -150,7 +160,7 @@ class LQS {
 		this.layoutScaleSlider.on('propertychange input', function(event) {
 			// find coords of screen centre
 			var screenMiddleVirt = this.toVirtual(LQS.screenMiddle());
-			this.layoutScale = this.layoutScaleSlider.val();
+			this.layoutScale = Math.pow(2,this.layoutScaleSlider.val());
 			var perc = Math.round( this.layoutScale*100000 ) / 1000;
 			layoutScaleDisplay.text( ""+perc+"%" );
 			this.nodesLayer.css( 'font-size',perc+"%" );
@@ -169,7 +179,7 @@ class LQS {
 		var resetTool = $('<div title="reset" class="lqs_tool">R</div>');
 		controlTools.append( resetTool );
 		resetTool.click( function() {
-			this.layoutScaleSlider.val(1).trigger('input');
+			this.layoutScaleSlider.val(0).trigger('input');
 			this.centrePage();
 			this.updateAllPositions();
 		}.bind(this));
@@ -193,7 +203,7 @@ class LQS {
 			if( confirm( "Purge layout? This will remove all cards and links from the page." ) ) {
 				this.purgeLayout();
 			}
-			this.layoutScaleSlider.val(1).trigger('input');
+			this.layoutScaleSlider.val(0).trigger('input');
 			this.centrePage();
 		}.bind(this));
 
@@ -201,7 +211,7 @@ class LQS {
 		// graph
 		var graphTool = $('<div title="graph" class="lqs_tool">G</div>');
 		controlTools.append( graphTool );
-		this.attachSeed( graphTool, LQS_NodeTypes['graph-connect'].makeSeed({}) ); 
+		this.attachSeed( graphTool, LQS_NodeTypes['graph-connect'].makeSeed({sourceCard:{data:{id:'//control-panel'}}}));
 
 
 		/* CONTROLS: load/save */
@@ -247,11 +257,75 @@ class LQS {
 			virtpt.y*this.layoutScale+this.offset.y
 		);
 	}
+	
+	deregisterCardSeeds( sourceID ) {
+		if( !this.seedsBySource[sourceID] ) {
+			// hopefully it just had no seeds
+			return;
+		}
+		var ids = Object.keys( this.seedsBySource[sourceID] );
+		for( let i=0; i<ids.length; ++i ) {
+			var id = ids[i];
+			var seed = this.seedsBySource[sourceID][id].seed;
+			
+			delete this.seedsByTarget[seed.id][id];
+			delete this.seedsBySource[sourceID][id];
+			delete this.seedsByID[id];
+		}
+	}
 
 	attachSeed( el, seed ) {
-		el.click( function() {
-			this.lqs.growSeed(this.seed,{});
-		}.bind({lqs:this,seed:seed}));
+		var id = LQS.uuid(); // unique ID for this element.
+		// nb. seed.id is the ID of the node that comes from the seed so is not unique	
+		if( ! this.seedsBySource[seed.sourceCard.data.id] ) { this.seedsBySource[seed.sourceCard.data.id]={}; }
+		this.seedsBySource[seed.sourceCard.data.id][id] = { seed: seed, el: el };
+		if( ! this.seedsByTarget[seed.id] ) { this.seedsByTarget[seed.id]={}; }
+		this.seedsByTarget[seed.id][id] = { seed: seed, el: el };
+		this.seedsByID[id] = { seed: seed, el: el };
+		el.attr('data-seed',id );
+		el.click( ()=>{ this.growSeed(seed,{}); }); // click grows with NO GEOMETRY
+		el.draggable( { 
+			scope: 'seeds',
+  			helper: "clone",
+			appendTo: this.nodesLayer,
+			start: (event,ui)=>{
+				el.addClass('lqs_seed_dragged_from');
+			},
+			stop: (event,ui)=>{
+				el.removeClass('lqs_seed_dragged_from');
+			},
+			containment: $('.lqs_nodes'),
+			opacity: 0.8,
+			scroll: true,
+//			drag: node.dragged.bind(node),
+		});
+		if( this.nodes[seed.id] ) {
+			this.takeSeed( id );
+		} else { 
+			this.returnSeed( id );
+		} 
+	}
+
+	takeSeed( seedID ) {
+		if( this.seedsByID[seedID] ) {	
+			this.seedsByID[seedID].el.addClass('lqs_seed_hole').removeClass('lqs_seed_filled');
+		}
+	}
+
+	returnSeed( seedID ) {
+		if( this.seedsByID[seedID] ) {	
+			this.seedsByID[seedID].el.removeClass('lqs_seed_hole').addClass('lqs_seed_filled');
+		}
+	}
+
+	seedDrop( event, ui ) {
+		var seedInfo = this.seedsByID[ui.draggable.attr('data-seed')];
+		if( ! seedInfo ) {
+			console.log( "Seed Drop action failed - unknown seed dropped:", ui.draggable.attr('data-seed'), ui.draggable );
+			return;
+		}
+		var geometry = { pos: this.toVirtual( { x: event.pageX, y: event.pageY } ) };
+		this.growSeed( seedInfo.seed, geometry );
 	}
 
 	// geometry is things that are decided when the seed is grown like x,y 
@@ -259,6 +333,7 @@ class LQS {
 		var sourceCard = seed.sourceCard;
 		var sourceCardAction = seed.sourceCardAction;
 
+		// copy the seed to make the nodeData
 		var nodeData = $.extend(true, {}, seed);
 		nodeData = Object.assign( nodeData, geometry );
 		if( nodeData.id && this.nodes[nodeData.id] ) {
@@ -398,6 +473,18 @@ class LQS {
 		this.nodes[node.data.id].updatePosition();
 		return this.nodes[node.data.id];
 	}
+
+	// nb. this is the final tidy up, use node.remove() to remove a node
+	removeNode( node ) {
+		if( this.seedsByTarget[node.data.id] ) {
+			var ids = Object.keys( this.seedsByTarget[node.data.id] );
+			for( let i=0;i<ids.length;++i ) {
+				this.returnSeed( ids[i] );
+			}
+		}
+		delete this.nodes[node.data.id];
+	}
+
 
 	pasteToBackground(event) {
 		var clipboardData = event.clipboardData || window.clipboardData || event.originalEvent.clipboardData;

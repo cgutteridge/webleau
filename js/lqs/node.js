@@ -100,6 +100,7 @@ class LQS_Node {
 			handles: "w,sw,s,se,e"
 		});
 		this.dom.outer.draggable( { 
+			scope: 'cards',
 			containment: $('.lqs_nodes'),
 			handle: ".lqs_node_title",
 			opacity: 0.8,
@@ -111,6 +112,7 @@ class LQS_Node {
 		});
 
 		this.dom.outer.droppable( {
+			scope: 'cards',
 			hoverClass: "drop-hover",
 			tolerance: "pointer",
 			drop: (event,ui)=>{ this.linkDrop(event,ui) }
@@ -175,6 +177,7 @@ class LQS_Node {
 				}.bind(node) );
 		
 				node.dom.icon.draggable( { 
+					scope: 'cards',
 					containment: $('.lqs_nodes'),
 					opacity: 0.8,
 					scroll: true,
@@ -185,6 +188,7 @@ class LQS_Node {
 				});
 		
 				node.dom.icon.droppable( {
+					scope: 'cards',
 					hoverClass: "drop-hover",
 					tolerance: "pointer",
 					drop: (event,ui)=>{ node.linkDrop(event,ui) }
@@ -207,7 +211,7 @@ class LQS_Node {
 				if( node.data.icon.url ) {
 					node.dom.icon.css('background-image', `url(${node.data.icon.url})` );
 				} else {
-					node.dom.icon.css('background-image', `linear-gradient(to top, rgba(255,255,255,0.7), rgba(127,127,127,0.7)), url(${LQS.logo()})` );
+					node.dom.icon.css('background-image', `linear-gradient(to bottom, rgba(255,255,255,0.7), rgba(127,127,127,0.7)), url(${LQS.logo()})` );
 				} 
 			},
 			leave: (node) => { 
@@ -254,6 +258,7 @@ class LQS_Node {
 				this.lqs.labelsLayer.append( node.dom.dot_text );
 
 				node.dom.dot_svg.draggable( { 
+					scope: 'cards',
 					containment: $('.lqs_nodes'),
 					opacity: 0.8,
 					scroll: true,
@@ -268,6 +273,7 @@ class LQS_Node {
 				}.bind(node) );
 		
 				node.dom.dot_svg.droppable( {
+					scope: 'cards',
 					hoverClass: "drop-hover",
 					tolerance: "pointer",
 					drop: (event,ui)=>{ node.linkDrop(event,ui) }
@@ -355,6 +361,7 @@ class LQS_Node {
 		if( doLeave ) {
 			this.viewSpec().leave(this);
 		}
+		this.lqs.deregisterCardSeeds( this.data.id );
 
 		this.data.view = view;
 
@@ -581,6 +588,9 @@ class LQS_Node {
 	}
 
 	remove() {
+		// clean up the viewSpec, including seeds
+		this.viewSpec().leave(this);
+
 		var link_ids = Object.keys(this.links);
 		for( let i=0;i<link_ids.length;++i ) {
 			this.links[link_ids[i]].remove();
@@ -590,7 +600,8 @@ class LQS_Node {
 			let viewSpec = this.views[view_ids[i]];
 			viewSpec.destroy(this);
 		}	
-		delete this.lqs.nodes[this.data.id];
+
+		this.lqs.removeNode(this);
 	}
 
 	static makeSeed(opts) {
