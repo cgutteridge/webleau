@@ -66,6 +66,7 @@ class LQS_Node {
 			} );
 		this.addDotFeature();
 		this.addIconFeature();
+		this.addFocusFeature();
 		this.addMetadataFeature();
 	} // end Node constructor
 
@@ -91,8 +92,8 @@ class LQS_Node {
 		this.lqs.nodesLayer.append( this.dom.outer );
 
 		// double click on node to add a comment
-		this.dom.outer.dblclick( ()=>{ this.addLinkedComment(); return false; } );
-		this.dom.title.dblclick( ()=>{ this.setView("icon"); return false; } );
+		this.dom.outer.dblclick( ()=>{ this.viewSpec().dblclick(this); return false; } );
+		this.dom.title.dblclick( ()=>{ this.viewSpec().dblclickTitle(this); return false; } );
 
 		// register UI hooks
 		this.dom.outer.resizable({
@@ -130,8 +131,46 @@ class LQS_Node {
 		this.setView( this.data.view, false );
 	}
 
-	addMetadataFeature() {
+	addFocusFeature() {
+		this.registerView({
+			id: "focus", 
+			init: (node) => {
+				node.registerAction(
+					"focus",
+					"FOCUS",
+					()=>{ node.setView( "focus" ); } );
+			},
+			enter: (node) => { // enter
+				node.dom.focus = $('<div class="lqs_focus"></div>');
+				var focusClose = $('<div class="lqs_focus_close">X</div>');
+				var focusInner = $('<div class="lqs_focus_inner"></div>');
+				node.dom.focusTitle = $('<div class="lqs_focus_title"></div>');
+				node.dom.focusContent = $('<div class="lqs_focus_content"></div>');
+				node.dom.focus.append( focusClose );
+				node.dom.focus.append( focusInner );
+				focusInner.append( node.dom.focusTitle );
+				focusInner.append( node.dom.focusContent );
+				$('body').append( node.dom.focus );
+				focusClose.click( ()=>node.setView('main') );
+				focusInner.dblclick(()=>{ node.setView('main'); return false; } );
+				//node.dom.focus.keypress(function(event){ alert(23); if( event.which==27 ) { node.setView('main') } }); //esc to close
+				node.hideAction( 'focus' );
+			},
+			setTitle(node,text) {
+				node.dom.focusTitle.text(text);
+			},
+			setContent(node,content) {
+				node.dom.focusContent.empty().append( content );
+			},
+			leave: (node) => {
+				node.dom.focus.remove();
+				node.showAction( 'focus' );
+			},
+			render: (node) => { return node.viewSpec('main').render(node); }
+		});
+	}
 
+	addMetadataFeature() {
 		this.registerView({
 			id: "meta", 
 			init: (node) => {
@@ -149,8 +188,6 @@ class LQS_Node {
 			},
 			render: (node) => { return LQS.dataToHTML( node.data ); }
 		});
-
-
 	}
 
 	addIconFeature() {
@@ -348,12 +385,13 @@ class LQS_Node {
 		this.views[params.id].init(this); // add any furniture
 	}
 
-	viewSpec() {
-		if( !this.views[this.data.view] ) {
-			console.log( "UNKNOWN CARD VIEW: "+this.data.view );
+	viewSpec( viewID = null) {
+		if( viewID == null ) { viewID = this.data.view; }
+		if( !this.views[viewID] ) {
+			console.log( "UNKNOWN CARD VIEW: "+viewID );
 			return;
 		}
-		return this.views[this.data.view];
+		return this.views[viewID];
 	}
 
 	setView( view, doLeave = true ) {
@@ -378,8 +416,7 @@ class LQS_Node {
 
 	rerender() {
 		var viewSpec = this.viewSpec();
-		this.dom.content.empty();
-		this.dom.content.append( viewSpec.render(this));
+		viewSpec.setContent( this, viewSpec.render(this));
 
 		var title = viewSpec.title(this);
 		if( title === null || title === undefined ) { title = ''; }
@@ -641,6 +678,13 @@ class LQS_Node {
 		comment.setView('edit');
 	}
 
+	// default double click behavior for all views of this card type
+	dblclick() {
+		this.setView( 'focus' );
+	}
+	dblclickTitle() {
+		this.setView( 'icon' );
+	}
 
 } // End Node
 

@@ -245,7 +245,7 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 			content.html( this.data.graph.node.data.html );
 			// duplicate code, candidate for a function?
 			content.find( 'a' ).attr("target","_blank");
-				content.find( 'img,iframe' ).css("max-width","100%");
+			content.find( 'img,iframe' ).css("max-width","100%").css('height','auto');
 		} else if( this.data.graph.node.data.icon ) {
 			content.html( $("<img style='width:100%;min-width:50px;max-width:100%' />").attr('src',this.data.graph.node.data.icon));
 		} else {

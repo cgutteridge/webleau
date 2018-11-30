@@ -67,7 +67,7 @@ $(document).ready(function(){
 		],
 		links: [
 			{
-				label: "comments",
+				label: "",
 				id: 'welcomelink',
 				subject: { node: 'a' },
 				object: { node: 'welcome' }

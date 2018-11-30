@@ -283,7 +283,7 @@ class LQS {
 		this.seedsByTarget[seed.id][id] = { seed: seed, el: el };
 		this.seedsByID[id] = { seed: seed, el: el };
 		el.attr('data-seed',id );
-		el.click( ()=>{ this.growSeed(seed,{}); }); // click grows with NO GEOMETRY
+		LQS.noDragClick( el, ()=>{ this.growSeed(seed,{}); }); // click grows with NO GEOMETRY
 		el.draggable( { 
 			scope: 'seeds',
   			helper: "clone",
@@ -308,13 +308,13 @@ class LQS {
 
 	takeSeed( seedID ) {
 		if( this.seedsByID[seedID] ) {	
-			this.seedsByID[seedID].el.addClass('lqs_seed_hole').removeClass('lqs_seed_filled');
+			this.seedsByID[seedID].el.addClass('lqs_seed_hole').removeClass('lqs_seed_filled').draggable('disable');
 		}
 	}
 
 	returnSeed( seedID ) {
 		if( this.seedsByID[seedID] ) {	
-			this.seedsByID[seedID].el.removeClass('lqs_seed_hole').addClass('lqs_seed_filled');
+			this.seedsByID[seedID].el.removeClass('lqs_seed_hole').addClass('lqs_seed_filled').draggable('enable');
 		}
 	}
 
