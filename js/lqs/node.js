@@ -139,6 +139,7 @@ class LQS_Node {
 					"focus",
 					"FOCUS",
 					()=>{ node.setView( "focus" ); } );
+
 			},
 			enter: (node) => { // enter
 				node.dom.focus = $('<div class="lqs_focus"></div>');
@@ -153,8 +154,8 @@ class LQS_Node {
 				$('body').append( node.dom.focus );
 				focusClose.click( ()=>node.setView('main') );
 				focusInner.dblclick(()=>{ node.setView('main'); return false; } );
-				//node.dom.focus.keypress(function(event){ alert(23); if( event.which==27 ) { node.setView('main') } }); //esc to close
 				node.hideAction( 'focus' );
+				$(window).bind( 'keyup.focus', (e)=>{ if( e.which==27 ) { node.setView('main') } } );
 			},
 			setTitle(node,text) {
 				node.dom.focusTitle.text(text);
@@ -165,6 +166,7 @@ class LQS_Node {
 			leave: (node) => {
 				node.dom.focus.remove();
 				node.showAction( 'focus' );
+				$(window).unbind( 'keyup.focus' );
 			},
 			render: (node) => { return node.viewSpec('main').render(node); }
 		});

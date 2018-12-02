@@ -16,12 +16,15 @@ class LQS {
 		this.curDown = false;
 		this.layoutScaleSlider = null;
 		this.defaultInspectorProxy = 'https://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
-		this.inspectorProxy = this.defaultInspectorProxy;
 		this.mouse = new LQS_Point( this.offset.x, this.offset.y );
 		this.mouseOverBackground = true;
 		this.seedsBySource = {};
 		this.seedsByTarget = {};
 		this.seedsByID = {};
+
+		// things to load/save
+		this.inspectorProxy = this.defaultInspectorProxy;
+		this.linkStyle = 'default';
 
 		this.bgSvgLayer = $('<svg class="lqs_bgsvg"><g id="axis"><line id="vaxis" /><line id="haxis" /></g></svg>');
 		$('body').append(this.bgSvgLayer);
@@ -178,7 +181,7 @@ class LQS {
 		controls.append(controlTools);
 
 		// reset
-		var resetTool = $('<div title="reset" class="lqs_tool">R</div>');
+		var resetTool = $('<div title="reset" class="lqs_tool">Reset View</div>');
 		controlTools.append( resetTool );
 		resetTool.click( ()=> {
 			this.layoutScaleSlider.val(0).trigger('input');
@@ -187,7 +190,7 @@ class LQS {
 		});
 
 		// quine download
-		var quineTool = $('<div title="quine" class="lqs_tool">Q</div>');
+		var quineTool = $('<div title="quine" class="lqs_tool">Quine</div>');
 		controlTools.append( quineTool );
 		quineTool.click( ()=>{
 			var head = $('head').html();
@@ -199,7 +202,7 @@ class LQS {
 		});
 
 		// purge everything
-		var purgeTool = $('<div title="purge" class="lqs_tool">X</div>');
+		var purgeTool = $('<div title="purge" class="lqs_tool">Purge</div>');
 		controlTools.append( purgeTool );
 		purgeTool.click( ()=>{
 			if( confirm( "Purge layout? This will remove all cards and links from the page." ) ) {
@@ -209,12 +212,28 @@ class LQS {
 			this.centrePage();
 		});
 
+		// strings and arrows
+		var arrowTool = $('<div title="arrow" class="lqs_tool">Arrow Links</div>');
+		var stringTool = $('<div title="string" class="lqs_tool">String Links</div>');
+		controlTools.append( arrowTool );
+		controlTools.append( stringTool );
+		arrowTool.click( ()=> {
+			arrowTool.hide();
+			stringTool.show();
+			this.setLinkStyle( 'arrow' );
+		});
+		stringTool.click( ()=> {
+			arrowTool.show();
+			stringTool.hide();
+			this.setLinkStyle( 'string' );
+		});
+		if( this.linkStyle == 'string' ) {	
+			stringTool.hide();
+		}else {
+			arrowTool.hide();
+		}
 
-		// graph
-		var graphTool = $('<div title="graph" class="lqs_seed">Data Connector</div>');
 
-		controlTools.append( graphTool );
-		this.attachSeed( graphTool, LQS_NodeTypes['graph-connect'].makeSeed({sourceCard:{data:{id:'//control-panel'}}}));
 
 
 		/* CONTROLS: load/save */
@@ -242,8 +261,13 @@ class LQS {
 			this.setLayout(layout);
 		});
 		
-	}	/* end controls */
+		// graph
+		var graphTool = $('<div title="graph" class="lqs_seed">Data Connector</div>');
+		controls.append( $("<div style='margin-top:1em'>Seeds</div>"));
+		controls.append( graphTool );
+		this.attachSeed( graphTool, LQS_NodeTypes['graph-connect'].makeSeed({sourceCard:{data:{id:'//control-panel'}}}));
 
+	}	/* end controls */
 
 
 
@@ -387,6 +411,7 @@ class LQS {
 		}
 
 		layout.inspectorProxy = this.inspectorProxy;
+		layout.linkStyle = this.linkStyle;
 		return layout;
 	}
 
@@ -402,6 +427,16 @@ class LQS {
 		}
 	}
 
+	setLinkStyle( style ) {
+		this.linkStyle = style;
+		var linkKeys = Object.keys(this.links);
+		for( var i=0; i<linkKeys.length; ++i ) {
+			this.links[linkKeys[i]].removeDom();
+			this.links[linkKeys[i]].addDom();
+			this.links[linkKeys[i]].updatePosition();
+		}
+	}
+
 	setLayout(layout) {
 		this.purgeLayout();
 		for( var i=0; i<layout.nodes.length; ++i ) {
@@ -414,6 +449,10 @@ class LQS {
 		this.inspectorProxy = this.defaultInspectorProxy;
 		if( layout.inspectorProxy ) {
 			this.inspectorProxy = layout.inspectorProxy;
+		}
+		this.linkStyle = 'default';
+		if( layout.linkStyle ) {
+			this.linkStyle = layout.linkStyle;
 		}
 	}
 

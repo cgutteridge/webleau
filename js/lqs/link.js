@@ -22,12 +22,13 @@ class LQS_Link {
 		objectNode.registerLink(this);
 
 		this.dom = {};
+		this.addDom();
+	}
 
-		this.style = 'default';
-
+	addDom() {
  		this.dom.path = $(document.createElementNS("http://www.w3.org/2000/svg","path"));
-		lqs.arrowsLayer.append( this.dom.path );
-		if( this.style == 'curve' ) {
+		this.lqs.arrowsLayer.append( this.dom.path );
+		if( this.lqs.linkStyle == 'string' ) {
 			this.dom.path.attr( "stroke", "#f00" );
 			this.dom.path.attr( "fill", "transparent" );
 			this.dom.path.attr( "stroke-linecap", "round" );
@@ -36,15 +37,18 @@ class LQS_Link {
 			this.dom.path.attr( "marker-end", "url(#arrow)" );
 		}
 
-
  		this.dom.fromText = $(document.createElementNS("http://www.w3.org/2000/svg","text"));
 		this.dom.fromText.attr( "class", "lqs_link_from_text" );
 		this.dom.fromText.id = this.dom.label_id;
-		this.dom.fromText.text( linkData.label );
-		lqs.labelsLayer.append( this.dom.fromText );
-
+		this.dom.fromText.text( this.data.label );
+		this.lqs.labelsLayer.append( this.dom.fromText );
 	}
 
+
+	removeDom() {
+		this.dom.path.remove();
+		this.dom.fromText.remove();
+	}
 
 	updatePosition() {
 		var subjectNode = this.lqs.nodes[this.data.subject.node];
@@ -54,7 +58,7 @@ class LQS_Link {
 		var pt1 = subjectNode.nearestPointTo( c1 );
 		var pt2 = objectNode.nearestPointTo( c2 );
 		if( pt1 && pt2 ) {
-			if( this.style == 'curve' ) {
+			if( this.lqs.linkStyle == 'string' ) {
 				let dipsize = 50 * this.lqs.layoutScale;
 				this.dom.path.attr('d',`M ${pt1.x} ${pt1.y} C ${pt1.x} ${pt1.y+dipsize}, ${pt2.x} ${pt2.y+dipsize}, ${pt2.x} ${pt2.y}` );
 				this.dom.path.attr( "stroke-width", 4*this.lqs.layoutScale );
@@ -73,8 +77,8 @@ class LQS_Link {
 		subjectNode.deRegisterLink(this);
 		objectNode.deRegisterLink(this);
 		delete this.lqs.links[this.data.id];
-		this.dom.path.remove();
-		this.dom.fromText.remove();
+		this.removeDom();
 	}
+
 }
 // End LQSLink
