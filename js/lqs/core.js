@@ -59,7 +59,7 @@ class LQS {
 		var rpt = this.toReal(new LQS_Point(0,0));
 		window.scrollTo( rpt.x-LQS.winWidth()/2, rpt.y-LQS.winHeight()/2 );
 
-		this.nodesLayer.dblclick(function(event) {
+		this.nodesLayer.dblclick((event)=> {
 			var nodeData = {
 				id: LQS.uuid(),
 				pos: this.toVirtual( { x: event.pageX, y: event.pageY } ),
@@ -71,15 +71,15 @@ class LQS {
 			var comment = this.addNode(nodeData);
 			comment.setView('edit');
 			comment.reveal();
-		}.bind(this));
+		});
 		//$('body').append( $('<div class="ident">liquid space</div>'));
 
 		/* MAIN EVENTS */
 
 		// location of mouse on tablau
-		$( document).on( "mousemove", function( event ) {
+		$(document).on( "mousemove", ( event )=> {
 			this.mouse = new LQS_Point( event.pageX, event.pageY );
-		}.bind(this));
+		});
 		/* each time the mouse enters something, if it's over the background set a flag */
 		this.nodesLayer.on( "mouseover", (event)=>{
 			this.mouseOverBackground = (event.target===this.nodesLayer[0]);
@@ -87,11 +87,11 @@ class LQS {
 	
 	
 		/* fancy stuff with paste */
-		$('body').on('paste', function(event) {
+		$('body').on('paste', (event)=> {
 			// if we are focused on a normal-paste element just skip this handler
 			if( $('.normal-paste:focus').length ) { return; }
 			this.pasteToBackground(event);
-		}.bind(this));
+		});
 
 
 		this.nodesLayer.droppable( {
@@ -104,7 +104,7 @@ class LQS {
 	
 		/* zoom on mousewheel, only when mouse over background */
 		/* otherwise do nothing, TODO allow scroll in things with a scrollbar other than the background */
-		this.nodesLayer.bind('wheel mousewheel', function(e){
+		this.nodesLayer.bind('wheel mousewheel', (e)=>{
 			if( !this.mouseOverBackground ) { return; }
 			var delta;
 	
@@ -115,26 +115,28 @@ class LQS {
 			}
 			this.layoutScaleSlider.val( parseFloat(this.layoutScaleSlider.val())+delta*0.001 );
 			this.layoutScaleSlider.trigger('propertychange');
-		}.bind(this));
+		});
 	
 		/* drag background to scroll */
 	
-		$(document).on("mousemove", function (event) {
+		$(document).on("mousemove", (event)=> {
 			if (this.curDown === true) {
 				$(document).scrollLeft(parseInt($(document).scrollLeft() + (LQS_ClickStart.x - event.pageX)));
 				$(document).scrollTop( parseInt($(document).scrollTop()  + (LQS_ClickStart.y - event.pageY)));
 			}
-		}.bind(this));
+		});
 		
-		$(document).on("mousedown", function (e) { 
+		$(document).on("mousedown", (e)=> { 
 			LQS_ClickStart = { x: e.pageX, y: e.pageY };
 			if( $(e.target).hasClass( "lqs_nodes" ) ) {
 				this.curDown = true; 
 				e.preventDefault(); 
 			}
-		}.bind(this));
-		$(window).on("mouseup",  function (e) { this.curDown = false; }.bind(this));
-		$(window).on("mouseout", function (e) { this.curDown = false; }.bind(this));
+		});
+		$(window).on("mouseup",  (e)=> { this.curDown = false; });
+		$(window).on("mouseout", (e)=> { this.curDown = false; });
+
+		document.addEventListener('gesturestart', (e)=> { e.preventDefault(); });
 	
 		this.addControlPanel();	
 	}
@@ -157,7 +159,7 @@ class LQS {
 		controls.append( $('<div></div>').css('margin-bottom', '8px' ).append(this.layoutScaleSlider) );
 		controls.append( this.layoutScaleSlider );
 		//controls.append( contentToggle );
-		this.layoutScaleSlider.on('propertychange input', function(event) {
+		this.layoutScaleSlider.on('propertychange input', (event)=> {
 			// find coords of screen centre
 			var screenMiddleVirt = this.toVirtual(LQS.screenMiddle());
 			this.layoutScale = Math.pow(2,this.layoutScaleSlider.val());
@@ -167,7 +169,7 @@ class LQS {
 			var screenMiddleReal = this.toReal(screenMiddleVirt);
 			window.scrollTo( screenMiddleReal.x-LQS.winWidth()/2, screenMiddleReal.y-LQS.winHeight()/2 );
 			this.updateAllPositions();
-		}.bind(this));
+		});
 
 
 		/* CONTROLS: tools */
@@ -178,38 +180,39 @@ class LQS {
 		// reset
 		var resetTool = $('<div title="reset" class="lqs_tool">R</div>');
 		controlTools.append( resetTool );
-		resetTool.click( function() {
+		resetTool.click( ()=> {
 			this.layoutScaleSlider.val(0).trigger('input');
 			this.centrePage();
 			this.updateAllPositions();
-		}.bind(this));
+		});
 
 		// quine download
 		var quineTool = $('<div title="quine" class="lqs_tool">Q</div>');
 		controlTools.append( quineTool );
-		quineTool.click( function() {
+		quineTool.click( ()=>{
 			var head = $('head').html();
 			var jsonLayout = JSON.stringify( this.getLayout());
 			jsonLayout = jsonLayout.replace( /<\/script>/ig, "<\/\"+\"script>" );
-			var page = `<!DOCTYPE html>\n<html lang='en'><head>${head}</head><body></body><script>$(document).ready(function(){ var lqs = new LQS(); lqs.setLayout( ${jsonLayout} ); });</`+"script></html>" ;
+			var page = `<!DOCTYPE html>\n<html lang='en'><head>${head}</head><body></body><script>$(document).ready( ()=>{ var lqs = new LQS(); lqs.setLayout( ${jsonLayout} ); });</`+"script></html>" ;
 			var filename = "liquid-space."+Date.now()+".html";
 			LQS.download( filename, page, "text/html" );
-		}.bind(this));
+		});
 
 		// purge everything
 		var purgeTool = $('<div title="purge" class="lqs_tool">X</div>');
 		controlTools.append( purgeTool );
-		purgeTool.click( function() {
+		purgeTool.click( ()=>{
 			if( confirm( "Purge layout? This will remove all cards and links from the page." ) ) {
 				this.purgeLayout();
 			}
 			this.layoutScaleSlider.val(0).trigger('input');
 			this.centrePage();
-		}.bind(this));
+		});
 
 
 		// graph
-		var graphTool = $('<div title="graph" class="lqs_tool">G</div>');
+		var graphTool = $('<div title="graph" class="lqs_seed">Data Connector</div>');
+
 		controlTools.append( graphTool );
 		this.attachSeed( graphTool, LQS_NodeTypes['graph-connect'].makeSeed({sourceCard:{data:{id:'//control-panel'}}}));
 
@@ -224,12 +227,12 @@ class LQS {
 		var uploadTool = $('<div title="upload" class="lqs_tool">&uarr;</div>');
 		controlIO.append( uploadTool );
 		controls.append(controlIO);
-		downloadTool.click( function() {
+		downloadTool.click( ()=>{
 			var layout = this.getLayout();
 			ioTextarea.val( JSON.stringify( layout ) );
 			ioTextarea.select();
-		}.bind(this));
-		uploadTool.click( function() {
+		});
+		uploadTool.click( ()=>{
 			var layout = JSON.parse( ioTextarea.val() );
 			if( !layout ) {
 				alert( "LOADING ERROR. Rewind tape and try again.");
@@ -237,7 +240,7 @@ class LQS {
 			}
 	
 			this.setLayout(layout);
-		}.bind(this));
+		});
 		
 	}	/* end controls */
 
