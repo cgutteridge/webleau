@@ -262,10 +262,25 @@ class LQS {
 		});
 		
 		// graph
-		var graphTool = $('<div title="graph" class="lqs_seed">Data Connector</div>');
+
 		controls.append( $("<div style='margin-top:1em'>Seeds</div>"));
-		controls.append( graphTool );
-		this.attachSeed( graphTool, LQS_NodeTypes['graph-connect'].makeSeed({sourceCard:{data:{id:'//control-panel'}}}));
+
+		var graphSeed = $('<div class="lqs_seed">Data Connector</div>');
+		controls.append( graphSeed );
+		this.attachSeed( graphSeed, LQS_NodeTypes['graph-connect'].makeSeed({sourceCard:{data:{id:'//control-panel'}}}));
+
+		var graphSeedLex = $('<div class="lqs_seed">Webscience Lexcon</div>');
+		controls.append( graphSeedLex );
+		this.attachSeed( graphSeedLex, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://www.soton.ac.uk/~totl/webscience-graph/' }));
+
+		var graphSeedWPDemo = $('<div class="lqs_seed">Blog Demo</div>');
+		controls.append( graphSeedWPDemo );
+		this.attachSeed( graphSeedWPDemo, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://www.soton.ac.uk/~totl/wordpress-graph-demo/' }));
+
+		var graphSeedWPDemo = $('<div class="lqs_seed">JRNL Blog</div>');
+		controls.append( graphSeedWPDemo );
+		this.attachSeed( graphSeedWPDemo, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://jrnl.global/wp-json/graph-api/v1/query' }));
+
 
 	}	/* end controls */
 

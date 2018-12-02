@@ -3,7 +3,7 @@
 
 LQS_NodeTypes['graph-connect'] = class LQS_Node_Graph_Connect extends LQS_Node {
 	render() {	
-		var input = $("<input class='normal-paste' value='https://www.southampton.ac.uk/~totl/wordpress-graph-demo/' style='width:100%'/>");
+		var input = $("<input class='normal-paste' style='width:100%'/>");
 		var button = $("<button>CONNECT</button>");
 		button.click( function() {
 			var seed = LQS_NodeTypes['graph-connection'].makeSeed({endpoint:input.val()});
@@ -55,99 +55,20 @@ LQS_NodeTypes['graph-connection'] = class LQS_Node_Graph_Connection extends LQS_
 			if( node.data.graph.ident && node.data.graph.ident.title ) {
 				node.viewSpec().setTitle(node, node.data.graph.ident.title );
 			}
-			$.ajax({
-				method: "GET",
-				data: { action: 'nodeTypes' },
-				url: node.data.graph.endpoint
-			}).done(function(ajaxData){
-				this.dom.content.empty();
-				//this.dom.content.append( $('<div>This endpoint has the following types of node:</div>'));
-				var keys = Object.keys( ajaxData.nodeTypes );
-				for( var i=0;i<keys.length;++i) {
-					var type = keys[i];
-					var seed = $('<div class="lqs_seed">'+type+' </div>');
-					if( ajaxData.nodeTypes[type]["count"] ) {
-						seed.append( $('<span>('+ajaxData.nodeTypes[type]["count"]+')</span>' ) );
-					}
-					this.dom.content.append(seed);
-					this.lqs.attachSeed( seed, LQS_NodeTypes['graph-type'].makeSeed({
-						endpoint: node.data.graph.endpoint,
-						ident: node.data.graph.ident,
-						nodeType: type,
-						//sourceCardAction: 'icon',
-						sourceCard: node,
-						from: node
-					}));
-				}
-				this.fitSize();
-			}.bind(this)).fail(function(){
-				this.dom.content.html( "Failed to get data (TODO: add a 'retry' icon)" );
-				this.fitSize();
-			}.bind(this))
-		}.bind(this));
-	}
-}
-
-
-LQS_NodeTypes['graph-type'] = class LQS_Node_Graph_Type extends LQS_Node {
-	constructor( nodeData, lqs ) {
-		super(nodeData,lqs);
-		this.showAction("reload");
-	}
-	static makeSeed(opts) {
-		// check opts: ident,nodeType,endpoint,from?
-		var seed = super.makeSeed(opts);
-		seed.id = "graph|"+opts.endpoint+"|type|"+opts.nodeType;
-		seed.title = opts.ident.title+" #"+opts.nodeType;
-		seed.type = "graph-type";
-		seed.graph = { 
-			endpoint: opts.endpoint,
-			ident: opts.ident,
-			nodeType: opts.nodeType };
-		seed.links = [];
-		if( opts.from ) {
-			var link_id = "graph|link|"+opts.from.data.id+"|"+seed.id;
-			seed.links.push({
-				object: {node: seed.id},
-				subject: {node: opts.from.data.id},
-				label: "belongs to",
-				id: link_id
-			});
-		};
-		return seed;
-	}
-	render() {
-		return $("<div>Loading...</div>");
-	}
-	update() {
-		var node = this;
-		$.ajax({
-			method: "GET",
-			data: { action: 'nodes', types:this.data.graph.nodeType },
-			url: node.data.graph.endpoint
-		}).done(function(ajaxData){
-			this.dom.content.empty();
-			//this.dom.content.html( LQS.dataToHTML( data ) );
-			var keys = Object.keys( ajaxData.nodes );
-			for( var i=0;i<keys.length;++i) {
-				var gnode = ajaxData.nodes[keys[i]];
-				var seed = $('<div class="lqs_seed"></div>').text( " "+gnode.title);
+			this.dom.content.text( "Connected" );
+			if( node.data.graph.ident.start ) {
+				var seed = $('<div class="lqs_seed">Start</div>');
 				this.dom.content.append(seed);
 				this.lqs.attachSeed( seed, LQS_NodeTypes['graph-node'].makeSeed({
-					endpoint: this.data.graph.endpoint,
-					ident: this.data.graph.ident,
-					nodeID: keys[i],
-					to: node,
-					linkType: 'node type',
-					//sourceCardAction: 'icon',
-					sourceCard: node
+					endpoint: node.data.graph.endpoint,
+					ident: node.data.graph.ident,
+					nodeID: node.data.graph.ident.start,
+					sourceCard: node,
+					linkType: 'fool',
+					from: node
 				}));
 			}
-			this.fitSize();
-		}.bind(this)).fail(function(){
-			this.dom.content.html( "Failed to get data (TODO: add a 'retry' icon)" );
-			this.fitSize();
-		}.bind(this))
+		}.bind(this));
 	}
 }
 
@@ -175,6 +96,7 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 	
 	}
 	static makeSeed(opts) {
+		var seed = super.makeSeed(opts);
 		// check opts: ident,nodeID,endpoint,from?,to?
 		var id = "graph|"+opts.endpoint+"|node|"+opts.nodeID;
 		var seed = super.makeSeed(opts);
@@ -186,25 +108,27 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 			ident: opts.ident,
 			endpoint: opts.endpoint
 		};
+		// check opts: ident,nodeID,endpoint,from?,to?,linkType?
 		seed.links = [];
 		if( opts.from ) {
-			var link_id = "graph|link|"+opts.from.data.id+"|"+id;
+			var link_id = "graph|link|"+opts.from.data.id+"|"+seed.id;
 			seed.links.push({
 				subject: {node: opts.from.data.id},
-				object: {node: id},
+				object: {node: seed.id},
 				label: opts.linkType,
 				id: link_id
 			});
 		};
 		if( opts.to ) {
-			var link_id = "graph|link|"+opts.to.data.id+"|"+id;
+			var link_id = "graph|link|"+opts.to.data.id+"|"+seed.id;
 			seed.links.push({
-				subject: {node: id},
+				subject: {node: seed.id},
 				object: {node: opts.to.data.id},
 				label: opts.linkType,
 				id: link_id
 			});
 		};
+console.log(opts,seed);
 		return seed;
 	}
 	render() {
@@ -276,7 +200,7 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 						ident: this.data.graph.ident,
 						nodeID: apiLink.object,
 						linkType: apiLink.type,
-						sourceCardAction: 'main',
+						//sourceCardAction: 'main',
 						sourceCard: node,
 						from: node
 					}));
@@ -292,7 +216,7 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 						ident: this.data.graph.ident,
 						nodeID: apiLink.subject,
 						linkType: apiLink.type,
-						sourceCardAction: 'main',
+						//sourceCardAction: 'main',
 						sourceCard: node,
 						to: node
 					}));
