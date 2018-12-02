@@ -7,8 +7,9 @@ LQS_NodeTypes['text'] = class LQS_Node_Text extends LQS_Node {
 		this.registerView({
 			id: "edit", 
 			enter: (node) => { // enter
-				node.data.size.width = ((LQS.winWidth() /2))/node.lqs.layoutScale;
-				node.data.size.height= ((LQS.winHeight()/2))/node.lqs.layoutScale;
+				node.set('size', {
+					width: ((LQS.winWidth() /2))/node.lqs.layoutScale,
+					height: ((LQS.winHeight()/2))/node.lqs.layoutScale });
 				node.dom.outer.addClass('lqs_node_notitle');
 			},
 			leave: (node) => {
@@ -36,10 +37,10 @@ LQS_NodeTypes['text'] = class LQS_Node_Text extends LQS_Node {
 				save.click( ()=>{
 					var v = node.dom.edit.textarea.val().trim();
 					if( v == "" ) { node.remove(); return; }
-					node.data.text = v;
+					node.set( 'text', v);
 					// force a resize
-					delete node.data.mainsize;
-					delete node.data.size;
+					node.set( 'mainsize', null );
+					node.set( 'size', null );
 					node.setView("main");
 				});
 				cancel.click( ()=>{

@@ -132,7 +132,6 @@ class LQS {
 		hammertime.on("panstart", (e)=> {
 			if( $(e.target).hasClass( "lqs_nodes" ) ) {
 				posBeforePan = new LQS_Point( parseInt($(document).scrollLeft()), parseInt($(document).scrollTop() ) );
-				console.log( 'panstart' );
 			} else {
 				posBeforePan = null;
 			}

@@ -51,7 +51,7 @@ LQS_NodeTypes['graph-connection'] = class LQS_Node_Graph_Connection extends LQS_
 			this.dom.content.html( "Failed to get ident data (TODO: add a 'retry' icon)" );
 			this.fitSize();
 		}.bind(this)).done(function(ajaxData){
-			node.data.graph.ident = ajaxData;
+			node.set( 'graph.ident', ajaxData );
 			if( node.data.graph.ident && node.data.graph.ident.title ) {
 				node.viewSpec().setTitle(node, node.data.graph.ident.title );
 			}
@@ -128,7 +128,6 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 				id: link_id
 			});
 		};
-console.log(opts,seed);
 		return seed;
 	}
 	render() {
@@ -141,16 +140,16 @@ console.log(opts,seed);
 			data: { action: 'nodes', ids:this.data.graph.nodeID, data:1 },
 			url: node.data.graph.endpoint
 		}).done(function(ajaxData){
-			this.data.graph.node = ajaxData.nodes[this.data.graph.nodeID];
+			this.set('graph.node', ajaxData.nodes[this.data.graph.nodeID] );
 			this.dom.content.empty();
 			this.dom.content.append( this.renderGraphNodeContent() );
 			this.fitSize();
 			this.viewSpec().setTitle(node, this.data.graph.node.title );
 			if( this.data.graph.node.data && this.data.graph.node.data.icon )  {
-				this.data.icon.url = this.data.graph.node.data.icon;
+				this.set('icon.url', this.data.graph.node.data.icon );
 			}
 			if( this.data.graph.node.title )  {
-				this.data.title = this.data.graph.node.title;
+				this.set('title',this.data.graph.node.title);
 			}
 		}.bind(this)).fail(function(){
 			var r = $("<div>Failed to get data (TODO: add a 'retry' icon). Using cached version.</div>" );

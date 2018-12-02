@@ -70,6 +70,18 @@ class LQS_Node {
 		this.addMetadataFeature();
 	} // end Node constructor
 
+	// all data should be modified via this function so it can be intercepted
+	set(field, data ) {
+		var path = field.split( /\./ );
+		var lastpath = path.pop();
+		var target = this.data;
+		for(let i=0;i<path.length;++i ) {
+			if( !target[path[i]] ) { target[path[i]] = {}; }
+			target = target[path[i]];
+		}
+		target[lastpath] = data;	
+	}
+
 	addCardToDisplay() {
 		this.dom.outer = $('<div class="lqs_node"></div>').attr("data-node",this.data.id).addClass('lqs_card_class_'+this.data.type);
 		this.dom.title = $('<div class="lqs_node_title"></div>');
@@ -387,8 +399,8 @@ class LQS_Node {
 			id: LQS.uuid() 
 		};
 		var newLink = this.lqs.addLink( linkData );
-		subjectNode.data.pos.x = subjectNode.dragStart.x;
-		subjectNode.data.pos.y = subjectNode.dragStart.y;
+		subjectNode.set('pos.x', subjectNode.dragStart.x);
+		subjectNode.set('pos.y', subjectNode.dragStart.y);
 		subjectNode.updatePosition();
 		subjectNode.updateLinksPosition();
 	}
@@ -414,7 +426,7 @@ class LQS_Node {
 		}
 		this.lqs.deregisterCardSeeds( this.data.id );
 
-		this.data.view = view;
+		this.set('view',view);
 
 		var viewSpec = this.viewSpec();
 		viewSpec.enter(this);
@@ -436,7 +448,7 @@ class LQS_Node {
 		viewSpec.setTitle( this, title );
 
 		if( !this.data.size ||  this.data.size.width === undefined ) {
-			this.data.size = {};
+			this.set( 'size',{} );
 			this.fitSize();
 		}
 	}
@@ -482,11 +494,13 @@ class LQS_Node {
 
 		var wDelta  = ui.size.width  - ui.originalSize.width;
 		var adjustedWidth  = ui.originalSize.width  + 2*wDelta;
-		this.data.size.width  = Math.max(50,adjustedWidth/this.lqs.layoutScale);
 
 		var hDelta  = ui.size.height - ui.originalSize.height;
 		var adjustedHeight =  ui.originalSize.height + 2*hDelta;
-		this.data.size.height = Math.max(50,adjustedHeight/this.lqs.layoutScale);
+
+		this.set('size',{
+			width: Math.max(50,adjustedWidth/this.lqs.layoutScale),
+			height: Math.max(50,adjustedHeight/this.lqs.layoutScale) });
 
 		this.updatePosition();
 		this.updateLinksPosition();
@@ -524,8 +538,9 @@ class LQS_Node {
 		this.dom.outer.css('max-width', (LQS.winWidth()/2)+"px");
 		this.dom.outer.css('max-height',(LQS.winHeight()*3/4)+"px");
 		this.dom.outer.find( '.lqs_tool' ).addClass('noTools');
-		this.data.size.width =  Math.max( 64, (this.dom.outer.width() )/this.lqs.layoutScale+10);
-		this.data.size.height = Math.max( 64, (this.dom.outer.height())/this.lqs.layoutScale+10);
+		this.set('size',{
+			width: Math.max( 64, (this.dom.outer.width() )/this.lqs.layoutScale+10),
+			height: Math.max( 64, (this.dom.outer.height())/this.lqs.layoutScale+10) });
 		this.dom.outer.find( '.lqs_tool' ).removeClass('noTools');
 		this.dom.outer.css('max-width','none');
 		this.dom.outer.css('max-height','none');

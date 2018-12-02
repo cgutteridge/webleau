@@ -82,25 +82,22 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 			url: this.lqs.inspectorProxy
 		}).done((ajaxData)=>{
 			let url = this.data.source.url;
-			this.data.source = ajaxData;
-			this.data.source.url = url;
+			this.set( 'source', ajaxData );
+			this.set( 'source.url', url );
 
 			if( this.data.source.size && this.data.source.size.width && this.data.source.size.height) {
-				console.log( this.data.source.size );
-				this.data.size = {};
-				this.data.size.width = this.data.source.size.width+4;
-				this.data.size.height = this.data.source.size.height+4;
+				this.set( 'size', { width: this.data.source.size.width+4, height: this.data.source.size.height+4 } );
 			}
 			if( this.data.source.image && this.data.source.image.url) {
-				this.data.icon.url = this.data.source.image.url;
+				this.set( 'icon.url', this.data.source.image.url );
 			}
 			else if( this.data.source.image && this.data.source.image.url) {
-				this.data.icon.url = this.data.source.image.url;
+				this.set( 'icon.url', this.data.source.image.url );
 			}
 			if( this.data.source.title ) {
-				this.data.title = this.data.source.title;
+				this.set( 'title', this.data.source.title );
 			} else {
-				this.data.title = this.data.source.url;
+				this.set( 'title', this.data.source.url );
 			}
 		
 			this.rerender();
