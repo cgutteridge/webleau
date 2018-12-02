@@ -43,7 +43,7 @@ LQS_NodeTypes['text'] = class LQS_Node_Text extends LQS_Node {
 					node.setView("main");
 				});
 				cancel.click( ()=>{
-					var v = textarea.val().trim();
+					var v = node.dom.edit.textarea.val().trim();
 					if( v == "" ) { node.remove(); return; }
 					node.setView("main");
 				});

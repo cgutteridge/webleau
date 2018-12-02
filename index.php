@@ -9,6 +9,7 @@ $scripts = array(
   "js/jquery-1.12.4.min.js",
   "js/jquery-ui.js",
   "js/jquery.ui.touch-punch.min.js",
+  "js/hammer.min.js",
   "js/lqs/core.js",
   "js/lqs/point.js",
   "js/lqs/line.js",

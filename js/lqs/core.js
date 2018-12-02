@@ -62,19 +62,6 @@ class LQS {
 		var rpt = this.toReal(new LQS_Point(0,0));
 		window.scrollTo( rpt.x-LQS.winWidth()/2, rpt.y-LQS.winHeight()/2 );
 
-		this.nodesLayer.dblclick((event)=> {
-			var nodeData = {
-				id: LQS.uuid(),
-				pos: this.toVirtual( { x: event.pageX, y: event.pageY } ),
-				title: "",
-				text: "",
-				type: 'text',
-				meta: {}
-			};
-			var comment = this.addNode(nodeData);
-			comment.setView('edit');
-			comment.reveal();
-		});
 		//$('body').append( $('<div class="ident">liquid space</div>'));
 
 		/* MAIN EVENTS */
@@ -120,27 +107,77 @@ class LQS {
 			this.layoutScaleSlider.trigger('propertychange');
 		});
 	
-		/* drag background to scroll */
-	
-		$(document).on("mousemove", (event)=> {
-			if (this.curDown === true) {
-				$(document).scrollLeft(parseInt($(document).scrollLeft() + (LQS_ClickStart.x - event.pageX)));
-				$(document).scrollTop( parseInt($(document).scrollTop()  + (LQS_ClickStart.y - event.pageY)));
+		// prevent gestures going up to the ipad OS
+		document.addEventListener('gesturestart', (e)=> { e.preventDefault(); return false; });
+
+		// stop
+		var hammertime = new Hammer.Manager( this.nodesLayer[0], {} );
+
+		// add ipad pinch gesture
+		hammertime.add(new Hammer.Pinch({}));
+		hammertime.get('pinch').set({ enable: true });
+		var scaleAtStartOfPinch;
+		hammertime.on("pinchstart", (e)=> {
+			scaleAtStartOfPinch = parseFloat(this.layoutScaleSlider.val());
+		});
+		hammertime.on("pinchmove", (e)=> {
+			this.layoutScaleSlider.val( scaleAtStartOfPinch + Math.log(e.scale) ) ;
+			this.layoutScaleSlider.trigger('propertychange');
+		});
+
+		/* drag background to scroll (ipad and desktop) */
+		hammertime.add(new Hammer.Pan({threshold:0}));
+		hammertime.get('pan').set({ enable: true });
+		var posBeforePan;
+		hammertime.on("panstart", (e)=> {
+			if( $(e.target).hasClass( "lqs_nodes" ) ) {
+				posBeforePan = new LQS_Point( parseInt($(document).scrollLeft()), parseInt($(document).scrollTop() ) );
+				console.log( 'panstart' );
+			} else {
+				posBeforePan = null;
+			}
+		});
+		hammertime.on("panmove", (e)=> {
+			if( $(e.target).hasClass( "lqs_nodes" ) && posBeforePan ) {
+				$(document).scrollLeft( posBeforePan.x - e.deltaX );
+				$(document).scrollTop(  posBeforePan.y - e.deltaY );
+			}
+		});
+
+		/* double tap */
+		hammertime.add( new Hammer.Tap({ event: 'doubletap', taps: 2 }) );
+		// Single tap recognizer
+		hammertime.add( new Hammer.Tap({ event: 'singletap' }) );
+		hammertime.get('doubletap').recognizeWith('singletap');
+		// we only want to trigger a tap, when we don't have detected a doubletap
+		hammertime.get('singletap').requireFailure('doubletap');
+		hammertime.on("doubletap", (e)=> {
+			if( $(e.target).hasClass( "lqs_nodes" ) ) {
+				var nodeData = {
+					id: LQS.uuid(),
+					pos: this.toVirtual( { x: e.srcEvent.pageX, y: e.srcEvent.pageY } ),
+					title: "",
+					text: "",
+					type: 'text',
+					meta: {}
+				};
+				var comment = this.addNode(nodeData);
+				comment.setView('edit');
+				comment.reveal();
+			}
+		});
+		// get rid of open menus on touch
+		hammertime.on("singletap", (e)=> {
+			if( $(e.target).hasClass( "lqs_nodes" ) ) {
+				$('.lqs_card_menu').hide();
 			}
 		});
 		
-		$(document).on("mousedown", (e)=> { 
-			LQS_ClickStart = { x: e.pageX, y: e.pageY };
-			if( $(e.target).hasClass( "lqs_nodes" ) ) {
-				this.curDown = true; 
-				e.preventDefault(); 
-			}
-		});
-		$(window).on("mouseup",  (e)=> { this.curDown = false; });
-		$(window).on("mouseout", (e)=> { this.curDown = false; });
-
-		document.addEventListener('gesturestart', (e)=> { e.preventDefault(); });
 	
+		// remember where a click started 
+		$(document).on("mousedown", (e)=> { LQS_ClickStart = { x: e.pageX, y: e.pageY }; } );
+
+		// add control panel
 		this.addControlPanel();	
 	}
 

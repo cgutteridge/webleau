@@ -91,9 +91,20 @@ class LQS_Node {
 		this.dom.outer.append( this.dom.content );
 		this.lqs.nodesLayer.append( this.dom.outer );
 
-		// double click on node to add a comment
-		this.dom.outer.dblclick( ()=>{ this.viewSpec().dblclick(this); return false; } );
-		this.dom.title.dblclick( ()=>{ this.viewSpec().dblclickTitle(this); return false; } );
+		// double clicks
+		var hammerNode = new Hammer.Manager( this.dom.content[0], {} );
+		hammerNode.add( new Hammer.Tap({ event: 'doubletap', taps: 2 }) );
+		hammerNode.add( new Hammer.Tap({ event: 'singletap' }) );
+		hammerNode.get('doubletap').recognizeWith('singletap');
+		hammerNode.get('singletap').requireFailure('doubletap');
+		hammerNode.on("doubletap", (e)=> { this.viewSpec().dblclick(this); return false; } );
+
+		var hammerTitle = new Hammer.Manager( this.dom.title[0], {} );
+		hammerTitle.add( new Hammer.Tap({ event: 'doubletap', taps: 2 }) );
+		hammerTitle.add( new Hammer.Tap({ event: 'singletap' }) );
+		hammerTitle.get('doubletap').recognizeWith('singletap');
+		hammerTitle.get('singletap').requireFailure('doubletap');
+		hammerTitle.on("doubletap", (e)=> { this.viewSpec().dblclickTitle(this); return false; } );
 
 		// register UI hooks
 		this.dom.outer.resizable({
