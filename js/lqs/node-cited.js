@@ -13,7 +13,7 @@ LQS_NodeTypes['cited'] = class LQS_Node_Cited extends LQS_Node {
 			leave: (node) => {
 				this.showAction( 'no-source' );
 			},
-			render: (node) => { return LQS.sanitiseHtml(this.data.html); }
+			render: (node) => { return node.fixup($(this.data.html)); }
 		});
 
 		this.registerAction(
@@ -31,7 +31,7 @@ LQS_NodeTypes['cited'] = class LQS_Node_Cited extends LQS_Node {
 
 	render() {
 		var content = $('<div></div>');
-		content.append( LQS.sanitiseHtml(this.data.html) );
+		content.append( this.fixup( $(this.data.html)) );
 		var cite = $('<div style="float:right;font-size:70%">- </div>');
 		if( this.data.source.creator && this.data.source.creator[0] && this.data.source.creator[0].name ) {
 			var creator;

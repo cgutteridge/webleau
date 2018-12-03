@@ -275,6 +275,18 @@ a {
 .lqs_node.drop-hover .lqs_node_title{
 	background-color: #666;
 }
+.lqs_node .lqs_hidden_seed {
+	display: none;
+}
+.lqs_node:hover .lqs_hidden_seed {
+	display: inline-block;
+}
+.lqs_node .lqs_graph_fold {
+	display: none;
+}
+.lqs_node:hover .lqs_graph_fold {
+	display: inline-block;
+}
 /* end nodes */
 
 

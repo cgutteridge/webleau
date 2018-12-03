@@ -22,6 +22,26 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 		}
 	}
 
+	static makeSeed(opts) {
+		// check opts: from,url
+		var id = opts.url
+		var seed = super.makeSeed(opts);
+		seed.id = id;
+		seed.type = "embed";
+		seed.links = [];
+		seed.source =  {url:opts.url};
+		if( opts.from ) {
+			var link_id = "embed|link|"+opts.from.data.id+"|"+seed.id;
+			seed.links.push({
+				subject: {node: opts.from.data.id},
+				object: {node: seed.id},
+				label: '',
+				id: link_id
+			});
+		};
+		return seed;
+	}
+
 	render() {
 		var empty = true;
 		var content = $('<div></div>');
@@ -62,11 +82,9 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 			span.append( $('<a>Source</a>').attr( 'href',this.data.source.url));
 		}
 */
-		content.find( 'a' ).attr("target","_blank");
-		content.find( 'img,iframe' ).css("max-width","100%").css('max-height','100%');
-		content.find( 'img').bind('load', ()=>{ this.fitSize(); } );
-		
-		//content.find( 'img,iframe' ).css("max-height","100%");
+
+		this.fixup( content );
+
 		return content;
 	}	
 
@@ -103,7 +121,7 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 			this.rerender();
 			this.updatePosition();
 			this.fitSize();
-			this.setView('icon');
+			//this.setView('icon');
 		}).fail(()=>{
 			this.data.source.error = "Metadata query failed";
 			this.rerender();

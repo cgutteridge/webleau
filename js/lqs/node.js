@@ -290,9 +290,11 @@ class LQS_Node {
 				node.dom.icon_text.css('font-size',(baseFontSize*node.lqs.layoutScale)+"px"); 
 				node.dom.icon.css('left',realPos.x-realSize.width/2 );
 				node.dom.icon.css('top', realPos.y-realSize.height/2 );
+				node.dom.icon.css('width', realSize.width );
+				node.dom.icon.css('height', realSize.height );
 			},
 			realSize: (node) => {
-				return { width: node.data.icon.size.width, height: node.data.icon.size.height };
+				return { width: node.data.icon.size.width*node.lqs.layoutScale, height: node.data.icon.size.height*node.lqs.layoutScale };
 			}
 		});
 
@@ -712,6 +714,28 @@ class LQS_Node {
 	}
 	dblclickTitle() {
 		this.setView( 'icon' );
+	}
+
+	fixup( element ) {
+		element.find( 'a' ).each( (i,e)=>{
+			e = $(e);
+			var href = e.attr( 'href' );
+			e.attr("target","_blank");
+			if( href && href != this.data.id ) {
+				let seed = $('<div class="lqs_seed lqs_hidden_seed" style="margin:0;padding:3px;font-size: 80%">link</div>');
+				seed.insertAfter( e );
+				this.lqs.attachSeed( seed, LQS_NodeTypes['embed'].makeSeed({
+					sourceCard:this,
+					sourceCardAction:'main',
+					from: this,
+					url: href
+				}));
+			}
+		});
+		element.find( 'script' ).remove();
+		element.find( 'img,iframe' ).css("max-width","100%").css('max-height','100%').css('height','auto');
+		//element.find( 'img').bind('load', ()=>{ this.fitSize(); } );
+		return element;
 	}
 
 } // End Node

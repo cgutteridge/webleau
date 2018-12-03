@@ -63,7 +63,7 @@ LQS_NodeTypes['html'] = class LQS_Node_Text extends LQS_Node {
 	}
 
 	render() {
-		return $('<div></div>').html( this.data.html );
+		return $('<div></div>').html( this.fixup($(this.data.html)) );
 	}	
 
 	dblclick() {
