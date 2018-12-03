@@ -282,7 +282,7 @@ class LQS_Node {
 				node.dom.icon_text.hide();
 			},
 			updatePosition: (node) => {
-				var baseFontSize = 10;
+				var baseFontSize = 16;
 				var realPos = node.realPos();
 				var realSize = node.realSize();
 				node.dom.icon_text.attr('x', realPos.x );
@@ -722,7 +722,7 @@ class LQS_Node {
 			var href = e.attr( 'href' );
 			e.attr("target","_blank");
 			if( href && href != this.data.id ) {
-				let seed = $('<div class="lqs_seed lqs_hidden_seed" style="margin:0;padding:3px;font-size: 80%">link</div>');
+				let seed = $('<div class="lqs_seed lqs_hidden_seed"></div>');
 				seed.insertAfter( e );
 				this.lqs.attachSeed( seed, LQS_NodeTypes['embed'].makeSeed({
 					sourceCard:this,

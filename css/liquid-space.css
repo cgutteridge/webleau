@@ -1,6 +1,7 @@
 /* general */
 body {
 	font-size:10pt;
+	font-family:serif;
 	width: 100%;
 	height: 100%;
 	background-color: #f8f0dc;
@@ -43,36 +44,35 @@ a {
 /* seeds */
 .lqs_seed {
 	margin: 2px 10px;
-	padding: 3px 10px;
-	border-radius: 1em;
+	padding: 3px 3px;
+	border-radius: 4px;
 	
 	display: inline-block;
-  	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2), inset 0 0 6px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.4);
-	background-image: linear-gradient(to top, rgba(255,255,255,0.3), rgba(127,127,127,0.3));
 	-moz-user-select: none;
 	-webkit-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
-	color: #000;
+
+	font-family: sans-serif;
+	border: 2px solid #ccc;
+	color: #ccc;
 }
 .lqs_seed_filled {
-	background-color: #bec7e7;
-	border: solid 1px #bec7e7;
+	color: white;
+	border-color: white;
+}
+.lqs_seed::before {
+	content: "☰ ";
 }
 .lqs_seed_filled:hover {
 	background-color: #cfd8f8;
-	border: solid 1px #adb6d6;
+	border-color: #eee;
 }
 .lqs_seed_dragged_from {
-	background-color: rgba( 0,0,0,0.1 );
-  	box-shadow: inset 2px 2px 8px 2px rgba(0,0,0,0.2);
-	border: solid 1px #999;
-	color: #666;
 }
 .lqs_seed_hole {
-	background-color: rgba( 0,0,0,0.1 );
-  	box-shadow: inset 2px 2px 8px 2px rgba(0,0,0,0.2);
 }
+
 /* end seeds */
 
 /* controls */
@@ -97,13 +97,14 @@ a {
 	position: fixed;
 }
 .controls {
+	font-family: sans-serif;
 	z-index: 1000;
 	width:20%;
 	position: fixed;
 	top:0%;
 	right:0%;
 	text-align: left;
-	background-color: #ccc;
+	background-color: #a9a9a9;
 	padding: 10px;
 	display: none;
 	border-bottom-left-radius: 5px;
@@ -123,7 +124,7 @@ a {
 	text-align: left;
 }
 .controls .lqs_tool {
-	background-color: #999;
+	background-color: #787878;
 	color: white;
 	cursor: pointer;
 	padding: 3px;
@@ -163,13 +164,13 @@ a {
 	cursor: default;
 	top: 0px;
 	left: 0px;
-	background-color: #ccc;
+	background-color: #a9a9a9;
 	border: solid 1px #f8f0dc;
 	border-radius: 5px;
 	margin: 0;
 	padding: 0px;
 	overflow: hidden;
-  	box-shadow:         2px 6px 20px 2px rgba(0,0,0,0.1);
+  	box-shadow:  2px 6px 20px 2px rgba(0,0,0,0.1);
 	-moz-user-select: contain;
 	-webkit-user-select: contain;
 	-ms-user-select: contain;
@@ -208,7 +209,7 @@ a {
 }
 .lqs_node_title {
 	text-align: center;
-	background-color: #999;
+	background-color: #6c6c6c;
 	color: #fff;
 	border-top-left-radius: 4px;
 	border-top-right-radius: 4px;
@@ -277,6 +278,12 @@ a {
 }
 .lqs_node .lqs_hidden_seed {
 	display: none;
+	margin: 0 0.5em;
+	font-size: 60%;
+	border-width: 1px;
+}
+.lqs_node .lqs_hidden_seed::before {
+	content: '☰';
 }
 .lqs_node:hover .lqs_hidden_seed {
 	display: inline-block;
@@ -388,11 +395,11 @@ a {
 	color: #00f !important;
 }
 .lqs_card_class_html:hover .lqs_node_title, .lqs_card_class_text:hover .lqs_node_title {
-	background-color: #999;
+	background-color: #6c6c6c;
 	color: #fff !important;
 }
 .lqs_card_class_html:hover, .lqs_card_class_text:hover {
-	background-color: #ccc;
+	background-color: #a9a9a9;
 	border: solid 1px #f8f0dc;
   	box-shadow:         2px 6px 20px 2px rgba(0,0,0,0.1);
 }

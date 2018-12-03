@@ -51,7 +51,7 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 		} else if ( this.data.source.embed ) {
 			content.html( this.data.source.embed );
 			empty = false;
-		} else {
+		} else if ( this.data.source.loaded ) {
 			let img = null;
 			if( this.data.source.image && this.data.source.image.url ) {
 				img = $('<img />')
@@ -72,18 +72,18 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 				// image, no description
 				content.append( img ); 
 				empty = false;
-			}
+			} 
+		} else {
+			content.text( "Loading..." ); 
 		}
-		if( empty ) { content.text( "Loading..." ); }
-/*
+
+		this.fixup( content );
+
 		if( this.data.source && this.data.source.url ) {
 			var span = $('<div style="text-align:right">- </div>');
 			content.append( span );
-			span.append( $('<a>Source</a>').attr( 'href',this.data.source.url));
+			span.append( $('<a>Source</a>').attr( 'href', this.data.source.url).attr('target','_blank'));
 		}
-*/
-
-		this.fixup( content );
 
 		return content;
 	}	
@@ -102,6 +102,7 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 			let url = this.data.source.url;
 			this.set( 'source', ajaxData );
 			this.set( 'source.url', url );
+			this.set( 'source.loaded',  true);
 
 			if( this.data.source.size && this.data.source.size.width && this.data.source.size.height) {
 				this.set( 'size', { width: this.data.source.size.width+4, height: this.data.source.size.height+4 } );
