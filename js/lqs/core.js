@@ -12,7 +12,7 @@ class LQS {
 		this.nodes = {};
 		this.links = {};
 		this.layoutScale = 1;
-		this.offset = new LQS_Point(5000,5000);
+		this.offset = new LQS_Point(50000,50000);
 		this.curDown = false;
 		this.layoutScaleSlider = null;
 		this.defaultInspectorProxy = 'https://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
