@@ -21,6 +21,7 @@ class LQS {
 		this.seedsBySource = {};
 		this.seedsByTarget = {};
 		this.seedsByID = {};
+		this.devMode = false;
 
 		// things to load/save
 		this.inspectorProxy = this.defaultInspectorProxy;
@@ -233,8 +234,9 @@ class LQS {
 
 
 		/* CONTROLS: tools */
-		var controlTools = $('<div class="this"></div>');
-		controls.append( $("<div style='margin-top:1em'>Tools</div>"));
+		var controlTools = $('<div class=""></div>');
+
+		controls.append( $("<div class='lqs_controls_subtitle'>Tools</div>"));
 		controls.append(controlTools);
 
 		// reset
@@ -269,11 +271,16 @@ class LQS {
 			this.centrePage();
 		});
 
+		var optionTools = $('<div class=""></div>');
+
+		controls.append( $("<div class='lqs_controls_subtitle'>Options</div>"));
+		controls.append(optionTools);
+
 		// strings and arrows
 		var arrowTool = $('<div title="arrow" class="lqs_tool">Arrow Links</div>');
 		var stringTool = $('<div title="string" class="lqs_tool">String Links</div>');
-		controlTools.append( arrowTool );
-		controlTools.append( stringTool );
+		optionTools.append( arrowTool );
+		optionTools.append( stringTool );
 		arrowTool.click( ()=> {
 			arrowTool.hide();
 			stringTool.show();
@@ -290,13 +297,33 @@ class LQS {
 			arrowTool.hide();
 		}
 
+		// devMode
+		var frodeTool = $('<div title="Frode mode" class="lqs_tool">Disabled developer features</div>');
+		var chrisTool = $('<div title="Chris mode" class="lqs_tool">Enable developer features</div>');
+		optionTools.append( frodeTool );
+		optionTools.append( chrisTool );
+		frodeTool.click( ()=> {
+			frodeTool.hide();
+			chrisTool.show();
+			this.setDevMode( false );
+		});
+		chrisTool.click( ()=> {
+			frodeTool.show();
+			chrisTool.hide();
+			this.setDevMode( true );
+		});
+		if( this.devMode ) {
+			chrisTool.hide();
+		}else {
+			frodeTool.hide();
+		}
 
 
 
 		/* CONTROLS: load/save */
 		var controlIO = $('<div class="lqs_controls_tools"></div>');
 		var ioTextarea = $('<textarea class="normal-paste" placeholder="save/load: hit save and copy this, or paste in here and hit load" style="width: 100%; height: 10%;" id="lqs_io"></textarea>');
-		controls.append( $("<div style='margin-top:1em'>Upload/Download</div>"));
+		controls.append( $("<div class='lqs_controls_subtitle'>Upload/Download</div>"));
 		controls.append( ioTextarea );
 		var downloadTool = $('<div title="download" class="lqs_tool">Download<div>');
 		controlIO.append( downloadTool );
@@ -320,11 +347,22 @@ class LQS {
 		
 		// graph
 
-		controls.append( $("<div style='margin-top:1em'>Seeds</div>"));
+		controls.append( $("<div class='lqs_controls_subtitle'>Connect to Knowledge Graph</div>"));
 
-		var graphSeed = this.renderSeed("Data Connector");
-		controls.append( graphSeed );
-		this.attachSeed( graphSeed, LQS_NodeTypes['graph-connect'].makeSeed({sourceCard:{data:{id:'//control-panel'}}}));
+		var input = $("<input placeholder='Graph endpoint URL' class='normal-paste' style='width:60%'/>");
+		var button = $("<button>Open</button>");
+		button.click( function() {
+			var seed = LQS_NodeTypes['graph-connection'].makeSeed({endpoint:input.val()});
+			// make the new connection appear in place of this node
+			this.lqs.growSeed( seed, this.data.pos );
+			this.remove();
+		}.bind(this));
+		var r = $("<div />");
+		r.append( input );
+		r.append( button );
+		controls.append( r );
+
+		controls.append( $("<p>Drag these onto the page to connect to a graph.</p>"));
 
 		var graphSeedLex = this.renderSeed("Webscience Lexicon");
 		controls.append( graphSeedLex );
@@ -512,6 +550,10 @@ class LQS {
 		for( var i=0; i<nodeKeys.length; ++i ) {
 			this.nodes[nodeKeys[i]].remove();
 		}
+	}
+
+	setDevMode( bool ) {
+		this.devMode = bool;
 	}
 
 	setLinkStyle( style ) {

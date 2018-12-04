@@ -49,7 +49,8 @@ class LQS_Node {
 		this.registerAction(
 			"autosize",
 			"AUTOSIZE",
-			()=>{ this.fitSize(); } );
+			()=>{ this.fitSize(); },
+			true );
 		this.registerAction(
 			"reload",
 			"RELOAD",
@@ -59,7 +60,7 @@ class LQS_Node {
 			"remove",
 			"REMOVE",
 			()=>{ 
-				if( confirm( "Really delete?" ) ) {
+				if( confirm( "Really remove?" ) ) {
 					this.remove();
 					this.lqs.updateAllPositions();
 				}
@@ -67,6 +68,7 @@ class LQS_Node {
 		this.addDotFeature();
 		this.addIconFeature();
 		this.addFocusFeature();
+		this.addSquishFeature();
 		this.addMetadataFeature();
 	} // end Node constructor
 
@@ -120,6 +122,7 @@ class LQS_Node {
 			drag: this.dragged.bind(this),
 			start: function() {
 				this.dragStart = new LQS_Point( this.data.pos.x, this.data.pos.y );
+				LQS.clearTextSelection();
 			}.bind(this)
 		});
 
@@ -197,7 +200,13 @@ class LQS_Node {
 				node.showAction( 'focus' );
 				$(window).unbind( 'keyup.focus' );
 			},
-			render: (node) => { return node.viewSpec('main').render(node); }
+			render: (node) => { 
+				if( node.renderFocus ) {
+					return node.renderFocus(); 
+				} else {
+					return node.viewSpec('main').render(node); 
+				} 
+			}
 		});
 	}
 
@@ -208,7 +217,8 @@ class LQS_Node {
 				node.registerAction(
 					"meta",
 					"METADATA",
-					()=>{ node.setView( "meta" ); } );
+					()=>{ node.setView( "meta" ); },
+					true );
 			},
 			enter: (node) => { // enter
 				delete node.data.size;
@@ -229,6 +239,8 @@ class LQS_Node {
 				node.data.icon.size = { width: 64, height: 64 };
 		
 				node.dom.icon = $("<div class='lqs_node_icon'></div>").attr("data-node",node.data.id);
+				node.dom.icon_img = $("<img />");
+				node.dom.icon.append( node.dom.icon_img );
 				node.dom.icon.width( node.data.icon.size.width );
 				node.dom.icon.height( node.data.icon.size.height );
 				node.dom.icon.hide();
@@ -252,6 +264,7 @@ class LQS_Node {
 					drag: node.dragged.bind(node),
 					start: function() {
 						node.dragStart = new LQS_Point( node.data.pos.x, node.data.pos.y );
+						LQS.clearTextSelection();
 					}.bind(node)
 				});
 		
@@ -265,7 +278,8 @@ class LQS_Node {
 				node.registerAction(
 					"icon",
 					"ICON",
-					()=>{ node.setView( "icon" ); } );
+					()=>{ node.setView( "icon" ); },
+					true );
 			},
 			destroy: (node) => {
 				node.dom.icon.remove();
@@ -277,7 +291,7 @@ class LQS_Node {
 				node.dom.icon.show();
 				node.dom.icon_text.show();
 				if( node.data.icon.url ) {
-					node.dom.icon.css('background-image', `url(${node.data.icon.url})` );
+					node.dom.icon_img.attr('src',node.data.icon.url );
 				} else {
 					node.dom.icon.css('background-image', `linear-gradient(to bottom, rgba(255,255,255,0.7), rgba(127,127,127,0.7)), url(${LQS.logo()})` );
 				} 
@@ -294,17 +308,80 @@ class LQS_Node {
 				node.dom.icon_text.attr('x', realPos.x );
 				node.dom.icon_text.attr('y', realPos.y + realSize.height/2+baseFontSize*node.lqs.layoutScale);
 				node.dom.icon_text.css('font-size',(baseFontSize*node.lqs.layoutScale)+"px"); 
+				node.dom.icon_img.css('max-width', realSize.width+"px" );
+				node.dom.icon_img.css('max-height', realSize.height+"px" );
 				node.dom.icon.css('left',realPos.x-realSize.width/2 );
 				node.dom.icon.css('top', realPos.y-realSize.height/2 );
-				node.dom.icon.css('width', realSize.width );
-				node.dom.icon.css('height', realSize.height );
 			},
 			realSize: (node) => {
 				return { width: node.data.icon.size.width*node.lqs.layoutScale, height: node.data.icon.size.height*node.lqs.layoutScale };
 			}
 		});
-
 	}
+
+	addSquishFeature() {
+		this.registerView({
+			id: "squish",
+			init: (node) => {
+				if( !node.data.squish ) { node.data.squish = {}; }
+		
+				node.dom.squish = $("<div class='lqs_node_squish'></div>").attr("data-node",node.data.id);
+				node.dom.squish.hide();
+				node.lqs.nodesLayer.append( node.dom.squish );
+		
+				LQS.noDragClick( node.dom.squish, function() {
+					node.setView('main');
+				}.bind(node) );
+		
+				node.dom.squish.draggable( { 
+					scope: 'cards',
+					containment: $('.lqs_nodes'),
+					opacity: 0.8,
+					scroll: true,
+					drag: node.dragged.bind(node),
+					start: function() {
+						node.dragStart = new LQS_Point( node.data.pos.x, node.data.pos.y );
+						LQS.clearTextSelection();
+					}.bind(node)
+				});
+		
+				node.dom.squish.droppable( {
+					scope: 'cards',
+					hoverClass: "drop-hover",
+					tolerance: "pointer",
+					drop: (event,ui)=>{ node.linkDrop(event,ui) }
+				});
+		
+				node.registerAction(
+					"squish",
+					"SQUISH",
+					()=>{ node.setView( "squish" ); },
+					true );
+			},
+			destroy: (node) => {
+				node.dom.squish.remove();
+			},
+			setTitle: (node,title ) => { node.dom.squish.text( title ); },
+			enter: (node) => { 
+				node.dom.outer.hide();
+				node.dom.squish.show();
+			},
+			leave: (node) => { 
+				node.dom.outer.show();
+				node.dom.squish.hide();
+			},
+			updatePosition: (node) => {
+				var realPos = node.realPos();
+				var realSize = node.realSize();
+				node.dom.squish.css('left',realPos.x-realSize.width/2 );
+				node.dom.squish.css('top', realPos.y-realSize.height/2 );
+			},
+			realSize: (node) => {
+				return { width: node.dom.squish.outerWidth(), height: node.dom.squish.outerHeight() };
+			}
+		});
+	}
+
 
 	addDotFeature() {
 		this.registerView( {
@@ -335,6 +412,7 @@ class LQS_Node {
 					drag: node.dragged.bind(node),
 					start: function() {
 						node.dragStart = new LQS_Point( node.data.pos.x, node.data.pos.y );
+						LQS.clearTextSelection();
 					}.bind(node)
 				});
 		
@@ -352,7 +430,8 @@ class LQS_Node {
 				node.registerAction(
 					"dot",
 					"DOT",
-					()=>{ node.setView( "dot" ); } );
+					()=>{ node.setView( "dot" ); },
+					true );
 			},
 			destroy: (node) => {
 				node.dom.dot_svg.remove();
@@ -467,11 +546,15 @@ class LQS_Node {
 		this.dom.menu.css( 'left', p.left-10 );
 		this.dom.menu.css( 'top', p.top-10 );
 		this.dom.menu.empty();
+		var normalActions = $('<div></div>');
+		var devActions = $('<div></div>');
+		this.dom.menu.append( normalActions );
+		this.dom.menu.append( devActions );
 
 		for( var i=0; i<this.actions.length; ++i ) {
 			let action= this.actions[i];
-			if( action.visible ) {
-				let item = $('<div></div>').text(action.label).addClass( "lqs_card_menu_item" );
+			if( action.visible && (!action.dev || this.lqs.devMode )) {
+				let item = $('<div></div>').text((action.dev?"☸ ":"")+action.label).addClass( "lqs_card_menu_item" );
 				if( action.active ) {
 					item.click( (e) => {
 						action.fn(); 
@@ -480,7 +563,11 @@ class LQS_Node {
 				} else {
 					item.addClass( "lqs_card_menu_item_disabled" );
 				}
-				this.dom.menu.append( item );
+				if( action.dev ) {
+					devActions.append( item );
+				} else {
+					normalActions.append( item );
+				}
 			}
 		}
 		this.dom.menu.mouseleave( (e)=>{ this.dom.menu.hide(); } );
@@ -581,7 +668,6 @@ class LQS_Node {
 		// find the intersection with each edge
 		var realPos = this.realPos();
 		var realFullSize = this.realFullSize();
-
 		var tl = new LQS_Point( realPos.x - realFullSize.width/2+1, realPos.y - realFullSize.height/2 )
 		var tr = new LQS_Point( realPos.x + realFullSize.width/2+1, realPos.y - realFullSize.height/2 )
 		var bl = new LQS_Point( realPos.x - realFullSize.width/2+1, realPos.y + realFullSize.height/2 )
@@ -611,8 +697,8 @@ class LQS_Node {
 		return rPt;
 	}
 
-	registerAction( id, label, fn ) {
-		var action = { id: id, label: label, fn: fn, active: true, visible: true };
+	registerAction( id, label, fn, dev=false ) {
+		var action = { id: id, label: label, fn: fn, active: true, visible: true, dev: dev };
 		this.actions.push( action );
 		this.actionsByID[id] = action;
 	}
@@ -719,7 +805,11 @@ class LQS_Node {
 		this.setView( 'focus' );
 	}
 	dblclickTitle() {
-		this.setView( 'icon' );
+		if( this.data.icon && this.data.icon.url ) {
+			this.setView( 'icon' );
+		} else {
+			this.setView( 'squish' );
+		}
 	}
 
 	fixup( element ) {
@@ -739,7 +829,8 @@ class LQS_Node {
 			}
 		});
 		element.find( 'script' ).remove();
-		element.find( 'img,iframe' ).css("max-width","100%").css('max-height','100%').css('height','auto');
+		element.find( 'img' ).css("max-width","100%").css('max-height','100%').css('height','auto');
+		//element.find( 'iframe' ).css("min-width","100%").css("min-height","100%");
 		//element.find( 'img').bind('load', ()=>{ this.fitSize(); } );
 		return element;
 	}

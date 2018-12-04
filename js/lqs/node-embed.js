@@ -87,6 +87,14 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 
 		return content;
 	}	
+/*
+ 	ONly works if the server allows iframe reading
+	renderFocus() {
+		var iframe = $("<iframe width='100%' height='100%' />").attr("src", this.data.source.url );
+		iframe.load( (e)=>{ console.log(e); } );
+		return iframe;
+	}
+*/
 
 	init() {
 		super.init();
@@ -128,4 +136,5 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 			this.rerender();
 		})
 	}
+
 }

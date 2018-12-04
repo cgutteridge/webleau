@@ -52,20 +52,21 @@ a {
 	margin: 2px 5px 2px 5px;
 	display: inline-block;
 	vertical-align:top;
-	padding: 3px 3px;
+	padding: 3px 10px;
 	-moz-user-select: none;
 	-webkit-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
 	font-family: sans-serif;
 	border-radius: 4px;
-	border: 2px solid #ccc;
+	border: 1px solid #ccc;
 	color: #ccc;
 	cursor: move;
 }
 .lqs_seed_filled {
 	color: white;
 	border-color: white;
+	background-color: #999;
 }
 .lqs_seed_filled:hover,
 .lqs_seed.ui-draggable-dragging {
@@ -74,7 +75,6 @@ a {
 	border-color: #eee;
 	box-shadow: 0px 0px 20px 2px rgba(0,0,0,0.2);
 }
-
 /* end seeds */
 
 /* controls */
@@ -141,6 +141,10 @@ a {
 .controls .lqs_tool:hover {
 	background-color: #666;
 }
+.lqs_controls_subtitle {
+	font-weight: bold;
+	margin: 1em 0 0.3em 0;
+}
 /* end controls */
 
 
@@ -176,26 +180,36 @@ a {
 	margin: 0;
 	padding: 0px;
 	overflow: hidden;
-  	box-shadow:  2px 6px 20px 2px rgba(0,0,0,0.1);
+	box-shadow: 2px 6px 20px 2px rgba(0,0,0,0.1);
+}
+.lqs_node_squish {
+	position: absolute;
+	cursor: move;
+	box-shadow: 2px 6px 20px 2px rgba(0,0,0,0.2);	
+	text-align: center;
+	background-color: #6c6c6c;
+	color: #fff;
+	overflow: hidden;
+	font-family: sans-serif;	
+	padding: 2px 8px;
+	border: solid 1px #f8f0dc;
+	border-radius: 5px;
 }
 .lqs_node_icon {
 	position: absolute;
 	cursor: move;
 	top: 0px;
 	left: 0px;
-	background-color: #999;
-	border-radius: 5px;
 	margin: 0;
 	padding: 0px;
 	overflow: hidden;
-	background-size: contain;
-	background-repeat:   no-repeat;
-	background-position: center center;  
-  	box-shadow:         2px 6px 20px 2px rgba(0,0,0,0.2);	
+}
+.lqs_node_icon img {
+	position: absolute;
+	bottom: 0;
+	border-radius: 5px;
 	border-top: solid 1px #aaa;
-	border-right: solid 1px #aaa;
-	border-bottom: solid 1px #999;
-	border-left: solid 1px #999;
+ 	box-shadow: 2px 6px 20px 2px rgba(0,0,0,0.2);	
 }
 .lqs_node_icon.drop-hover {
 	background-color: #666;
@@ -231,10 +245,10 @@ a {
 .lqs_node_title_right {
 	float: right;
 }
-.lqs_node_title_left  .lqs_tool {
+.lqs_node_title_left .lqs_tool {
 	margin-right: 0.2em;
 }
-.lqs_node_title_right  .lqs_tool {
+.lqs_node_title_right .lqs_tool {
 	margin-left: 0.2em;
 }
 .lqs_node_resize {
@@ -296,6 +310,9 @@ a {
 .lqs_node:hover .lqs_graph_fold {
 	display: inline-block;
 }
+.lqs_graph_links {
+//	background-color: #6c6c6c;
+}
 /* end nodes */
 
 
@@ -307,22 +324,22 @@ a {
 	//pointer-events: auto; 
 }
 .lqs_link_from_text {
-        opacity: 0.6;
+	opacity: 0.6;
 	text-anchor: middle;
 	//pointer-events: auto; 
 }
 .lqs_dot circle {
 	fill: #666;
-        opacity: 0.6;
+	opacity: 0.6;
 	pointer-events: auto; 
 }
 .lqs_dot_text {
-        opacity: 0.6;
+	opacity: 0.6;
 	text-anchor: middle;
 	pointer-events: auto; 
 }
 .lqs_icon_text {
-        opacity: 0.6;
+	opacity: 0.6;
 	text-anchor: middle;
 	pointer-events: auto; 
 }
@@ -336,7 +353,7 @@ a {
 
 /*meta data table*/
 .meta_object, .meta_array {
-    	border-spacing: 2px;
+	border-spacing: 2px;
 	border-collapse: separate;
 }
 .meta_object th, .meta_object td, .meta_array th, .meta_array td {
@@ -365,7 +382,7 @@ a {
 	font-family: sans-serif;
 	font-size: 10pt;
 	padding: 2px 15px;
-	margin: 4px  4px;
+	margin: 4px 4px;
 	border-radius: 5px;
 }
 .lqs_card_menu_item:hover {
@@ -387,7 +404,7 @@ a {
 .lqs_card_class_html, .lqs_card_class_text {
 	background-color: rgba(0,0,0,0);
 	border: solid 1px transparent;
-  	box-shadow: none;
+	box-shadow: none;
 }
 .lqs_card_class_html .lqs_node_title, .lqs_card_class_text .lqs_node_title {
 	background-color: transparent;
@@ -403,7 +420,7 @@ a {
 .lqs_card_class_html:hover, .lqs_card_class_text:hover {
 	background-color: #a9a9a9;
 	border: solid 1px #f8f0dc;
-  	box-shadow:         2px 6px 20px 2px rgba(0,0,0,0.1);
+	box-shadow: 2px 6px 20px 2px rgba(0,0,0,0.1);
 }
 /* end custom nodes type: html & text */
 
@@ -416,9 +433,9 @@ a {
 	left: 1%;
 	border: solid 1px #333;
 	border-radius: 1px;
-	background-color: rgba( 255,255,255,0.9);
+	background-color: #a9a9a9;
 	z-index: 5000;
-  	box-shadow:         2px 6px 20px 2px rgba(0,0,0,0.1);
+	box-shadow: 2px 6px 20px 2px rgba(0,0,0,0.1);
 }
 .lqs_focus_inner {
 	overflow: auto;
@@ -465,3 +482,4 @@ a {
 {
 	display: none;
 }
+/* end wikipedia hacks */
