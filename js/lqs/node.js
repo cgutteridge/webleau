@@ -129,6 +129,24 @@ class LQS_Node {
 			tolerance: "pointer",
 			drop: (event,ui)=>{ this.linkDrop(event,ui) }
 		});
+
+		// text-selecting multiple nodes at once is ugly. Clear the selected range if we leave a node
+		// while holding down the mouse.
+		/*
+		this.dom.outer.mouseout((e)=>{
+			if( this.lqs.screenPosOnMouseDown ) {
+				var realPos = this.realPos();
+				var realSize = this.realSize();
+				if( e.pageX-1<=realPos.x-realSize.width/2
+				 || e.pageX+1>=realPos.x+realSize.width/2 
+				 || e.pageY-1<=realPos.y-realSize.height/2 
+				 || e.pageY+1>=realPos.y+realSize.height/2 ) {
+					LQS.clearTextSelection();
+				}
+			}
+			return true;
+		});
+		*/
 	}
 
 	removeCardFromDisplay() {

@@ -55,19 +55,39 @@ LQS_NodeTypes['graph-connection'] = class LQS_Node_Graph_Connection extends LQS_
 			if( node.data.graph.ident && node.data.graph.ident.title ) {
 				node.viewSpec().setTitle(node, node.data.graph.ident.title );
 			}
-			this.dom.content.text( "Connected" );
+			this.dom.content.empty();
+			if( this.data.graph.ident.description ) {
+				this.dom.content.append( $("<p></p>").text( this.data.graph.ident.description ));
+			}
+			
 			if( node.data.graph.ident.start ) {
-				var seed = $('<div class="lqs_seed">Start</div>');
+				var seed = this.lqs.renderSeed( "Start" );
 				this.dom.content.append(seed);
 				this.lqs.attachSeed( seed, LQS_NodeTypes['graph-node'].makeSeed({
 					endpoint: node.data.graph.endpoint,
 					ident: node.data.graph.ident,
 					nodeID: node.data.graph.ident.start,
-					sourceCard: node,
-					linkType: 'fool',
-					from: node
+					sourceCard: node
 				}));
 			}
+			var input = $("<input class='normal-paste' style=''/>");
+			var button = $("<button style='margin-left:1em'>Open node</button>");
+			button.click( function() {
+				var seed = LQS_NodeTypes['graph-node'].makeSeed({
+					endpoint: node.data.graph.endpoint,
+					ident: node.data.graph.ident,
+					nodeID: input.val(),
+					sourceCard: node
+				});
+				// make the new connection appear in place of this node
+				this.lqs.growSeed( seed, this.data.pos );
+				this.remove();
+			}.bind(this));
+			var r = $("<div>Open a node by ID: </div>");
+			r.append( input );
+			r.append( button );
+			this.dom.content.append(r);
+			this.fitSize();
 		}.bind(this));
 	}
 }
@@ -233,11 +253,9 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 			for( var i=0;i<ajaxData.links.length; ++i ) {
 				var apiLink = ajaxData.links[i];
 				if( apiLink.subject == this.data.graph.nodeID && ajaxData.nodes[apiLink.object] ) {
-					let row = $('<div></div>').text(apiLink.type+" ");
 					let gnode = ajaxData.nodes[apiLink.object];
-					let seed = $('<div class="lqs_seed"></div>').text( "has "+apiLink.type+" \""+gnode.title+"\"");
-					row.append(seed);
-					this.dom.content.find(".lqs_graph_links").append(row);
+					let seed = this.lqs.renderSeed( "has "+apiLink.type+" \""+gnode.title+"\"");
+					this.dom.content.find(".lqs_graph_links").append(seed);
 					this.lqs.attachSeed( seed, LQS_NodeTypes['graph-node'].makeSeed({
 						endpoint: this.data.graph.endpoint,
 						ident: this.data.graph.ident,
@@ -249,9 +267,8 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 					}));
 				}
 				if( apiLink.object == this.data.graph.nodeID && ajaxData.nodes[apiLink.subject] ) {
-					let row = $('<div></div>').text(" "+apiLink.type);
 					let gnode = ajaxData.nodes[apiLink.subject];
-					let seed = $('<div class="lqs_seed"></div>').text( "is "+apiLink.type+" of \""+gnode.title+"\"");
+					let seed = this.lqs.renderSeed("is "+apiLink.type+" of \""+gnode.title+"\"");
 					this.dom.content.find(".lqs_graph_links").append(seed);
 					this.lqs.attachSeed( seed, LQS_NodeTypes['graph-node'].makeSeed({
 						endpoint: this.data.graph.endpoint,

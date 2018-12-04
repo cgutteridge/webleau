@@ -108,23 +108,28 @@ class LQS {
 		});
 	
 		// remember where a click & pan started 
-		var posBeforePan;
-		var screenPosOnMouseDown;
+		this.posBeforePan;
+		this.screenPosOnMouseDown;
+		this.mouseDownOnBackground;
 		$(document).on("mousedown", (e)=> { 
-			LQS_ClickStart = { x: e.pageX, y: e.pageY }; 
+			LQS_ClickStart = { x: e.pageX, y: e.pageY }; // used for no-drag-click
 			if( $(e.originalEvent.target).hasClass( "lqs_nodes" ) ) {
-				posBeforePan = new LQS_Point( parseInt($(document).scrollLeft()), parseInt($(document).scrollTop() ) );
-				screenPosOnMouseDown = new LQS_Point( e.screenX, e.screenY );
-			} else {
-				posBeforePan = null;
-				screenPosOnMouseDown = null;
+				this.mouseDownOnBackground = true;
 			}
+			this.posBeforePan = new LQS_Point( parseInt($(document).scrollLeft()), parseInt($(document).scrollTop() ) );
+			this.screenPosOnMouseDown = new LQS_Point( e.screenX, e.screenY );
 		});
-		$(document).on("mouseup", (e)=> { screenPosOnMouseDown = posBeforePan = null; } );
+		$(document).on("mouseup", (e)=> { 
+			
+			this.screenPosOnMouseDown = null;
+			this.posBeforePan = null; 
+			LQS_ClickStart = null;
+			this.mouseDownOnBackground = false;	
+		} );
 		$(document).on("mousemove", (e)=> { 
-			if( screenPosOnMouseDown ) {
-				$(document).scrollLeft( posBeforePan.x + screenPosOnMouseDown.x - e.screenX );
-				$(document).scrollTop(  posBeforePan.y + screenPosOnMouseDown.y - e.screenY );
+			if( this.mouseDownOnBackground ) {
+				$(document).scrollLeft( this.posBeforePan.x + this.screenPosOnMouseDown.x - e.screenX );
+				$(document).scrollTop(  this.posBeforePan.y + this.screenPosOnMouseDown.y - e.screenY );
 			}
 				
 		});
@@ -150,9 +155,9 @@ class LQS {
 
 			hammertime.on("panstart", (e)=> {
 				if( $(e.target).hasClass( "lqs_nodes" ) ) {
-					posBeforePan = new LQS_Point( parseInt($(document).scrollLeft()), parseInt($(document).scrollTop() ) );
+					this.posBeforePan = new LQS_Point( parseInt($(document).scrollLeft()), parseInt($(document).scrollTop() ) );
 				} else {
-					posBeforePan = null;
+					this.posBeforePan = null;
 				}
 				return true;
 			});
@@ -161,9 +166,9 @@ class LQS {
 			hammertime.add(new Hammer.Pan({threshold:0}));
 			hammertime.get('pan').set({ enable: true });
 			hammertime.on("panmove", (e)=> {
-				if( $(e.srcEvent.target).hasClass( "lqs_nodes" ) && posBeforePan ) {
-					$(document).scrollLeft( posBeforePan.x - e.deltaX );
-					$(document).scrollTop(  posBeforePan.y - e.deltaY );
+				if( $(e.srcEvent.target).hasClass( "lqs_nodes" ) && this.posBeforePan ) {
+					$(document).scrollLeft( this.posBeforePan.x - e.deltaX );
+					$(document).scrollTop(  this.posBeforePan.y - e.deltaY );
 				}
 				return true;
 			});
@@ -293,9 +298,9 @@ class LQS {
 		var ioTextarea = $('<textarea class="normal-paste" placeholder="save/load: hit save and copy this, or paste in here and hit load" style="width: 100%; height: 10%;" id="lqs_io"></textarea>');
 		controls.append( $("<div style='margin-top:1em'>Upload/Download</div>"));
 		controls.append( ioTextarea );
-		var downloadTool = $('<div title="download" class="lqs_tool">&darr;<div>');
+		var downloadTool = $('<div title="download" class="lqs_tool">Download<div>');
 		controlIO.append( downloadTool );
-		var uploadTool = $('<div title="upload" class="lqs_tool">&uarr;</div>');
+		var uploadTool = $('<div title="upload" class="lqs_tool">Upload</div>');
 		controlIO.append( uploadTool );
 		controls.append(controlIO);
 		downloadTool.click( ()=>{
@@ -317,23 +322,23 @@ class LQS {
 
 		controls.append( $("<div style='margin-top:1em'>Seeds</div>"));
 
-		var graphSeed = $('<div class="lqs_seed">Data Connector</div>');
+		var graphSeed = this.renderSeed("Data Connector");
 		controls.append( graphSeed );
 		this.attachSeed( graphSeed, LQS_NodeTypes['graph-connect'].makeSeed({sourceCard:{data:{id:'//control-panel'}}}));
 
-		var graphSeedLex = $('<div class="lqs_seed">Webscience Lexcon</div>');
+		var graphSeedLex = this.renderSeed("Webscience Lexicon");
 		controls.append( graphSeedLex );
 		this.attachSeed( graphSeedLex, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://www.soton.ac.uk/~totl/webscience-graph/' }));
 
-		var graphSeedWPDemo = $('<div class="lqs_seed">Blog Demo</div>');
+		var graphSeedWPDemo = this.renderSeed("Blog Demo");
 		controls.append( graphSeedWPDemo );
 		this.attachSeed( graphSeedWPDemo, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://www.soton.ac.uk/~totl/wordpress-graph-demo/' }));
 
-		var graphSeedWPDemo = $('<div class="lqs_seed">JRNL Blog</div>');
+		var graphSeedWPDemo = this.renderSeed("JRNL Blog");
 		controls.append( graphSeedWPDemo );
 		this.attachSeed( graphSeedWPDemo, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://jrnl.global/wp-json/graph-api/v1/query' }));
 
-		var graphSeedWikipedia = $('<div class="lqs_seed">Wikipedia</div>');
+		var graphSeedWikipedia = this.renderSeed("Wikipedia");
 		controls.append( graphSeedWikipedia );
 		this.attachSeed( graphSeedWikipedia, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://www.soton.ac.uk/~totl/wiki-graph-demo/' }));
 
@@ -474,6 +479,10 @@ class LQS {
 		}
 
 		return node;
+	}
+
+	renderSeed(text) {
+		return $("<div class='lqs_seed'></div>").append( $("<div class='lqs_seed_inner'></div>").text(text) );
 	}
 
 	getLayout() {
@@ -785,6 +794,16 @@ class LQS {
 		});
 	}
 
+	static clearTextSelection() {
+		var sel = window.getSelection ? window.getSelection() : document.selection;
+		if (sel) {
+			if (sel.removeAllRanges) {
+				sel.removeAllRanges();
+			} else if (sel.empty) {
+				sel.empty();
+			}
+		}
+	}
 
 	static logo( svg ) {
 		return "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDIwMDEwOTA0Ly9FTiIKICJodHRwOi8vd3d3LnczLm9yZy9UUi8yMDAxL1JFQy1TVkctMjAwMTA5MDQvRFREL3N2ZzEwLmR0ZCI+CjxzdmcgdmVyc2lvbj0iMS4wIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiB3aWR0aD0iMTAyNC4wMDAwMDBwdCIgaGVpZ2h0PSIxMDI0LjAwMDAwMHB0IiB2aWV3Qm94PSIwIDAgMTAyNC4wMDAwMDAgMTAyNC4wMDAwMDAiCiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0Ij4KPG1ldGFkYXRhPgpDcmVhdGVkIGJ5IHBvdHJhY2UgMS4xNSwgd3JpdHRlbiBieSBQZXRlciBTZWxpbmdlciAyMDAxLTIwMTcKPC9tZXRhZGF0YT4KPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMC4wMDAwMDAsMTAyNC4wMDAwMDApIHNjYWxlKDAuMTAwMDAwLC0wLjEwMDAwMCkiCmZpbGw9IiMwMDAwMDAiIHN0cm9rZT0ibm9uZSI+CjxwYXRoIGQ9Ik01MjQ1IDk5OTQgYy0yOTggLTEyMiAtODIzIC0yMDIgLTE1MDYgLTIzMCBsLTE1NiAtNiAtNDIgLTE0MSBjLTI0Ci03NyAtNDUgLTE0NiAtNDggLTE1MyAtMyAtOSA2NSAtMTMgMjg5IC0xNyAzMTggLTUgMzg3IC0xNCA0NjAgLTYyIDgyIC01NAoxMTQgLTE4MyA4MyAtMzMzIC0zMSAtMTU0IC0xMjkgLTQ4MSAtMTAyNSAtMzQzNyAtNDkwIC0xNjE3IC05MzQgLTMwODcgLTk4NgotMzI2OCAtMjA2IC03MTYgLTI5NCAtMTEyMSAtMjk0IC0xMzUxIDAgLTI3MCA4NiAtNDkyIDI2MCAtNjY3IDE1NyAtMTU4IDM0MwotMjI5IDYwNSAtMjI5IDUxNCAwIDk2NyAyOTkgMTM1OCA4OTUgMTQ0IDIyMCAzMDIgNTMxIDQyMiA4MjkgbDUyIDEyOCAyNTQgMwpjNDQ2IDQgNzI0IDYxIDEwMjQgMjEwIDE1NyA3OCAyODEgMTY1IDM5OCAyODIgMjc2IDI3MSA0NTkgNjAwIDUyOSA5NDYgMzIKMTU5IDMzIDUwMSAwIDY4NyAtNjkgMzk5IC0yMjEgNzUyIC02NDUgMTQ5NSAtMjMxIDQwNSAtMzYyIDY3OSAtNDUxIDk0OSAtNzAKMjA3IC05MCAzMTYgLTkwIDQ4NiAwIDEzMyAyIDE1MiAyOCAyMjUgMzcgMTA2IDg2IDE4NSAxNjYgMjY1IDE2NyAxNjkgNDE1CjI3OCA2ODIgMjk4IDI2NiAyMSA0NDkgLTM0IDU3NiAtMTcyIDY2IC03MyAxMDQgLTE1MCAxNDcgLTI5NiA2MCAtMjA3IDEzMQotMzI1IDIyNiAtMzc3IDUwIC0yNyAxOTggLTI1IDI1OSAzIDU1IDI2IDEwMyA3MyAxMjkgMTI5IDQ3IDEwMSA1MiAyNzggMTEKMzkwIC04NCAyMjUgLTM2MSA0NTIgLTY4NCA1NjAgLTE0MyA0OCAtMjU2IDY2IC00NDcgNzIgLTMxOSAxMCAtNTc1IC00MiAtODQ3Ci0xNzIgLTE5MSAtOTIgLTM0NSAtMTk5IC01MDYgLTM1NSAtMjYwIC0yNTEgLTM5OSAtNTExIC00NTEgLTg0NSAtMjUgLTE1NgotMTYgLTM4OSAxOSAtNTM5IDc5IC0zMzcgMjYzIC03NjAgNTkxIC0xMzY2IDM4NSAtNzA5IDU0NyAtMTE0NCA1NDggLTE0NjUgMAotMjg1IC04NiAtNTEyIC0yNjUgLTcwMCAtMTg1IC0xOTQgLTQ1MiAtMzM5IC03MjEgLTM5MCAtMTg2IC0zNiAtNDAzIC0yOQotNTcwIDE2IC0xNjMgNDUgLTMyNyAxNDkgLTM4MSAyNDIgLTQ1IDc3IC00OCAxMTUgLTE1IDI0MSA4OSAzNDggMzUgNTY5IC0xNjEKNjQ4IC00NSAxOCAtNzYgMjIgLTE2NSAyMiAtMTM3IDEgLTE4NyAtMTggLTI2OCAtMTAzIC05OSAtMTAzIC0xMzcgLTIxMCAtMTM3Ci0zODAgMCAtMTI4IDE4IC0yMDYgNzUgLTMyNiAxMzAgLTI3NyA0MTEgLTUwNyA3MzAgLTYwMCA1NSAtMTYgMTAxIC0zMCAxMDMKLTMxIDYgLTMgLTY2IC0xNzEgLTEzNCAtMzEzIC0xNzcgLTM3MSAtMzUzIC02MzQgLTU1MiAtODIyIC0yMzggLTIyNyAtNDc2Ci0zNTIgLTYzNSAtMzM1IC0yNTYgMjcgLTMzOCAyNzkgLTI0MiA3NTEgMzcgMTgwIDgzIDM0MSAyMjAgNzY1IDg2IDI2NiAyMDYzCjY3NjEgMjQyMSA3OTUzIDUgMTUgLTQgMTcgLTg4IDE2IC03NCAtMSAtMTA1IC02IC0xNTMgLTI1eiIvPgo8L2c+Cjwvc3ZnPgo=";
