@@ -107,63 +107,69 @@ class LQS {
 			this.layoutScaleSlider.trigger('propertychange');
 		});
 	
-		// prevent gestures going up to the ipad OS
-		document.addEventListener('gesturestart', (e)=> { e.preventDefault(); return false; });
-
-		// stop
-		var hammertime = new Hammer.Manager( this.nodesLayer[0], {} );
-
-		// add ipad pinch gesture
-		hammertime.add(new Hammer.Pinch({}));
-		hammertime.get('pinch').set({ enable: true });
-		var scaleAtStartOfPinch;
-		hammertime.on("pinchstart", (e)=> {
-			scaleAtStartOfPinch = parseFloat(this.layoutScaleSlider.val());
-		});
-		hammertime.on("pinchmove", (e)=> {
-			this.layoutScaleSlider.val( scaleAtStartOfPinch + Math.log(e.scale) ) ;
-			this.layoutScaleSlider.trigger('propertychange');
-		});
-
 		// remember where a click & pan started 
 		var posBeforePan;
+		var screenPosOnMouseDown;
 		$(document).on("mousedown", (e)=> { 
 			LQS_ClickStart = { x: e.pageX, y: e.pageY }; 
 			if( $(e.originalEvent.target).hasClass( "lqs_nodes" ) ) {
 				posBeforePan = new LQS_Point( parseInt($(document).scrollLeft()), parseInt($(document).scrollTop() ) );
+				screenPosOnMouseDown = new LQS_Point( e.screenX, e.screenY );
 			} else {
 				posBeforePan = null;
+				screenPosOnMouseDown = null;
 			}
+		});
+		$(document).on("mouseup", (e)=> { screenPosOnMouseDown = posBeforePan = null; } );
+		$(document).on("mousemove", (e)=> { 
+			if( screenPosOnMouseDown ) {
+				$(document).scrollLeft( posBeforePan.x + screenPosOnMouseDown.x - e.screenX );
+				$(document).scrollTop(  posBeforePan.y + screenPosOnMouseDown.y - e.screenY );
+			}
+				
 		});
 
 		if( navigator.userAgent.match(/iPad/i) != null ) {
+			// prevent gestures going up to the ipad OS
+			document.addEventListener('gesturestart', (e)=> { e.preventDefault(); return false; });
+
+			// stop
+			var hammertime = new Hammer.Manager( this.nodesLayer[0], {} );
+	
+			// add ipad pinch gesture
+			hammertime.add(new Hammer.Pinch({}));
+			hammertime.get('pinch').set({ enable: true });
+			var scaleAtStartOfPinch;
+			hammertime.on("pinchstart", (e)=> {
+				scaleAtStartOfPinch = parseFloat(this.layoutScaleSlider.val());
+			});
+			hammertime.on("pinchmove", (e)=> {
+				this.layoutScaleSlider.val( scaleAtStartOfPinch + Math.log(e.scale) ) ;
+				this.layoutScaleSlider.trigger('propertychange');
+			});
+
 			hammertime.on("panstart", (e)=> {
 				if( $(e.target).hasClass( "lqs_nodes" ) ) {
 					posBeforePan = new LQS_Point( parseInt($(document).scrollLeft()), parseInt($(document).scrollTop() ) );
 				} else {
 					posBeforePan = null;
 				}
+				return true;
+			});
+
+			/* drag background to scroll (ipad and desktop) */
+			hammertime.add(new Hammer.Pan({threshold:0}));
+			hammertime.get('pan').set({ enable: true });
+			hammertime.on("panmove", (e)=> {
+				if( $(e.srcEvent.target).hasClass( "lqs_nodes" ) && posBeforePan ) {
+					$(document).scrollLeft( posBeforePan.x - e.deltaX );
+					$(document).scrollTop(  posBeforePan.y - e.deltaY );
+				}
+				return true;
 			});
 		}
 
-		/* drag background to scroll (ipad and desktop) */
-		hammertime.add(new Hammer.Pan({threshold:0}));
-		hammertime.get('pan').set({ enable: true });
-		hammertime.on("panmove", (e)=> {
-			if( $(e.srcEvent.target).hasClass( "lqs_nodes" ) && posBeforePan ) {
-				$(document).scrollLeft( posBeforePan.x - e.deltaX );
-				$(document).scrollTop(  posBeforePan.y - e.deltaY );
-			}
-		});
-
-		/* double tap */
-		hammertime.add( new Hammer.Tap({ event: 'doubletap', taps: 2 }) );
-		// Single tap recognizer
-		hammertime.add( new Hammer.Tap({ event: 'singletap' }) );
-		hammertime.get('doubletap').recognizeWith('singletap');
-		// we only want to trigger a tap, when we don't have detected a doubletap
-		hammertime.get('singletap').requireFailure('doubletap');
-		hammertime.on("doubletap", (e)=> {
+		this.nodesLayer.dblclick( (e)=>{
 			if( $(e.target).hasClass( "lqs_nodes" ) ) {
 				var nodeData = {
 					id: LQS.uuid(),
@@ -179,7 +185,7 @@ class LQS {
 			}
 		});
 		// get rid of open menus on touch
-		hammertime.on("singletap", (e)=> {
+		this.nodesLayer.click( (e)=>{
 			if( $(e.target).hasClass( "lqs_nodes" ) ) {
 				$('.lqs_card_menu').hide();
 			}
