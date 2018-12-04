@@ -70,13 +70,10 @@ a {
 .lqs_seed::before {
 	content: "☰ ";
 }
-.lqs_seed_filled:hover {
+.lqs_seed_filled:hover,
+.lqs_seed.ui-draggable-dragging {
 	background-color: #666666;
 	border-color: #eee;
-}
-.lqs_seed_dragged_from {
-}
-.lqs_seed_hole {
 }
 
 /* end seeds */
