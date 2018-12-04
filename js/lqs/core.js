@@ -333,6 +333,10 @@ class LQS {
 		controls.append( graphSeedWPDemo );
 		this.attachSeed( graphSeedWPDemo, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://jrnl.global/wp-json/graph-api/v1/query' }));
 
+		var graphSeedWikipedia = $('<div class="lqs_seed">Wikipedia</div>');
+		controls.append( graphSeedWikipedia );
+		this.attachSeed( graphSeedWikipedia, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://www.soton.ac.uk/~totl/wiki-graph-demo/' }));
+
 
 	}	/* end controls */
 
