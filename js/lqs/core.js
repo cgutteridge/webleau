@@ -610,62 +610,140 @@ class LQS {
 		}
 	}
 
+	change( event ) {
+		if( event.action == 'node-alter' ) {
+			if( !this.nodes[ event.node ] ) {
+				return { ok: false, error: 'unknown node' };
+			}
+			var lastpath = event.field[ event.field.length-1 ];
+			var target = this.nodes[event.node].data;
+			for(let i=0;i<event.field.length-1;++i ) {
+				if( !target[event.field[i]] ) { target[event.field[i]] = {}; }
+				target = target[event.field[i]];
+			}
+			target[lastpath] = event.data;	
+			this.logEvent( event );
+			return { ok: true };
+		} 
+		if( event.action == 'link-add' ) {
+			if( this.links[event.link.id] ) {
+				return { ok: false, error: 'link already exists' };
+			}
+			if( !this.nodes[event.link.subject.node] ) {
+				return { ok: false, error: 'unknown subject' };
+			}
+			if( !this.nodes[event.link.object.node] ) {
+				return { ok: false, error: 'unknown object' };
+			}
+			
+			this.logEvent( event );
+
+			// create link
+			var link = new LQS_Link( event.link, this );
+			this.links[link.data.id] = link;
+			this.links[link.data.id].updatePosition();
+			return { ok: true };
+		}
+		if( event.action == 'node-add' ) {
+			if( this.nodes[event.node.id] ) {
+				return { ok: false, error: 'node already exists' };
+			}
+
+			var nodeClass;
+			if( !event.node.type ) {
+				nodeClass = LQS_NodeTypes['html'];
+			} else if( LQS_NodeTypes[event.node.type] ) {
+				nodeClass = LQS_NodeTypes[event.node.type];
+			} else {
+				return { ok: false, error: 'unknown node type' };
+			}
+			
+			this.logEvent( event );
+
+			// create node
+			const NC = nodeClass;
+			var node = new NC( event.node, this );
+			this.nodes[node.data.id] = node;
+			this.nodes[node.data.id].init(); // things to do after the constructor
+			this.nodes[node.data.id].updatePosition();
+	
+			// denature any visible seeds to this node
+			if( this.seedsByTarget[node.data.id] ) {
+				var ids = Object.keys( this.seedsByTarget[node.data.id] );
+				for( let i=0;i<ids.length;++i ) {
+					this.takeSeed( ids[i] );
+				}
+			}
+	
+			return { ok: true };
+		}
+		if( event.action == 'link-remove' ) {
+			if(! this.links[event.link] ) {
+				return { ok: false, error: 'unknown link' };
+			}
+			var link = this.links[event.link];
+
+			var subjectNode = this.nodes[link.data.subject.node];
+			var objectNode = this.nodes[link.data.object.node];
+			subjectNode.deRegisterLink(link);
+			objectNode.deRegisterLink(link);
+			delete this.links[link.data.id];
+			link.removeDom();
+			this.logEvent( event );
+			return { ok: true };
+		}
+		if( event.action == 'node-remove' ) {
+			if(! this.nodes[event.node] ) {
+				return { ok: false, error: 'unknown node' };
+			}
+			var node = this.nodes[event.node];
+
+			// clean up the viewSpec, including seeds
+			node.viewSpec().leave(node);
+	
+			var link_ids = Object.keys(node.links);
+			for( let i=0;i<link_ids.length;++i ) {
+				node.links[link_ids[i]].remove();
+			}
+			var view_ids = Object.keys(node.views);
+			for( let i=0;i<view_ids.length;++i ) {
+				let viewSpec = node.views[view_ids[i]];
+				viewSpec.destroy(node);
+			}	
+	
+			if( this.seedsByTarget[node.data.id] ) {
+				var ids = Object.keys( this.seedsByTarget[node.data.id] );
+				for( let i=0;i<ids.length;++i ) {
+					this.returnSeed( ids[i] );
+				}
+			}
+			delete this.nodes[node.data.id];
+
+			this.logEvent( event );
+			return { ok: true };
+		}
+		return { ok: false, error: 'unknown action' };
+	}
+
+	logEvent( event ) {
+		console.log(event);
+	}
 
 	addLink( linkData ) {
-		// validate link TODO
-		if( this.links[linkData.id] ) { return null; }
-		if( !this.nodes[linkData.subject.node] ) { return null; }
-		if( !this.nodes[linkData.object.node] ) { return null; }
-		
-		// create link
-		var link = new LQS_Link( linkData, this );
-		this.links[link.data.id] = link;
-		this.links[link.data.id].updatePosition();
-		return this.links[link.data.id];
+		this.change( { 
+			action: "link-add",
+			link: linkData
+		});
 	}
 
 	addNode( nodeData ) {
 		// validate node TODO
-
-		var nodeClass;
-		if( !nodeData.type ) {
-			nodeClass = LQS_NodeTypes['html'];
-		} else if( LQS_NodeTypes[nodeData.type] ) {
-			nodeClass = LQS_NodeTypes[nodeData.type];
-		} else {
-			nodeClass = LQS_NodeTypes["error"];
-		}
-		
-		// create node
-		const NC = nodeClass;
-		var node = new NC( nodeData, this );
-		this.nodes[node.data.id] = node;
-		this.nodes[node.data.id].init(); // things to do after the constructor
-		this.nodes[node.data.id].updatePosition();
-
-		// denature any visible seeds to this node
-		if( this.seedsByTarget[node.data.id] ) {
-			var ids = Object.keys( this.seedsByTarget[node.data.id] );
-			for( let i=0;i<ids.length;++i ) {
-				this.takeSeed( ids[i] );
-			}
-		}
-
-
-		return this.nodes[node.data.id];
+		this.change( { 
+			action: "node-add",
+			node: nodeData
+		});
+		return this.nodes[ nodeData.id];
 	}
-
-	// nb. this is the final tidy up, use node.remove() to remove a node
-	removeNode( node ) {
-		if( this.seedsByTarget[node.data.id] ) {
-			var ids = Object.keys( this.seedsByTarget[node.data.id] );
-			for( let i=0;i<ids.length;++i ) {
-				this.returnSeed( ids[i] );
-			}
-		}
-		delete this.nodes[node.data.id];
-	}
-
 
 	pasteToBackground(event) {
 		var clipboardData = event.clipboardData || window.clipboardData || event.originalEvent.clipboardData;
@@ -692,7 +770,7 @@ class LQS {
 				nodeData.source.creator   = [{}];
 				nodeData.source.creator[0].name = dom.attr( 'data-citation-author-name' );
 				nodeData.source.creator[0].url  = dom.attr( 'data-citation-author-url' );
-				var newNode = this.addNode(nodeData);
+				this.addNode(nodeData);
 				return;
 			}
 		}
@@ -707,7 +785,7 @@ class LQS {
 				// but we'll still crate links if they are needed
 				this.nodes[nodeData.id].reveal();
 			} else {
-				var newNode = this.addNode(nodeData);
+				this.addNode(nodeData);
 			}
 			return;
 		}
@@ -716,16 +794,16 @@ class LQS {
 			//nodeData.title = "Pasted HTML";
 			nodeData.html = html;
 			nodeData.type = "html";
-			var newNode = this.addNode(nodeData);
-			newNode.fitSize();
+			this.addNode(nodeData);
+			this.nodes[nodeData.id].fitSize();
 			return;
 		}
 	
 		//nodeData.title = "Pasted text";
 		nodeData.text = text;
 		nodeData.type = "text";
-		var newNode = this.addNode(nodeData);
-		newNode.fitSize();
+		this.addNode(nodeData);
+		this.nodes[nodeData.id].fitSize();
 	}	
 
 
