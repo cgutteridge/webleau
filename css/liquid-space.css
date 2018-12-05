@@ -473,8 +473,7 @@ a {
 .lqs_focus .lqs_cached {
 	border: none;
 }
-.lqs_focus_inner .lqs_graph_fold,
-.lqs_focus_inner .lqs_seed {
+.lqs_focus_inner .lqs_graph_fold {
 	display: none !important;
 }
 /* end focus view */
