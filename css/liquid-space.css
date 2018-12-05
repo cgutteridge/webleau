@@ -49,7 +49,7 @@ a {
 
 /* seeds */
 .lqs_seed {
-	margin: 2px 5px 2px 5px;
+	margin: 2px 5px 0px 5px;
 	display: inline-block;
 	vertical-align:top;
 	padding: 3px 10px;
@@ -59,20 +59,27 @@ a {
 	user-select: none;
 	font-family: sans-serif;
 	border-radius: 4px;
-	border: 1px solid #ccc;
-	color: #ccc;
+	border: 1px dashed #888888;
+	color: #888888;
 	cursor: move;
+}
+.lqs_seed_inline { 
+	//border-color: #ccc;
+	padding: 1px 5px;
+	margin-left: 0px;
+	margin-right: 0px;
+	vertical-align: middle;
 }
 .lqs_seed_filled {
 	color: white;
-	border-color: white;
-	background-color: #999;
+	border: 1px solid #fff;
+	background-color: #b8b8b8;
 }
 .lqs_seed_filled:hover,
 .lqs_seed.ui-draggable-dragging {
-	margin: 0px 5px 4px 5px;
+	margin-top: 0px;
+	margin-bottom: 2px;
 	background-color: #666666;
-	border-color: #eee;
 	box-shadow: 0px 0px 20px 2px rgba(0,0,0,0.2);
 }
 /* end seeds */
@@ -81,7 +88,7 @@ a {
 .controls_icon {
 	position: fixed;
 	top:0%;
-	right:0%;
+	left:0%;
 	opacity: 0.2;
 	padding: 10px;
 	color: #000;
@@ -102,11 +109,13 @@ a {
 	font-family: sans-serif;
 	z-index: 1000;
 	width:20%;
+	height:100%;
+	overflow-y: auto;
 	position: fixed;
 	top:0%;
-	right:0%;
+	left:0%;
 	text-align: left;
-	background-color: #a9a9a9;
+	background-color: #cfcfcf;
 	padding: 10px;
 	display: none;
 	border-bottom-left-radius: 5px;
@@ -174,7 +183,7 @@ a {
 	cursor: default;
 	top: 0px;
 	left: 0px;
-	background-color: #a9a9a9;
+	background-color: #cfcfcf;
 	border: solid 1px #f8f0dc;
 	border-radius: 5px;
 	margin: 0;
@@ -202,13 +211,8 @@ a {
 	left: 0px;
 	margin: 0;
 	padding: 0px;
-	overflow: hidden;
-}
-.lqs_node_icon img {
-	position: absolute;
-	bottom: 0;
 	border-radius: 5px;
-	border-top: solid 1px #aaa;
+	border: solid 1px #aaa;
  	box-shadow: 2px 6px 20px 2px rgba(0,0,0,0.2);	
 }
 .lqs_node_icon.drop-hover {
@@ -418,7 +422,7 @@ a {
 	color: #fff !important;
 }
 .lqs_card_class_html:hover, .lqs_card_class_text:hover {
-	background-color: #a9a9a9;
+	background-color: #cfcfcf;
 	border: solid 1px #f8f0dc;
 	box-shadow: 2px 6px 20px 2px rgba(0,0,0,0.1);
 }
@@ -433,7 +437,7 @@ a {
 	left: 1%;
 	border: solid 1px #333;
 	border-radius: 1px;
-	background-color: #a9a9a9;
+	background-color: #cfcfcf;
 	z-index: 5000;
 	box-shadow: 2px 6px 20px 2px rgba(0,0,0,0.1);
 }
@@ -478,7 +482,8 @@ a {
 
 /* hacks to tidy mediawiki html for demo. This should be done in API not css */
 .infobox,
-.metadata
+.metadata,
+.vertical-navbox
 {
 	display: none;
 }

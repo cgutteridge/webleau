@@ -53,6 +53,7 @@ LQS_NodeTypes['graph-connection'] = class LQS_Node_Graph_Connection extends LQS_
 		}.bind(this)).done(function(ajaxData){
 			node.set( 'graph.ident', ajaxData );
 			if( node.data.graph.ident && node.data.graph.ident.title ) {
+				node.set( 'title',node.data.graph.ident.title );
 				node.viewSpec().setTitle(node, node.data.graph.ident.title );
 			}
 			this.dom.content.empty();
@@ -61,14 +62,22 @@ LQS_NodeTypes['graph-connection'] = class LQS_Node_Graph_Connection extends LQS_
 			}
 			
 			if( node.data.graph.ident.start ) {
-				var seed = this.lqs.renderSeed( "Start" );
-				this.dom.content.append(seed);
-				this.lqs.attachSeed( seed, LQS_NodeTypes['graph-node'].makeSeed({
-					endpoint: node.data.graph.endpoint,
-					ident: node.data.graph.ident,
-					nodeID: node.data.graph.ident.start,
-					sourceCard: node
-				}));
+				let a = node.data.graph.ident.start;
+				if( !Array.isArray( a ) ) { a = [a]; }
+				let startDiv = $("<p>Suggested start point"+(a.length==1?"":"s")+", drag to open: </p>");
+				this.dom.content.append( startDiv );
+				for(let i=0;i<a.length;++i) {
+					let id = a[i];
+					let seedname = LQS.truncate(id, 32 );
+					let seed = this.lqs.renderSeed( seedname );
+					startDiv.append(seed);
+					this.lqs.attachSeed( seed, LQS_NodeTypes['graph-node'].makeSeed({
+						endpoint: node.data.graph.endpoint,
+						ident: node.data.graph.ident,
+						nodeID: id,
+						sourceCard: node
+					}));
+				}
 			}
 			var input = $("<input class='normal-paste' style=''/>");
 			var button = $("<button style='margin-left:1em'>Open node</button>");
@@ -81,7 +90,6 @@ LQS_NodeTypes['graph-connection'] = class LQS_Node_Graph_Connection extends LQS_
 				});
 				// make the new connection appear in place of this node
 				this.lqs.growSeed( seed, this.data.pos );
-				this.remove();
 			}.bind(this));
 			var r = $("<div>Open a node by ID: </div>");
 			r.append( input );
@@ -228,7 +236,20 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 			return null;
 		} else if( this.data.graph.node.data.html ) {
 			content.html( this.data.graph.node.data.html );
-			// duplicate code, candidate for a function?
+			content.find( '[data-seed-id]' ).each( (i,e)=>{
+				e=$(e);
+				var seed = $('<div class="lqs_seed lqs_seed_inline" />').text( e.text() );	
+				var seedID = e.attr("data-seed-id");
+				e.replaceWith(seed);
+				this.lqs.attachSeed( seed, LQS_NodeTypes['graph-node'].makeSeed({
+					endpoint: this.data.graph.endpoint,
+					ident: this.data.graph.ident,
+					nodeID: seedID,
+					linkType: "links to",
+					sourceCard: this,
+					from: this
+				}));
+			});
 			this.fixup(content);
 		} else if( this.data.graph.node.data.icon ) {
 			content.html( $("<img style='width:100%;min-width:50px;max-width:100%' />").attr('src',this.data.graph.node.data.icon));

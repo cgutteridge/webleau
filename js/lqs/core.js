@@ -177,9 +177,10 @@ class LQS {
 
 		this.nodesLayer.dblclick( (e)=>{
 			if( $(e.target).hasClass( "lqs_nodes" ) ) {
+				console.log(e);
 				var nodeData = {
 					id: LQS.uuid(),
-					pos: this.toVirtual( { x: e.srcEvent.pageX, y: e.srcEvent.pageY } ),
+					pos: this.toVirtual( { x: e.pageX, y: e.pageY } ),
 					title: "",
 					text: "",
 					type: 'text',
@@ -355,7 +356,6 @@ class LQS {
 			var seed = LQS_NodeTypes['graph-connection'].makeSeed({endpoint:input.val()});
 			// make the new connection appear in place of this node
 			this.lqs.growSeed( seed, this.data.pos );
-			this.remove();
 		}.bind(this));
 		var r = $("<div />");
 		r.append( input );
@@ -845,6 +845,11 @@ class LQS {
 				sel.empty();
 			}
 		}
+	}
+
+	static truncate( text, max ) {
+		if( text.length <= max ) { return text; }
+		return text.substring(0,max-1)+"…";
 	}
 
 	static logo( svg ) {

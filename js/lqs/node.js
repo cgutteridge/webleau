@@ -238,11 +238,7 @@ class LQS_Node {
 				if( !node.data.icon ) { node.data.icon = {}; }
 				node.data.icon.size = { width: 64, height: 64 };
 		
-				node.dom.icon = $("<div class='lqs_node_icon'></div>").attr("data-node",node.data.id);
-				node.dom.icon_img = $("<img />");
-				node.dom.icon.append( node.dom.icon_img );
-				node.dom.icon.width( node.data.icon.size.width );
-				node.dom.icon.height( node.data.icon.size.height );
+				node.dom.icon = $("<img class='lqs_node_icon' />").attr("data-node",node.data.id);
 				node.dom.icon.hide();
 				node.lqs.nodesLayer.append( node.dom.icon );
 		
@@ -291,7 +287,8 @@ class LQS_Node {
 				node.dom.icon.show();
 				node.dom.icon_text.show();
 				if( node.data.icon.url ) {
-					node.dom.icon_img.attr('src',node.data.icon.url );
+					node.dom.icon.attr('src',node.data.icon.url );
+					node.dom.icon.load( ()=>{ node.updatePosition(); } );
 				} else {
 					node.dom.icon.css('background-image', `linear-gradient(to bottom, rgba(255,255,255,0.7), rgba(127,127,127,0.7)), url(${LQS.logo()})` );
 				} 
@@ -305,13 +302,15 @@ class LQS_Node {
 				var baseFontSize = 16;
 				var realPos = node.realPos();
 				var realSize = node.realSize();
+				node.dom.icon.css('max-width', realSize.width+"px" );
+				node.dom.icon.css('max-height', realSize.height+"px" );
+				var w = node.dom.icon.width();	
+				var h = node.dom.icon.height();	
+				node.dom.icon.css('left',realPos.x-w/2 );
+				node.dom.icon.css('top', realPos.y-h/2 );
 				node.dom.icon_text.attr('x', realPos.x );
-				node.dom.icon_text.attr('y', realPos.y + realSize.height/2+baseFontSize*node.lqs.layoutScale);
+				node.dom.icon_text.attr('y', realPos.y + node.dom.icon.height()/2 +baseFontSize*node.lqs.layoutScale);
 				node.dom.icon_text.css('font-size',(baseFontSize*node.lqs.layoutScale)+"px"); 
-				node.dom.icon_img.css('max-width', realSize.width+"px" );
-				node.dom.icon_img.css('max-height', realSize.height+"px" );
-				node.dom.icon.css('left',realPos.x-realSize.width/2 );
-				node.dom.icon.css('top', realPos.y-realSize.height/2 );
 			},
 			realSize: (node) => {
 				return { width: node.data.icon.size.width*node.lqs.layoutScale, height: node.data.icon.size.height*node.lqs.layoutScale };
