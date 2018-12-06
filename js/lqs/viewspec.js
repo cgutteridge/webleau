@@ -60,6 +60,7 @@ class LQS_ViewSpec {
 	}
 
 	realSize(node) {
+		if( !node.data.size ) { return { width: 100, height: 100 }; }
 		return {
 			width:  node.data.size.width  * node.lqs.layoutScale,
 			height: node.data.size.height * node.lqs.layoutScale };
