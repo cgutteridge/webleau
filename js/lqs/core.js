@@ -574,16 +574,9 @@ class LQS {
 		return layout;
 	}
 
-	// erase all stuff
+	// erase all the things
 	purgeLayout() {
-		var linkKeys = Object.keys(this.links);
-		for( var i=0; i<linkKeys.length; ++i ) {
-			this.links[linkKeys[i]].remove();
-		}
-		var nodeKeys = Object.keys(this.nodes);
-		for( var i=0; i<nodeKeys.length; ++i ) {
-			this.nodes[nodeKeys[i]].remove();
-		}
+		this.change( { action: "purge" } );
 	}
 
 	setDevMode( bool ) {
@@ -646,7 +639,14 @@ class LQS {
 
 	change( event ) {
 		if( event.action == 'purge' ) {
-			this.purgeLayout();
+			var linkKeys = Object.keys(this.links);
+			for( var i=0; i<linkKeys.length; ++i ) {
+				this.links[linkKeys[i]].remove();
+			}
+			var nodeKeys = Object.keys(this.nodes);
+			for( var i=0; i<nodeKeys.length; ++i ) {
+				this.nodes[nodeKeys[i]].remove();
+			}
 			this.logEvent( event );
 			return { ok: true };
 		}
@@ -654,7 +654,7 @@ class LQS {
 			if( !this.nodes[ event.node ] ) {
 				return { ok: false, error: 'unknown node' };
 			}
-			this.nodes[ event.node ].reveal();
+			this.focusPage( this.nodes[ event.node ].data.pos );
 			this.logEvent( event );
 			return { ok: true };
 		}

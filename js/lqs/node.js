@@ -757,7 +757,7 @@ class LQS_Node {
 	}
 
 	reveal() {
-		this.lqs.focusPage( this.data.pos );
+		this.lqs.change( { action: 'node-focus', 'node':this.data.id } );
 	}
 
 	addLinkedComment() {
