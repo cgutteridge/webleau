@@ -9,7 +9,7 @@ class LQS {
 		this.bgSvgLayer = null;
 		this.fgSvgLayer = null;
 		this.eventListeners = [];
-//		this.eventListeners.push( (e)=>{ console.log(e); } );
+		this.eventListeners.push( (e)=>{ console.log(e); } );
 
 		this.nodes = {};
 		this.links = {};
@@ -356,19 +356,19 @@ class LQS {
 		var rc = $("<div />");
 		rcbutton.click( ()=>{
 			var channel = new MessageChannel();
-			var port1 = channel.port1;
 			var rciframe = $('<iframe></iframe>').attr('src', rcinput.val() );
 			$('body').append($('<div class="lqs_remote_control"></div>').append(rciframe));
 			rc.hide();
 			rciframe.load( ()=>{ 
-port1.postMessage({action:'hello'});
-console.log('iframe loaded');
-				port1.onmessage = (e)=>{
-					console.log( "MAIN", e );
+				channel.port1.onmessage = (e)=>{
+					let event = JSON.parse(e.data);
+					this.change( event );
 				};
 				this.eventListeners.push( (e)=>{
-					port1.postMessage( e );
+					let s = JSON.stringify(e);
+					rciframe[0].contentWindow.postMessage( ''+s, '*' );
 				} );
+				rciframe[0].contentWindow.postMessage(JSON.stringify( {action:'hello'}), '*', [channel.port2] );
 			});
 		});
 		rc.append( rcinput );
@@ -640,6 +640,17 @@ console.log('iframe loaded');
 	}
 
 	change( event ) {
+		if( event.action == 'purge' ) {
+			this.purgeLayout();
+			return { ok: true };
+		}
+		if( event.action == 'node-focus' ) {
+			if( !this.nodes[ event.node ] ) {
+				return { ok: false, error: 'unknown node' };
+			}
+			this.nodes[ event.node ].reveal();
+			return { ok: true };
+		}
 		if( event.action == 'node-alter' ) {
 			if( !this.nodes[ event.node ] ) {
 				return { ok: false, error: 'unknown node' };
@@ -651,6 +662,7 @@ console.log('iframe loaded');
 				target = target[event.field[i]];
 			}
 			target[lastpath] = event.data;	
+			this.nodes[event.node].updatePosition();
 			this.logEvent( event );
 			return { ok: true };
 		} 

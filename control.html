@@ -1,24 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
+<meta charset="utf-8">
 <style>
 body {
 	background-color: black;
 	color: red;
 }
 </style>
+<script src='js/jquery-1.12.4.min.js' ></script>
 </head>
 <body>
 <div>REMOTE CONTROL</div>
+<div id='status'>Listening</div>
+<div id='msg'></div>
+<button id='create'>CREATE</button>
+<button id='move'>MOVE</button>
+<button id='focus'>FOCUS</button>
+<button id='destroy'>DESTROY</button>
+<button id='purge'>PURGE</button>
 <script>
-window.addEventListener('message', (e)=>{
-alert(23);
-   console.log( "RC", e );
-   e.ports[0].postMessage('Message back from the IFrame');
-});  
-console.log( "RC: Listening, maybe");
+$(document).ready( ()=>{
+	var port;
+	
+	window.addEventListener('message', (e)=>{
+   		var data = JSON.parse( e.data );
+   		if( data.action == 'hello' ) {
+	 		$('#status').html("Connected" );
+   		}
+ 		$('#msg').text(e.data);
+   		if( e.ports.length ) {
+	   		port = e.ports[0];
+   		}
+	});  
+	$('#create').click( ()=>{ 
+		if( !port ) { alert( 'Not connected'); return;}
+		port.postMessage( JSON.stringify( { 
+			"action": "node-add", 
+			"node": { 
+				"id": "voodoo1", 
+				"type": "text", 
+				"title": "I'm magic", 
+				"pos": { "x": -100, "y": -100 }, 
+				"size": { "width": 100, "height": 100 }, 
+				"text": "This node was created by voodoo iframe ports." 
+			} 
+		}));
+	} );
+	$('#move').click( ()=>{ 
+		if( !port ) { alert( 'Not connected'); return;}
+		port.postMessage(  JSON.stringify({ 
+			"action":"node-alter", 
+			"node":"voodoo1",
+			"field": ["pos"], 
+			"data":{"x":0,"y":200}
+		}));
+	});
+	$('#focus').click( ()=>{ 
+		if( !port ) { alert( 'Not connected'); return;}
+		port.postMessage(  JSON.stringify({ 
+			"action":"node-focus",
+			"node":"voodoo1" 
+		}));
+	} );
+	$('#destroy').click( ()=>{ 
+		if( !port ) { alert( 'Not connected'); return;}
+		port.postMessage(  JSON.stringify({ 
+			"action":"node-remove",
+			"node":"voodoo1" 
+		}));
+	} );
+	$('#purge').click( ()=>{ 
+		if( !port ) { alert( 'Not connected'); return;}
+		port.postMessage(  JSON.stringify({ 
+			"action":"purge",
+		}));
+	} );
+});
 </script>
-
+	
 </body>
 </html>
