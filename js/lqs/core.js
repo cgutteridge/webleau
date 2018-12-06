@@ -86,6 +86,16 @@ class LQS {
 			this.pasteToBackground(event);
 		});
 
+		this.dropZone = $('<div contenteditable="true" class="lqs_dropzone" title="DROP ZONE - Drag stuff to here"></div>');
+		$('body').append( this.dropZone );
+		this.dropZone.bind('DOMNodeInserted', (event)=>{
+			if (event.originalEvent && event.originalEvent.target) {
+				this.droppedDOM(event.originalEvent.target);
+			}
+			this.dropZone.empty();
+		});
+
+
 
 		this.nodesLayer.droppable( {
 			scope: 'seeds',
@@ -230,6 +240,7 @@ class LQS {
 
 		this.inSetup = false;
 	}
+
 
 	addControlPanel() {
 		/* CONTROLS */
@@ -694,6 +705,43 @@ class LQS {
 		delete this.nodes[node.data.id];
 	}
 
+	droppedDOM(dom) {
+		console.log( dom );
+
+		var nodeData = {};
+		nodeData.pos = this.toVirtual(this.mouse);
+
+		var el = $(dom);
+
+		if( el.is("a") ) {
+			var url = el.attr('href');
+			if( url && LQS.validURL(url) ) {
+				nodeData.type = "embed";
+				nodeData.source = {};
+				nodeData.source.url = url;
+				nodeData.id = url;
+				if( this.nodes[nodeData.id] ) {
+					// already exists, lets just bring it into view
+					// but we'll still crate links if they are needed
+					this.nodes[nodeData.id].reveal();
+				} else {
+					var newNode = this.addNode(nodeData);
+				}
+				return;
+			}
+		}
+
+
+		// fallback, just make an HTML node
+		var tmp = document.createElement("div");
+		tmp.appendChild( dom );
+		nodeData.html = "<div>"+tmp.innerHTML+"</div>";
+		nodeData.type = "html";
+		var newNode = this.addNode(nodeData);
+		newNode.fitSize();
+
+		return;
+	}
 
 	pasteToBackground(event) {
 		var clipboardData = event.clipboardData || window.clipboardData || event.originalEvent.clipboardData;
@@ -778,7 +826,7 @@ class LQS {
 	static validURL(str) {
 		//var pattern = /^(https?:\/\/)?((([a-z\d]([a-z\d-]*[a-z\d])*)\.)+[a-z]{2,}|((\d{1,3}\.){3}\d{1,3}))(\:\d+)?(\/[-a-z\d%_.~+]*)*(\?[-;&a-z\d%_.~+=]*)?(\#[-a-z\d_]*)?$/i;
 		var pattern = /^(https?:\/\/)?((([a-z\d]([a-z\d-]*[a-z\d])*)\.)+[a-z]{2,}|((\d{1,3}\.){3}\d{1,3}))(\:\d+)?[^ ]*/;
-		if(!pattern.test(str)) {
+		if(!pattern.test(""+str)) {
 			return false;
 		} else {
 			return true;

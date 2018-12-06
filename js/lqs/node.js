@@ -100,12 +100,11 @@ class LQS_Node {
 		this.lqs.nodesLayer.append( this.dom.menu );
 
 		if( this.founder ) {
-			let a = $('<a target="_blank">&#x2B08;</a>').attr( 'href','#'+this.data.id).attr('data-title',this.data.title);
-			a.attr( "title", "Direct link to this card" );
+			this.dom.urlTool = $('<a class="lqs_url"  target="_blank">&#x2B08;</a>').attr( 'href','#'+this.data.id).attr('data-title',this.data.title);
+			this.dom.urlTool.attr( "title", "Direct link to this card" );
 			if( this.data.icon && this.data.icon.url ) {
-				a.attr( "data-img", this.data.icon.url );
+				this.dom.urlTool.attr( "data-img", this.data.icon.url );
 			}
-			this.dom.urlTool = $('<div class="lqs_url"></div>').append(a);
 			this.dom.outer.append( this.dom.urlTool );
 		} else { console.log( this); }
 

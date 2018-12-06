@@ -270,13 +270,11 @@ a {
 	right: 4px;
 	font-size: 120%;
 	z-index: 10;
+	color: #fff !important;
+	text-decoration: none;
 }
 .lqs_node:hover .lqs_url {
 	display: block;
-}
-.lqs_node .lqs_url a {
-	color: #fff !important;
-	text-decoration: none;
 }
 .lqs_node .lqs_node_empty_title {
 	display: none;
@@ -502,3 +500,20 @@ a {
 	display: none;
 }
 /* end wikipedia hacks */
+
+
+/* dropzone */
+.lqs_dropzone {
+	position: fixed;
+	text-align: center;
+	bottom:0%;
+	right:0%;
+	width: 100px;
+	height: 60px;
+	color: #000;
+	opacity: 50%;
+	background-color: #999;
+	border-top-left-radius: 5px;
+	z-index: 1000;
+}
+/* end dropzone */
