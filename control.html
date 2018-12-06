@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+<style>
+body {
+	background-color: black;
+	color: red;
+}
+</style>
+</head>
+<body>
+<div>REMOTE CONTROL</div>
+<script>
+window.addEventListener('message', (e)=>{
+alert(23);
+   console.log( "RC", e );
+   e.ports[0].postMessage('Message back from the IFrame');
+});  
+console.log( "RC: Listening, maybe");
+</script>
+
+</body>
+</html>

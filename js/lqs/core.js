@@ -8,6 +8,8 @@ class LQS {
 		this.nodesLayer = null;
 		this.bgSvgLayer = null;
 		this.fgSvgLayer = null;
+		this.eventListeners = [];
+//		this.eventListeners.push( (e)=>{ console.log(e); } );
 
 		this.nodes = {};
 		this.links = {};
@@ -37,9 +39,9 @@ class LQS {
 		$('body').append(this.nodesLayer);
 
 		this.fgSvgLayer  = $(document.createElementNS("http://www.w3.org/2000/svg","svg"));
-		var defs         = $(document.createElementNS("http://www.w3.org/2000/svg","defs"));
+		var defs	 = $(document.createElementNS("http://www.w3.org/2000/svg","defs"));
 		var marker       = $(document.createElementNS("http://www.w3.org/2000/svg","marker"));
-		var path         = $(document.createElementNS("http://www.w3.org/2000/svg","path"));
+		var path	 = $(document.createElementNS("http://www.w3.org/2000/svg","path"));
 		this.arrowsLayer = $(document.createElementNS("http://www.w3.org/2000/svg","g"));
 		this.labelsLayer = $(document.createElementNS("http://www.w3.org/2000/svg","g"));
 		defs.append(marker);
@@ -345,18 +347,45 @@ class LQS {
 	
 			this.setLayout(layout);
 		});
-		
-		// graph
+	
+		// puppetmaster
 
+		controls.append( $("<div class='lqs_controls_subtitle'>Remote Control</div>"));
+		var rcinput = $("<input placeholder='Remote Control URL' class='normal-paste' style='width:60%'/>");
+		var rcbutton = $("<button>Open</button>");
+		var rc = $("<div />");
+		rcbutton.click( ()=>{
+			var channel = new MessageChannel();
+			var port1 = channel.port1;
+			var rciframe = $('<iframe></iframe>').attr('src', rcinput.val() );
+			$('body').append($('<div class="lqs_remote_control"></div>').append(rciframe));
+			rc.hide();
+			rciframe.load( ()=>{ 
+port1.postMessage({action:'hello'});
+console.log('iframe loaded');
+				port1.onmessage = (e)=>{
+					console.log( "MAIN", e );
+				};
+				this.eventListeners.push( (e)=>{
+					port1.postMessage( e );
+				} );
+			});
+		});
+		rc.append( rcinput );
+		rc.append( rcbutton );
+		controls.append( rc );
+		
+
+		// graph
 		controls.append( $("<div class='lqs_controls_subtitle'>Connect to Knowledge Graph</div>"));
 
 		var input = $("<input placeholder='Graph endpoint URL' class='normal-paste' style='width:60%'/>");
 		var button = $("<button>Open</button>");
-		button.click( function() {
+		button.click( ()=> {
 			var seed = LQS_NodeTypes['graph-connection'].makeSeed({endpoint:input.val()});
 			// make the new connection appear in place of this node
-			this.lqs.growSeed( seed, this.data.pos );
-		}.bind(this));
+			this.growSeed( seed );
+		});
 		var r = $("<div />");
 		r.append( input );
 		r.append( button );
@@ -726,7 +755,9 @@ class LQS {
 	}
 
 	logEvent( event ) {
-		console.log(event);
+		for( let i=0;i<this.eventListeners.length;++i ) {
+			this.eventListeners[i](event);
+		}
 	}
 
 	addLink( linkData ) {
@@ -817,9 +848,9 @@ class LQS {
 		else{
 			var elem = window.document.createElement('a');
 			elem.href = window.URL.createObjectURL(blob);
-			elem.download = filename;        
+			elem.download = filename;	
 			document.body.appendChild(elem);
-			elem.click();        
+			elem.click();	
 			document.body.removeChild(elem);
 		}
 	}
@@ -908,7 +939,7 @@ class LQS {
 
 	static noDragClick( element, fn ){
 		element.mouseup( (e) => {
-        		if (e.pageX==LQS_ClickStart.x && e.pageY==LQS_ClickStart.y) {
+			if (e.pageX==LQS_ClickStart.x && e.pageY==LQS_ClickStart.y) {
 				fn();
 			}
 		});
