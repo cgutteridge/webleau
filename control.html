@@ -19,6 +19,7 @@ body {
 <button id='focus'>FOCUS</button>
 <button id='destroy'>DESTROY</button>
 <button id='purge'>PURGE</button>
+<button id='bad'>BAD EVENT</button>
 <script>
 $(document).ready( ()=>{
 	var port;
@@ -36,6 +37,7 @@ $(document).ready( ()=>{
 	$('#create').click( ()=>{ 
 		if( !port ) { alert( 'Not connected'); return;}
 		port.postMessage( JSON.stringify( { 
+			"myid": "testing",
 			"action": "node-add", 
 			"node": { 
 				"id": "voodoo1", 
@@ -74,6 +76,15 @@ $(document).ready( ()=>{
 		if( !port ) { alert( 'Not connected'); return;}
 		port.postMessage(  JSON.stringify({ 
 			"action":"purge",
+		}));
+	} );
+	$('#bad').click( ()=>{ 
+		if( !port ) { alert( 'Not connected'); return;}
+		port.postMessage(  JSON.stringify({ 
+			"action":"node-alter",
+			"node":"that-does-not-exist",
+			"field": ["pos"], 
+			"data":{"x":0,"y":200}
 		}));
 	} );
 });

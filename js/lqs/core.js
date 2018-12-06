@@ -362,7 +362,12 @@ class LQS {
 			rciframe.load( ()=>{ 
 				channel.port1.onmessage = (e)=>{
 					let event = JSON.parse(e.data);
-					this.change( event );
+					var result = this.change( event );
+					if( !result.ok ) {
+						let s = JSON.stringify({ action:'error', message: result.error, event: event });
+						rciframe[0].contentWindow.postMessage( ''+s, '*' );
+					}
+					
 				};
 				this.eventListeners.push( (e)=>{
 					let s = JSON.stringify(e);
