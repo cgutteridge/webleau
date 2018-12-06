@@ -647,6 +647,7 @@ class LQS {
 	change( event ) {
 		if( event.action == 'purge' ) {
 			this.purgeLayout();
+			this.logEvent( event );
 			return { ok: true };
 		}
 		if( event.action == 'node-focus' ) {
@@ -654,6 +655,7 @@ class LQS {
 				return { ok: false, error: 'unknown node' };
 			}
 			this.nodes[ event.node ].reveal();
+			this.logEvent( event );
 			return { ok: true };
 		}
 		if( event.action == 'node-alter' ) {
