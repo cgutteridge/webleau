@@ -16,6 +16,7 @@ class LQS_Node {
 		this.dragStart;
 		if( !this.data.size ) { this.data.size = {}; }
 		if( !this.data.pos ) { this.data.pos = {}; }
+		if( this.lqs.inSetup ) { this.founder = true; }
 
 		// dom
 		this.borderSize = 2;
@@ -97,6 +98,16 @@ class LQS_Node {
 		this.dom.menuTool.mouseover( function() { this.showMenu(); }.bind(this));
 		this.dom.menu = $('<div class="lqs_card_menu"></div>').hide();
 		this.lqs.nodesLayer.append( this.dom.menu );
+
+		if( this.founder ) {
+			let a = $('<a target="_blank">&#x2B08;</a>').attr( 'href','#'+this.data.id).attr('data-title',this.data.title);
+			a.attr( "title", "Direct link to this card" );
+			if( this.data.icon && this.data.icon.url ) {
+				a.attr( "data-img", this.data.icon.url );
+			}
+			this.dom.urlTool = $('<div class="lqs_url"></div>').append(a);
+			this.dom.outer.append( this.dom.urlTool );
+		} else { console.log( this); }
 
 		this.dom.outer.append( this.dom.title );
 		this.dom.title.append( this.dom.titleLeft );

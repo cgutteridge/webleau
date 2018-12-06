@@ -4,7 +4,9 @@ var LQS_NodeTypes = {};
 var LQS_ClickStart = null;
 
 class LQS {
-	constructor() {
+	constructor( layout={} ) {
+		this.inSetup = true;
+
 		this.nodesLayer = null;
 		this.bgSvgLayer = null;
 		this.fgSvgLayer = null;
@@ -201,6 +203,32 @@ class LQS {
 	
 		// add control panel
 		this.addControlPanel();	
+
+		this.setLayout( layout );
+
+		var hash= window.location.hash.replace( /^#/,'');
+		var parts = hash.split( /;/ );
+		var opts = {};
+		if( parts ) {
+			var target = parts.shift();
+			if( parts.length ) {
+				for( let i=0; i<parts.length; ++i ) {
+					let kv = parts[i].split( "=", 2 );
+					if( kv.length == 2 ) {
+						opts[kv[0]]=kv[1];
+					} else {
+						// not sure if there's no =
+					}
+				}
+			}
+			if( target ) {
+				if( this.nodes[target] ) {
+					this.nodes[target].reveal();
+				}
+			}
+		}
+
+		this.inSetup = false;
 	}
 
 	addControlPanel() {
@@ -256,7 +284,7 @@ class LQS {
 			var head = $('head').html();
 			var jsonLayout = JSON.stringify( this.getLayout());
 			jsonLayout = jsonLayout.replace( /<\/script>/ig, "<\/\"+\"script>" );
-			var page = `<!DOCTYPE html>\n<html lang='en'><head>${head}</head><body></body><script>$(document).ready( ()=>{ var lqs = new LQS(); lqs.setLayout( ${jsonLayout} ); });</`+"script></html>" ;
+			var page = `<!DOCTYPE html>\n<html lang='en'><head>${head}</head><body></body><script>$(document).ready( ()=>{ var lqs = new LQS( ${jsonLayout} ); });</`+"script></html>" ;
 			var filename = "liquid-space."+Date.now()+".html";
 			LQS.download( filename, page, "text/html" );
 		});

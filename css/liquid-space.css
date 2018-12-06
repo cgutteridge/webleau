@@ -263,6 +263,21 @@ a {
 .lqs_node .lqs_tool {
 	display: none;
 }
+.lqs_node .lqs_url {
+	display: none;
+	position: absolute;
+	top: 1px;
+	right: 4px;
+	font-size: 120%;
+	z-index: 10;
+}
+.lqs_node:hover .lqs_url {
+	display: block;
+}
+.lqs_node .lqs_url a {
+	color: #fff !important;
+	text-decoration: none;
+}
 .lqs_node .lqs_node_empty_title {
 	display: none;
 	position: absolute;

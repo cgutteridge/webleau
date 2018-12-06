@@ -6,6 +6,7 @@ class LQS_Link {
 
  		this.data = linkData;
 		if( !this.data.id  ) { this.data.id=LQS.uuid(); }
+		if( this.lqs.inSetup ) { this.founder = true; }
 		var subjectNode = this.lqs.nodes[this.data.subject.node];
 		if( !subjectNode ) {
 			alert( "Failed to link subjectNode "+JSON.stringify( this.data.subject ));
