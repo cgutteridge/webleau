@@ -355,7 +355,7 @@ class LQS {
 		button.click( function() {
 			var seed = LQS_NodeTypes['graph-connection'].makeSeed({endpoint:input.val()});
 			// make the new connection appear in place of this node
-			this.lqs.growSeed( seed, this.data.pos );
+			this.growSeed( seed );
 		}.bind(this));
 		var r = $("<div />");
 		r.append( input );
