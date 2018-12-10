@@ -180,14 +180,16 @@ class LQS_Node {
 				var talmudInner = $('<div class="lqs_talmud_inner"></div>');
 				var talmudLeft = $('<div class="lqs_talmud_left"></div>');
 				var talmudRight = $('<div class="lqs_talmud_right"></div>');
+				let focusCard = $('<div class="lqs_talmud_card"></div>');
 				node.dom.talmudTitle = $('<div class="lqs_talmud_title"></div>');
 				node.dom.talmudContent = $('<div class="lqs_talmud_content"></div>');
 				node.dom.talmud.append( talmudClose );
 				node.dom.talmud.append( talmudInner );
 				node.dom.talmud.append( talmudLeft );
 				node.dom.talmud.append( talmudRight );
-				talmudInner.append( node.dom.talmudTitle );
-				talmudInner.append( node.dom.talmudContent );
+				focusCard.append( node.dom.talmudTitle );
+				focusCard.append( node.dom.talmudContent );
+				talmudInner.append( focusCard );
 				$('body').append( node.dom.talmud );
 				talmudClose.click( ()=>node.setView('main') );
 				talmudInner.dblclick(()=>{ node.setView('main'); return false; } );
@@ -199,22 +201,25 @@ class LQS_Node {
 					let card = $('<div class="lqs_talmud_card"></div>');
 					let cardNode;
 					if( link.data.subject.node == this.data.id ) {
-						cardNode = this.lqs.nodes[link.data.object.node];
-						let label = $('<div class="lqs_talmud_link_label"></div>').text(link.data.label );
-						talmudRight.append( label );
+						if( link.data.label ) {
+							talmudRight.append( $('<div class="lqs_talmud_link_label"></div>').text(link.data.label ) );;
+						}
 						talmudRight.append( card );
+						cardNode = this.lqs.nodes[link.data.object.node];
 					}
 					if( link.data.object.node == this.data.id ) {
-						cardNode = this.lqs.nodes[link.data.subject.node];
-						let label = $('<div class="lqs_talmud_link_label"></div>').text("is "+link.data.label+" of" );
-						talmudLeft.append( label );
+						if( link.data.label ) {
+							talmudLeft.append( $('<div class="lqs_talmud_link_label"></div>').text("is "+link.data.label+" of" ) );
+						}
 						talmudLeft.append( card );
+						cardNode = this.lqs.nodes[link.data.subject.node];
 					}
 					card.append( $('<div class="lqs_talmud_card_title"></div>').text( cardNode.viewSpec().title(cardNode) ) );
 					card.append( cardNode.render() );
 					card.click( ()=>{ 		
 						this.setView( "main" );
 						cardNode.setView( "talmud" );
+						return false; // don't honour any links in the card!
 					} );
 				}
 			},
