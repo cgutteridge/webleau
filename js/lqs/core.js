@@ -198,7 +198,9 @@ class LQS {
 			}
 		});
 		
-	
+
+		this.addMapListener();
+
 		// add control panel
 		this.addControlPanel();	
 	}
@@ -728,6 +730,67 @@ class LQS {
 		newNode.fitSize();
 	}	
 
+	addMapListener() {
+		$(window).bind( 'keyup.map', (e)=>{ 
+			if( this.map ) {
+				if( e.which==77 || e.which==27 ) { this.hideMap(); }
+			} else {
+				if( e.which==77 ) { this.showMap(); }
+			}
+		});
+	}
+
+	showMap() {
+		this.map = $(document.createElementNS("http://www.w3.org/2000/svg","svg")).addClass('lqs_map');
+		$('body').append( this.map );
+		var min = {};
+		var max = {};
+		//var linkKeys = Object.keys( this.links );
+		//for( var i=0;i<linkKeys.length;++i ) {
+		var nodeKeys = Object.keys( this.nodes );
+		for( let i=0;i<nodeKeys.length;++i ) {
+			let p = this.nodes[nodeKeys[i]].data.pos;
+			if( typeof min.x=='undefined' || p.x<min.x ) { min.x=p.x; }
+			if( typeof max.x=='undefined' || p.x>max.x ) { max.x=p.x; }
+			if( typeof min.y=='undefined' || p.y<min.y ) { min.y=p.y; }
+			if( typeof max.y=='undefined' || p.y>max.y ) { max.y=p.y; }
+		}
+		let w = max.x-min.x;
+		let h = max.y-min.y;
+		let scale = (this.map.width()*0.9)/w;
+		if( h*scale > (this.map.height()*0.9) ) {
+			scale = (this.map.height()*0.9)/h;
+		}
+
+		var leftOffset = this.map.width()*0.05;
+		var topOffset = this.map.height()*0.05;
+		for( let i=0;i<nodeKeys.length;++i ) {
+			let p = this.nodes[nodeKeys[i]].data.pos;
+ 			let dot = $(document.createElementNS("http://www.w3.org/2000/svg","circle"));
+			dot.attr("r",5);
+			dot.attr('cx',(p.x-min.x)*scale+leftOffset );
+			dot.attr('cy',(p.y-min.y)*scale+topOffset );
+			this.map.append( dot );	
+		}
+		var linkKeys = Object.keys( this.links );
+		for( let i=0;i<linkKeys.length;++i ) {
+			let link = this.links[linkKeys[i]];
+ 			let line = $(document.createElementNS("http://www.w3.org/2000/svg","line"));
+			var node1 = this.nodes[ link.data.subject.node ];
+			var node2 = this.nodes[ link.data.object.node ];
+			line.attr('x1',(node1.data.pos.x-min.x)*scale+leftOffset );
+			line.attr('y1',(node1.data.pos.y-min.y)*scale+topOffset );
+			line.attr('x2',(node2.data.pos.x-min.x)*scale+leftOffset );
+			line.attr('y2',(node2.data.pos.y-min.y)*scale+topOffset );
+			line.attr( "class", "lqs_link" );
+			line.attr( "marker-end", "url(#arrow)" );
+			this.map.append( line );	
+		}
+	}
+	hideMap() {
+		this.map.remove();
+		delete this.map;
+	}
 
 	/* STATIC UTILITY FUNCTIONS */
 

@@ -487,3 +487,17 @@ a {
 	display: none;
 }
 /* end wikipedia hacks */
+
+/* map */
+.lqs_map {
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 5100;
+	background-color: #ccc;
+	opacity: 0.95;
+}
+/* end map */
+
