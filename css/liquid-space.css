@@ -501,3 +501,75 @@ a {
 }
 /* end map */
 
+
+/* talmud */
+.lqs_talmud {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	top: 0%;
+	left: 0%;
+	background-color: #a0a0a0;
+	z-index: 5000;
+}
+.lqs_talmud_left, .lqs_talmud_right, .lqs_talmud_inner {
+        height: 100%;
+        position: fixed;
+        overflow-y: auto;
+}
+.lqs_talmud_left {
+	left: 0%;
+	width: 20%;
+	padding: 0.5em;
+}
+.lqs_talmud_title {
+	font-size: 150%;
+	font-weight: bold;
+}
+.lqs_talmud_inner {
+	background-color: #cfcfcf;
+	left: 25%;
+	width: 50%;
+	padding: 1em;
+}
+.lqs_talmud_right {
+	right: 00%;
+	width: 20%;
+	padding: 0.5em;
+}
+.lqs_talmud_close {
+	position: fixed;
+	top: 0%;
+	right: 0%;
+	padding: 5px 10px;
+	background-color: #333;
+	color: #ccc;
+	font-size: 150%;
+	opacity: 0.3;
+	cursor: pointer;
+	z-index: 5001;
+}
+.lqs_talmud_close:hover {
+	opacity: 1;
+}
+.lqs_talmud_inner {
+	width: 50%;
+}
+.lqs_talmud_card {
+	cursor: pointer;
+	background-color: #aaa;
+	padding: 0.5em;
+	margin: 0.5em 1em;
+	max-height: 40%;
+	border: solid 1px #000;
+	overflow-y: auto;
+	box-shadow: 2px 6px 20px 2px rgba(0,0,0,0.3);
+}
+.lqs_talmud_card:hover { 
+	background-color: #888;
+}
+.lqs_talmud_card_title {
+	font-size: 120%;
+	font-weight: bold;
+}
+/* end talmud */

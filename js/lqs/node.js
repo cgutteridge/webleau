@@ -68,6 +68,7 @@ class LQS_Node {
 		this.addDotFeature();
 		this.addIconFeature();
 		this.addFocusFeature();
+		this.addTalmudFeature();
 		this.addSquishFeature();
 		this.addMetadataFeature();
 	} // end Node constructor
@@ -161,6 +162,86 @@ class LQS_Node {
 	init() {
 		if( !this.data.view ) { this.data.view = 'main'; }
 		this.setView( this.data.view, false );
+	}
+
+	addTalmudFeature() {
+		this.registerView({
+			id: "talmud", 
+			init: (node) => {
+				node.registerAction(
+					"talmud",
+					"TALMUD",
+					()=>{ node.setView( "talmud" ); } );
+
+			},
+			enter: (node) => { // enter
+				node.dom.talmud = $('<div class="lqs_talmud"></div>');
+				var talmudClose = $('<div class="lqs_talmud_close">X</div>');
+				var talmudInner = $('<div class="lqs_talmud_inner"></div>');
+				var talmudLeft = $('<div class="lqs_talmud_left"></div>');
+				var talmudRight = $('<div class="lqs_talmud_right"></div>');
+				let focusCard = $('<div class="lqs_talmud_card"></div>');
+				node.dom.talmudTitle = $('<div class="lqs_talmud_title"></div>');
+				node.dom.talmudContent = $('<div class="lqs_talmud_content"></div>');
+				node.dom.talmud.append( talmudClose );
+				node.dom.talmud.append( talmudInner );
+				node.dom.talmud.append( talmudLeft );
+				node.dom.talmud.append( talmudRight );
+				focusCard.append( node.dom.talmudTitle );
+				focusCard.append( node.dom.talmudContent );
+				talmudInner.append( focusCard );
+				$('body').append( node.dom.talmud );
+				talmudClose.click( ()=>node.setView('main') );
+				talmudInner.dblclick(()=>{ node.setView('main'); return false; } );
+				node.hideAction( 'talmud' );
+				$(window).bind( 'keyup.talmud', (e)=>{ if( e.which==27 ) { node.setView('main') } } );
+				let linkIds = Object.keys(this.links);
+				for( let i=0; i<linkIds.length; ++i ) {
+					let link = this.links[linkIds[i]];
+					let card = $('<div class="lqs_talmud_card"></div>');
+					let cardNode;
+					if( link.data.subject.node == this.data.id ) {
+						if( link.data.label ) {
+							talmudRight.append( $('<div class="lqs_talmud_link_label"></div>').text(link.data.label ) );;
+						}
+						talmudRight.append( card );
+						cardNode = this.lqs.nodes[link.data.object.node];
+					}
+					if( link.data.object.node == this.data.id ) {
+						if( link.data.label ) {
+							talmudLeft.append( $('<div class="lqs_talmud_link_label"></div>').text("is "+link.data.label+" of" ) );
+						}
+						talmudLeft.append( card );
+						cardNode = this.lqs.nodes[link.data.subject.node];
+					}
+					card.append( $('<div class="lqs_talmud_card_title"></div>').text( cardNode.viewSpec().title(cardNode) ) );
+					card.append( cardNode.render() );
+					card.click( ()=>{ 		
+						this.setView( "main" );
+						cardNode.setView( "talmud" );
+						return false; // don't honour any links in the card!
+					} );
+				}
+			},
+			setTitle(node,text) {
+				node.dom.talmudTitle.text(text);
+			},
+			setContent(node,content) {
+				node.dom.talmudContent.empty().append( content );
+			},
+			leave: (node) => {
+				node.dom.talmud.remove();
+				node.showAction( 'talmud' );
+				$(window).unbind( 'keyup.talmud' );
+			},
+			render: (node) => { 
+				if( node.renderTalmud ) {
+					return node.renderTalmud(); 
+				} else {
+					return node.viewSpec('main').render(node); 
+				} 
+			}
+		});
 	}
 
 	addFocusFeature() {
@@ -812,6 +893,7 @@ class LQS_Node {
 	}
 
 	fixup( element ) {
+/*
 		element.find( 'a' ).each( (i,e)=>{
 			e = $(e);
 			var href = e.attr( 'href' );
@@ -827,6 +909,7 @@ class LQS_Node {
 				}));
 			}
 		});
+*/
 		element.find( 'script' ).remove();
 		element.find( 'img' ).css("max-width","100%").css('max-height','100%').css('height','auto');
 		//element.find( 'iframe' ).css("min-width","100%").css("min-height","100%");
