@@ -765,11 +765,13 @@ class LQS {
 		var leftOffset = this.map.width()*0.05;
 		var topOffset = this.map.height()*0.05;
 		for( let i=0;i<nodeKeys.length;++i ) {
-			let p = this.nodes[nodeKeys[i]].data.pos;
+			let node = this.nodes[nodeKeys[i]];
+			let p = node.data.pos;
  			let dot = $(document.createElementNS("http://www.w3.org/2000/svg","circle"));
 			dot.attr("r",5);
 			dot.attr('cx',(p.x-min.x)*scale+leftOffset );
 			dot.attr('cy',(p.y-min.y)*scale+topOffset );
+			//dot.attr('title',node.viewSpec().title(node));
 			this.map.append( dot );	
 		}
 		var linkKeys = Object.keys( this.links );
