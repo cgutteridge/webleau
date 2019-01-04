@@ -84,6 +84,26 @@ a {
 }
 /* end seeds */
 
+/* remote control */
+.lqs_remote_control {
+	position: fixed;
+	top:0%;
+	right:0%;
+	z-index: 1000;
+	border-bottom-left-radius: 5px;
+}
+.lqs_remote_control iframe {
+	border:0;
+	border-bottom-left-radius: 5px;
+}
+/* end remote control */
+
+.controls_icon img {
+	width: 64px;
+	height: 64px;
+	display: block;
+}
+
 /* controls */
 .controls_icon {
 	position: fixed;
@@ -93,7 +113,7 @@ a {
 	padding: 10px;
 	color: #000;
 	background-color: #999;
-	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
 	z-index: 1000;
 }
 .controls_icon img {

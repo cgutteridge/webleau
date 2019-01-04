@@ -76,13 +76,7 @@ class LQS_Node {
 	// all data should be modified via this function so it can be intercepted
 	set(field, data ) {
 		var path = field.split( /\./ );
-		var lastpath = path.pop();
-		var target = this.data;
-		for(let i=0;i<path.length;++i ) {
-			if( !target[path[i]] ) { target[path[i]] = {}; }
-			target = target[path[i]];
-		}
-		target[lastpath] = data;	
+		this.lqs.change( { action: 'node-alter', node: this.data.id, field: path, data: data } );
 	}
 
 	addCardToDisplay() {
@@ -112,6 +106,7 @@ class LQS_Node {
 		// register UI hooks
 		this.dom.outer.resizable({
 			resize: this.resized.bind(this),
+			stop: (event,ui)=>{ this.set( 'size' ,this.data.size) },
 			handles: "w,sw,s,se,e"
 		});
 		this.dom.outer.draggable( { 
@@ -121,6 +116,7 @@ class LQS_Node {
 			opacity: 0.8,
 			scroll: true,
 			drag: this.dragged.bind(this),
+			stop: (event,ui)=>{ this.set( 'pos' ,this.data.pos) },
 			start: function() {
 				this.dragStart = new LQS_Point( this.data.pos.x, this.data.pos.y );
 				LQS.clearTextSelection();
@@ -565,9 +561,9 @@ class LQS_Node {
 			label: "",
 			id: LQS.uuid() 
 		};
-		var newLink = this.lqs.addLink( linkData );
-		subjectNode.set('pos.x', subjectNode.dragStart.x);
-		subjectNode.set('pos.y', subjectNode.dragStart.y);
+		this.lqs.addLink( linkData );
+		// reset location without causing event, an event will be sent by the end of dragging
+		subjectNode.data.pos = { x: subjectNode.dragStart.x, y: subjectNode.dragStart.y };
 		subjectNode.updatePosition();
 		subjectNode.updateLinksPosition();
 	}
@@ -673,9 +669,11 @@ class LQS_Node {
 		var hDelta  = ui.size.height - ui.originalSize.height;
 		var adjustedHeight =  ui.originalSize.height + 2*hDelta;
 
-		this.set('size',{
+		// nb. writing without event, must set an event at the end
+		this.data.size = {
 			width: Math.max(50,adjustedWidth/this.lqs.layoutScale),
-			height: Math.max(50,adjustedHeight/this.lqs.layoutScale) });
+			height: Math.max(50,adjustedHeight/this.lqs.layoutScale) 
+		};
 
 		this.updatePosition();
 		this.updateLinksPosition();
@@ -689,6 +687,8 @@ class LQS_Node {
 		var realTopLeft = new LQS_Point( 
 			(ui.position.left + realSize.width/2 ),
 			(ui.position.top  + realSize.height/2 ) );
+
+		// nb. writing without event, must set an event at the end
 		this.data.pos = this.lqs.toVirtual( realTopLeft );
 
 		this.updatePosition();
@@ -827,20 +827,7 @@ class LQS_Node {
 	}
 
 	remove() {
-		// clean up the viewSpec, including seeds
-		this.viewSpec().leave(this);
-
-		var link_ids = Object.keys(this.links);
-		for( let i=0;i<link_ids.length;++i ) {
-			this.links[link_ids[i]].remove();
-		}
-		var view_ids = Object.keys(this.views);
-		for( let i=0;i<view_ids.length;++i ) {
-			let viewSpec = this.views[view_ids[i]];
-			viewSpec.destroy(this);
-		}	
-
-		this.lqs.removeNode(this);
+		this.lqs.change( { action: 'node-remove', 'node':this.data.id } );
 	}
 
 	static makeSeed(opts) {
@@ -851,7 +838,7 @@ class LQS_Node {
 	}
 
 	reveal() {
-		this.lqs.focusPage( this.data.pos );
+		this.lqs.change( { action: 'node-focus', 'node':this.data.id } );
 	}
 
 	addLinkedComment() {
@@ -867,7 +854,8 @@ class LQS_Node {
 			type: 'text',
 			meta: {}
 		};
-		var comment = this.lqs.addNode(nodeData);
+		this.lqs.addNode(nodeData);
+		var comment = this.lqs.nodes[nodeData.id];
 		comment.reveal();
 		var linkData = {
 			subject: { node: comment.data.id },
@@ -875,7 +863,7 @@ class LQS_Node {
 			label: "comments",
 			id: LQS.uuid() 
 		};
-		var newLink = this.lqs.addLink( linkData );
+		this.lqs.addLink( linkData );
 		//subjectNode.updateLinksPosition();
 		comment.setView('edit');
 	}

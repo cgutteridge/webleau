@@ -5,6 +5,12 @@
     <meta content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" name="viewport">
 
 <?php
+$debug = $_GET["debug"];
+#$debug = true;
+$styles = array(
+  "css/jquery-ui.css",
+  "css/liquid-space.css"
+);
 $scripts = array(
   "js/jquery-1.12.4.min.js",
   "js/jquery-ui.js",
@@ -23,7 +29,7 @@ $scripts = array(
   "js/lqs/node-embed.js",
   "js/lqs/node-cited.js"
 );
-if( $_GET["debug"] ) {
+if( $debug ) {
 	foreach( $scripts as $script ) {
 		print "<script src='$script'></script>";
 	}
@@ -35,12 +41,19 @@ if( $_GET["debug"] ) {
 	print "</script>\n";
 }
 ?>
-    <style id='all_css'>
 <?php
-readfile("css/jquery-ui.css");
-readfile("css/liquid-space.css");
+if( $debug ) {
+	foreach( $styles as $style ) {
+		print "<link rel='stylesheet' href='$style' />";
+	}
+} else {
+        print "<style id='all_css'>";
+	foreach( $styles as $style ) {
+		readfile( $style );
+	}
+        print "</style>";
+}
 ?>
-    </style>
   </head>
   <body></body>
   <script>

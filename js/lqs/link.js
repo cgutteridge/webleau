@@ -72,12 +72,7 @@ class LQS_Link {
 	}
 
 	remove() {
-		var subjectNode = this.lqs.nodes[this.data.subject.node];
-		var objectNode = this.lqs.nodes[this.data.object.node];
-		subjectNode.deRegisterLink(this);
-		objectNode.deRegisterLink(this);
-		delete this.lqs.links[this.data.id];
-		this.removeDom();
+		this.lqs.change( { action: 'link-remove', 'link':this.data.id } );
 	}
 
 }
