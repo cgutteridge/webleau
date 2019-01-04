@@ -177,7 +177,6 @@ class LQS {
 
 		this.nodesLayer.dblclick( (e)=>{
 			if( $(e.target).hasClass( "lqs_nodes" ) ) {
-				console.log(e);
 				var nodeData = {
 					id: LQS.uuid(),
 					pos: this.toVirtual( { x: e.pageX, y: e.pageY } ),
@@ -732,6 +731,8 @@ class LQS {
 
 	addMapListener() {
 		$(window).bind( 'keyup.map', (e)=>{ 
+			// if we are focused on a normal-paste element just skip this handler
+			if( $('.normal-paste:focus').length ) { return; }
 			if( this.map ) {
 				if( e.which==77 || e.which==27 ) { this.hideMap(); }
 			} else {
