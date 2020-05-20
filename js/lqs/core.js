@@ -329,7 +329,7 @@ class LQS {
 		var ioTextarea = $('<textarea class="normal-paste" placeholder="save/load: hit save and copy this, or paste in here and hit load" style="width: 100%; height: 10%;" id="lqs_io"></textarea>');
 		controls.append( $("<div class='lqs_controls_subtitle'>Upload/Download</div>"));
 		controls.append( ioTextarea );
-		var downloadTool = $('<div title="download" class="lqs_tool">Download<div>');
+		var downloadTool = $('<div title="download" class="lqs_tool">Download</div>');
 		controlIO.append( downloadTool );
 		var uploadTool = $('<div title="upload" class="lqs_tool">Upload</div>');
 		controlIO.append( uploadTool );
