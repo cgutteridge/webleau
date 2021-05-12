@@ -64,7 +64,7 @@ a {
 	cursor: move;
 }
 .lqs_seed_inline { 
-	//border-color: #ccc;
+	/*border-color: #ccc;*/
 	padding: 1px 5px;
 	margin-left: 0px;
 	margin-right: 0px;
@@ -335,7 +335,7 @@ a {
 	display: inline-block;
 }
 .lqs_graph_links {
-//	background-color: #6c6c6c;
+	/*background-color: #6c6c6c;*/
 }
 /* end nodes */
 
@@ -345,12 +345,12 @@ a {
 	stroke:#666;
 	stroke-width:2;
 	opacity: 0.2;
-	//pointer-events: auto; 
+	/*pointer-events: auto;*/
 }
 .lqs_link_from_text {
 	opacity: 0.6;
 	text-anchor: middle;
-	//pointer-events: auto; 
+	/*pointer-events: auto;*/
 }
 .lqs_dot circle {
 	fill: #666;
