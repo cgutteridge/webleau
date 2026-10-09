@@ -38,8 +38,10 @@ npm install && npm start
 # MCP needs HTTP up first
 ```
 
-## Known broken
+## Known broken / caveats
 
-- Remote Wikipedia graph demo returns empty `nodes: []`
-- JRNL graph API 500 (seed removed)
+- Remote `chris.totl.net/wiki-graph-demo` still empty (UI uses local proxy instead)
+- Blog/Webscience seeds still remote on chris.totl.net
 - Legacy `index.php` still present; prefer `npm start`
+- Existing `sessions/*.json` may still have old cards until you load a Starter or purge
+- MCP requires HTTP (`npm start`) to be running
