@@ -726,13 +726,11 @@ class LQS {
 				return { ok: false, error: 'unknown node' };
 			}
 			// View switches need enter/leave + rerender (same as LQS_Node.setView).
+			// Do not skip when nextView === current: init() calls setView(existingView)
+			// and still needs enter/update (otherwise cards stay blank / icon never shows).
 			if( event.field && event.field.length === 1 && event.field[0] === 'view' ) {
 				var viewNode = this.nodes[event.node];
 				var nextView = event.data;
-				if( viewNode.data.view === nextView ) {
-					this.logEvent( event );
-					return { ok: true };
-				}
 				var doLeave = event.doLeave !== false;
 				if( doLeave && viewNode.data.view ) {
 					viewNode.viewSpec().leave(viewNode);
