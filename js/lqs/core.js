@@ -397,6 +397,34 @@ class LQS {
 		r.append( button );
 		controls.append( r );
 
+		controls.append( $("<div class='lqs_controls_subtitle'>Starters</div>"));
+		var starterRow = $('<div class="lqs_controls_tools"></div>');
+		controls.append(starterRow);
+		fetch('/api/starters').then((r)=>r.json()).then((data)=>{
+			(data.starters || []).forEach((starter)=>{
+				var btn = $('<div class="lqs_tool"></div>').text(starter.title).attr('title', starter.description || '');
+				starterRow.append(btn);
+				btn.click(()=>{
+					var sessionId = (window.lqsSessionId) || new URLSearchParams(location.search).get('session') || 'default';
+					fetch('/api/sessions/' + encodeURIComponent(sessionId) + '/starter/' + encodeURIComponent(starter.id), {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: '{}'
+					}).then(()=> fetch('/api/sessions/' + encodeURIComponent(sessionId)))
+					.then((r)=>r.json())
+					.then((session)=>{
+						if( session.layout ) {
+							if( window.lqsSessionSync ) {
+								window.lqsSessionSync.runRemote(()=> this.setLayout(session.layout));
+							} else {
+								this.setLayout(session.layout);
+							}
+						}
+					}).catch((err)=> alert('Failed to load starter: ' + err));
+				});
+			});
+		}).catch(()=>{ /* server optional when opened as file */ });
+
 		controls.append( $("<p>Drag these onto the page to connect to a graph.</p>"));
 
 		// Direct chris.totl.net URLs — the old soton.ac.uk paths 301/302 through

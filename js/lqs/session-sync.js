@@ -15,6 +15,8 @@ class LQS_SessionSync {
 		this.ws = null;
 		this._applyingRemote = false;
 		this._seq = 0;
+		window.lqsSessionId = this.sessionId;
+		window.lqsSessionSync = this;
 	}
 
 	/**
@@ -25,11 +27,24 @@ class LQS_SessionSync {
 		const data = await this._fetchJson('/api/sessions/' + encodeURIComponent(this.sessionId));
 		this._seq = data.eventCount || 0;
 		if (data.layout) {
-			this.lqs.setLayout(data.layout);
+			this.runRemote(() => this.lqs.setLayout(data.layout));
 		}
 
 		this.lqs.eventListeners.push((event) => this._onLocalEvent(event));
 		this._connectWs();
+	}
+
+	/**
+	 * Run a function without posting resulting change events to the server.
+	 * @param {function(): void} fn
+	 */
+	runRemote(fn) {
+		this._applyingRemote = true;
+		try {
+			fn();
+		} finally {
+			this._applyingRemote = false;
+		}
 	}
 
 	/**
@@ -75,12 +90,7 @@ class LQS_SessionSync {
 				}
 				this._applyRemote(data.event);
 			} else if (data.type === 'layout' && data.layout) {
-				this._applyingRemote = true;
-				try {
-					this.lqs.setLayout(data.layout);
-				} finally {
-					this._applyingRemote = false;
-				}
+				this.runRemote(() => this.lqs.setLayout(data.layout));
 			}
 		};
 		this.ws.onclose = () => {

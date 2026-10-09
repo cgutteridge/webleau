@@ -12,7 +12,9 @@
   "scripts": {
     "start": "tsx server/http.ts",
     "mcp": "tsx server/mcp.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
@@ -25,7 +27,8 @@
     "@types/node": "^26.6.4",
     "@types/ws": "^8.18.2",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
   },
   "allowScripts": {
     "esbuild@0.28.2": true

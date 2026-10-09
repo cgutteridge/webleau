@@ -280,6 +280,68 @@ server.registerTool(
   },
 );
 
+server.registerTool(
+  'starter_load',
+  {
+    title: 'Load starter layout',
+    description: 'Replace the session with a named starter (welcome, memex-trail, blank)',
+    inputSchema: {
+      session: z.string().optional(),
+      starter: z.enum(['welcome', 'memex-trail', 'blank']),
+    },
+  },
+  async ({ session, starter }) => {
+    const id = session ?? sessionId;
+    return textResult(
+      await api(`/api/sessions/${encodeURIComponent(id)}/starter/${encodeURIComponent(starter)}`, {
+        method: 'POST',
+        body: '{}',
+      }),
+    );
+  },
+);
+
+server.registerTool(
+  'wikipedia_open',
+  {
+    title: 'Open Wikipedia page',
+    description:
+      'Add a Wikipedia graph-node card for a page title (uses local /api/graph/wikipedia)',
+    inputSchema: {
+      session: z.string().optional(),
+      page: z.string().describe('Wikipedia page title, e.g. Douglas Engelbart or Memex'),
+      x: z.number().optional(),
+      y: z.number().optional(),
+    },
+  },
+  async ({ session, page, x, y }) => {
+    const id = session ?? sessionId;
+    const nodeID = page.trim().replace(/ /g, '_');
+    const endpoint = '/api/graph/wikipedia';
+    const ident = await api<Record<string, unknown>>(
+      `/api/graph/wikipedia`,
+    );
+    const node = {
+      id: `graph|${endpoint}|node|${nodeID}`,
+      type: 'graph-node',
+      title: page,
+      pos: { x: x ?? Math.round(Math.random() * 400 - 200), y: y ?? Math.round(Math.random() * 400 - 200) },
+      size: { width: 280, height: 320 },
+      graph: {
+        nodeID,
+        endpoint,
+        ident,
+      },
+    };
+    return textResult(
+      await api(`/api/sessions/${encodeURIComponent(id)}/events`, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'node-add', node, clientId: 'mcp' }),
+      }),
+    );
+  },
+);
+
 async function main(): Promise<void> {
   try {
     await api('/api/health');

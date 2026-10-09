@@ -1,6 +1,6 @@
 # Working notes
 
-Last updated: 2026-10-09 (wikipedia proxy landed)
+Last updated: 2026-10-09 (starters + tests)
 
 ## Done
 
@@ -10,15 +10,17 @@ Last updated: 2026-10-09 (wikipedia proxy landed)
 - `index.html` + `session-sync.js` so the canvas persists and receives remote events
 - Graph/inspector URLs pointed at `chris.totl.net`; empty wiki responses no longer crash the client
 - **Local Wikipedia LGA** at `GET /api/graph/wikipedia` (MediaWiki); control-panel seed uses it
+- Vitest for `applyEvent` + wiki HTML rewrite (`npm test`)
+- Starters API + control-panel buttons + MCP `starter_load` / `wikipedia_open`
+- Short TTL cache on MediaWiki fetches
 
 ## In progress / next
 
-1. Unit tests for `applyEvent` (Vitest)
-2. MCP `wikipedia_open` helper tool
-3. Starter session layouts (demo trails)
-4. Local inspector proxy (optional; still using chris.totl.net)
-5. Harden session-sync (reconnect, offline queue, focus events)
-6. Rate-limit / cache MediaWiki responses
+1. Local inspector proxy (optional; still using chris.totl.net)
+2. Harden session-sync (offline queue, focus viewport sync)
+3. Export Markdown dump of a session
+4. Demo polish: better default layout, touch targets
+5. More graph proxies or drop dead remote seeds
 
 ## Decisions
 

@@ -45,10 +45,16 @@ Env: `PORT` (default `8787`), `WEBLEAU_SESSION` (default `default`), `WEBLEAU_UR
 - `GET /api/sessions/:id/events?since=N`
 - `WS /ws?session=&clientId=` — `{ type: 'event' | 'layout' | 'hello', ... }`
 - `GET /api/graph/wikipedia` — local Wikipedia LGA (ident / nodes / follow); MediaWiki-backed
+- `GET /api/starters` — named demo layouts
+- `POST /api/sessions/:id/starter/:starterId` — load starter (`welcome`, `memex-trail`, `blank`)
 
 ### MCP tools
 
-`session_get`, `session_list`, `node_add`, `node_update`, `node_remove`, `link_add`, `link_remove`, `node_focus`, `purge`. Resource: `webleau://session/{id}`.
+`session_get`, `session_list`, `node_add`, `node_update`, `node_remove`, `link_add`, `link_remove`, `node_focus`, `purge`, `starter_load`, `wikipedia_open`. Resource: `webleau://session/{id}`.
+
+### Tests
+
+`npm test` — Vitest (session `applyEvent`, wiki HTML rewrite).
 
 ### Mutations
 

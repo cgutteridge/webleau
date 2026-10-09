@@ -10,6 +10,9 @@ const USER_AGENT =
 
 const START = ['Douglas_Engelbart', 'Memex', 'Hypertext', 'Vannevar_Bush'];
 
+const cache = new Map<string, { at: number; value: unknown }>();
+const CACHE_TTL_MS = Number(process.env.WEBLEAU_WIKI_CACHE_MS ?? 5 * 60 * 1000);
+
 export interface WikiIdentResponse {
   ok: true;
   action: 'ident';
@@ -361,6 +364,11 @@ async function mwJson<T>(params: Record<string, string>): Promise<T> {
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v);
   }
+  const cacheKey = url.toString();
+  const hit = cache.get(cacheKey);
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
+    return hit.value as T;
+  }
   const response = await fetch(url, {
     headers: {
       'User-Agent': USER_AGENT,
@@ -370,7 +378,9 @@ async function mwJson<T>(params: Record<string, string>): Promise<T> {
   if (!response.ok) {
     throw new Error(`MediaWiki HTTP ${response.status}`);
   }
-  return (await response.json()) as T;
+  const value = (await response.json()) as T;
+  cache.set(cacheKey, { at: Date.now(), value });
+  return value;
 }
 
 /**

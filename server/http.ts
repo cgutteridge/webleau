@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { handleWikipediaGraph } from './graph/wikipedia.js';
 import { SessionStore, type SessionEvent } from './session/index.js';
+import { listStarters, STARTERS } from './session/starters.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
@@ -98,6 +99,29 @@ app.get('/api/graph/wikipedia', async (req, res, next) => {
   try {
     const payload = await handleWikipediaGraph(req.query as Record<string, unknown>);
     res.json(payload);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** List named starter layouts. */
+app.get('/api/starters', (_req, res) => {
+  res.json({ starters: listStarters() });
+});
+
+/**
+ * Replace a session layout with a named starter (clears via purge semantics by overwrite).
+ */
+app.post('/api/sessions/:id/starter/:starterId', async (req, res, next) => {
+  try {
+    const starter = STARTERS[req.params.starterId];
+    if (!starter) {
+      res.status(404).json({ ok: false, error: 'unknown starter' });
+      return;
+    }
+    const session = await store.setLayout(req.params.id, structuredClone(starter.layout));
+    broadcast(req.params.id, { type: 'layout', layout: session.layout });
+    res.json({ ok: true, id: session.id, starter: req.params.starterId, updatedAt: session.updatedAt });
   } catch (err) {
     next(err);
   }
