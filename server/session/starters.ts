@@ -14,7 +14,7 @@ export const STARTERS: Record<string, { title: string; description: string; layo
     title: 'Memex trail',
     description: 'A short trail from Bush to Engelbart to the web',
     layout: {
-      inspectorProxy: 'https://chris.totl.net/lqs-inspector-v1/',
+      inspectorProxy: '/api/inspector',
       nodes: [
         {
           id: 'note-trail',
@@ -47,7 +47,7 @@ export const STARTERS: Record<string, { title: string; description: string; layo
     title: 'Blank desk',
     description: 'Empty canvas',
     layout: {
-      inspectorProxy: 'https://chris.totl.net/lqs-inspector-v1/',
+      inspectorProxy: '/api/inspector',
       nodes: [],
       links: [],
     },

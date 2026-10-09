@@ -1,6 +1,6 @@
 # Working notes
 
-Last updated: 2026-10-09 (starters + tests)
+Last updated: 2026-10-09 (inspector + markdown export)
 
 ## Done
 
@@ -8,19 +8,19 @@ Last updated: 2026-10-09 (starters + tests)
 - HTTP adapter: static site, REST, WebSocket (`npm start` → `:8787`)
 - MCP adapter over HTTP (`.cursor/mcp.json`, `npm run mcp`)
 - `index.html` + `session-sync.js` so the canvas persists and receives remote events
-- Graph/inspector URLs pointed at `chris.totl.net`; empty wiki responses no longer crash the client
-- **Local Wikipedia LGA** at `GET /api/graph/wikipedia` (MediaWiki); control-panel seed uses it
-- Vitest for `applyEvent` + wiki HTML rewrite (`npm test`)
-- Starters API + control-panel buttons + MCP `starter_load` / `wikipedia_open`
-- Short TTL cache on MediaWiki fetches
+- **Local Wikipedia LGA** at `GET /api/graph/wikipedia` (MediaWiki)
+- Vitest for `applyEvent`, wiki rewrite, markdown export (`npm test`)
+- Starters + MCP `starter_load` / `wikipedia_open` / `session_export_markdown`
+- **Local inspector** at `GET /api/inspector?url=` (oEmbed + Open Graph)
+- Markdown export: `GET /api/sessions/:id/export.md` + control-panel button
 
 ## In progress / next
 
-1. Local inspector proxy (optional; still using chris.totl.net)
-2. Harden session-sync (offline queue, focus viewport sync)
-3. Export Markdown dump of a session
-4. Demo polish: better default layout, touch targets
-5. More graph proxies or drop dead remote seeds
+1. Harden session-sync (offline queue, focus viewport sync)
+2. Demo polish: better default layout, touch targets
+3. Drop or replace remaining chris.totl.net graph seeds if flaky
+4. Session search / sources panel
+5. Multiplayer presence (later)
 
 ## Decisions
 

@@ -2,7 +2,7 @@ import type { Layout } from './types.js';
 
 /** Welcome layout shown for a fresh session. */
 export const DEFAULT_LAYOUT: Layout = {
-  inspectorProxy: 'https://chris.totl.net/lqs-inspector-v1/',
+  inspectorProxy: '/api/inspector',
   nodes: [
     {
       id: 'a',

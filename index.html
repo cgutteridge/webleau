@@ -32,7 +32,7 @@ $(document).ready(function(){
 	sync.start().catch(function(err) {
 		console.error('session sync failed; falling back to embedded layout', err);
 		lqs.setLayout({
-			inspectorProxy: 'https://chris.totl.net/lqs-inspector-v1/',
+			inspectorProxy: '/api/inspector',
 			nodes: [
 				{
 					id: 'a',

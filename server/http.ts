@@ -4,7 +4,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { handleWikipediaGraph } from './graph/wikipedia.js';
+import { inspectUrl } from './inspector/proxy.js';
 import { SessionStore, type SessionEvent } from './session/index.js';
+import { layoutToMarkdown } from './session/exportMarkdown.js';
 import { listStarters, STARTERS } from './session/starters.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -122,6 +124,34 @@ app.post('/api/sessions/:id/starter/:starterId', async (req, res, next) => {
     const session = await store.setLayout(req.params.id, structuredClone(starter.layout));
     broadcast(req.params.id, { type: 'layout', layout: session.layout });
     res.json({ ok: true, id: session.id, starter: req.params.starterId, updatedAt: session.updatedAt });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Export session as Markdown research notes. */
+app.get('/api/sessions/:id/export.md', async (req, res, next) => {
+  try {
+    const session = await store.get(req.params.id);
+    const markdown = layoutToMarkdown(session.layout, session.id);
+    res.type('text/markdown').send(markdown);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * URL inspector for embed cards.
+ * Query: ?url=https://...
+ */
+app.get('/api/inspector', async (req, res, next) => {
+  try {
+    const target = String(req.query.url ?? '');
+    if (!target) {
+      res.status(400).json({ error: 'url query required' });
+      return;
+    }
+    res.json(await inspectUrl(target));
   } catch (err) {
     next(err);
   }

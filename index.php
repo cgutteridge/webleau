@@ -60,7 +60,7 @@ if( $debug ) {
 $(document).ready(function(){ 
 	var lqs = new LQS();
 	lqs.setLayout( {
-		inspectorProxy: 'https://chris.totl.net/lqs-inspector-v1/',
+		inspectorProxy: '/api/inspector',
 		nodes: [
 			{
 				id: 'a',

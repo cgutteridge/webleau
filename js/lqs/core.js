@@ -17,7 +17,7 @@ class LQS {
 		this.offset = new LQS_Point(50000,50000);
 		this.curDown = false;
 		this.layoutScaleSlider = null;
-		this.defaultInspectorProxy = 'https://chris.totl.net/lqs-inspector-v1/';
+		this.defaultInspectorProxy = '/api/inspector';
 		this.mouse = new LQS_Point( this.offset.x, this.offset.y );
 		this.mouseOverBackground = true;
 		this.seedsBySource = {};
@@ -262,6 +262,13 @@ class LQS {
 			var page = `<!DOCTYPE html>\n<html lang='en'><head>${head}</head><body></body><script>$(document).ready( ()=>{ var lqs = new LQS(); lqs.setLayout( ${jsonLayout} ); });</`+"script></html>" ;
 			var filename = "liquid-space."+Date.now()+".html";
 			LQS.download( filename, page, "text/html" );
+		});
+
+		var mdTool = $('<div title="markdown export" class="lqs_tool">Export Markdown</div>');
+		controlTools.append( mdTool );
+		mdTool.click( ()=>{
+			var sessionId = window.lqsSessionId || new URLSearchParams(location.search).get('session') || 'default';
+			window.open('/api/sessions/' + encodeURIComponent(sessionId) + '/export.md', '_blank');
 		});
 
 		// purge everything

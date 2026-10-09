@@ -302,6 +302,30 @@ server.registerTool(
 );
 
 server.registerTool(
+  'session_export_markdown',
+  {
+    title: 'Export session Markdown',
+    description: 'Return the session as Markdown research notes',
+    inputSchema: {
+      session: z.string().optional(),
+    },
+  },
+  async ({ session }) => {
+    const id = session ?? sessionId;
+    const response = await fetch(
+      `${baseUrl}/api/sessions/${encodeURIComponent(id)}/export.md`,
+    );
+    const text = await response.text();
+    if (!response.ok) {
+      throw new Error(text || response.statusText);
+    }
+    return {
+      content: [{ type: 'text' as const, text }],
+    };
+  },
+);
+
+server.registerTool(
   'wikipedia_open',
   {
     title: 'Open Wikipedia page',
