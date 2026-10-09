@@ -67,6 +67,7 @@ export class SessionStore {
     }
     const fromDisk = await this.readDisk(id);
     if (fromDisk) {
+      this.normalizeLayout(fromDisk.layout);
       this.sessions.set(id, fromDisk);
       return fromDisk;
     }
@@ -141,6 +142,21 @@ export class SessionStore {
   async eventsSince(id: string, since: number): Promise<LoggedEvent[]> {
     const session = await this.get(id);
     return session.events.filter((entry) => entry.seq > since);
+  }
+
+  /**
+   * Migrate known-stale layout fields toward the current local baseline.
+   *
+   * @param layout - Layout to normalize in place
+   */
+  private normalizeLayout(layout: Layout): void {
+    const proxy = layout.inspectorProxy;
+    if (
+      !proxy ||
+      /chris\.totl\.net|southampton\.ac\.uk|soton\.ac\.uk/i.test(proxy)
+    ) {
+      layout.inspectorProxy = '/api/inspector';
+    }
   }
 
   /**

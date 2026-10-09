@@ -48,15 +48,16 @@ Env: `PORT` (default `8787`), `WEBLEAU_SESSION` (default `default`), `WEBLEAU_UR
 - `GET /api/starters` — named demo layouts
 - `POST /api/sessions/:id/starter/:starterId` — load starter (`welcome`, `memex-trail`, `blank`)
 - `GET /api/sessions/:id/export.md` — Markdown research-notes export
+- `GET /api/sessions/:id/search?q=` — search cards in a session
 - `GET /api/inspector?url=` — local oEmbed/Open Graph inspector for embeds
 
 ### MCP tools
 
-`session_get`, `session_list`, `node_add`, `node_update`, `node_remove`, `link_add`, `link_remove`, `node_focus`, `purge`, `starter_load`, `wikipedia_open`, `session_export_markdown`. Resource: `webleau://session/{id}`.
+`session_get`, `session_list`, `node_add`, `node_update`, `node_remove`, `link_add`, `link_remove`, `node_focus`, `purge`, `starter_load`, `wikipedia_open`, `session_export_markdown`, `session_search`. Resource: `webleau://session/{id}`.
 
 ### Tests
 
-`npm test` — Vitest (`applyEvent`, wiki HTML rewrite, markdown export).
+`npm test` — Vitest (`applyEvent`, wiki HTML rewrite, markdown export, search).
 
 ### Mutations
 

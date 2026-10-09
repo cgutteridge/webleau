@@ -326,6 +326,26 @@ server.registerTool(
 );
 
 server.registerTool(
+  'session_search',
+  {
+    title: 'Search session',
+    description: 'Search node titles and text in the current session',
+    inputSchema: {
+      session: z.string().optional(),
+      q: z.string().describe('Search query'),
+    },
+  },
+  async ({ session, q }) => {
+    const id = session ?? sessionId;
+    return textResult(
+      await api(
+        `/api/sessions/${encodeURIComponent(id)}/search?q=${encodeURIComponent(q)}`,
+      ),
+    );
+  },
+);
+
+server.registerTool(
   'wikipedia_open',
   {
     title: 'Open Wikipedia page',

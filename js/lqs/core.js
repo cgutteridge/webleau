@@ -404,6 +404,35 @@ class LQS {
 		r.append( button );
 		controls.append( r );
 
+		controls.append( $("<div class='lqs_controls_subtitle'>Search session</div>"));
+		var searchRow = $('<div></div>');
+		var searchInput = $('<input class="normal-paste" placeholder="Find cards…" style="width:70%" />');
+		var searchBtn = $('<button>Find</button>');
+		var searchHits = $('<div class="lqs_search_hits" style="max-height:8em;overflow:auto;font-size:90%"></div>');
+		searchRow.append(searchInput).append(searchBtn);
+		controls.append(searchRow).append(searchHits);
+		var runSearch = ()=>{
+			var sessionId = window.lqsSessionId || new URLSearchParams(location.search).get('session') || 'default';
+			var q = searchInput.val();
+			fetch('/api/sessions/' + encodeURIComponent(sessionId) + '/search?q=' + encodeURIComponent(q))
+				.then((r)=>r.json())
+				.then((data)=>{
+					searchHits.empty();
+					(data.hits || []).forEach((hit)=>{
+						var row = $('<div class="lqs_tool" style="display:block;margin:2px 0"></div>')
+							.text(hit.title || hit.nodeId)
+							.attr('title', hit.snippet || '');
+						row.click(()=> this.change({ action: 'node-focus', node: hit.nodeId }));
+						searchHits.append(row);
+					});
+					if( !(data.hits || []).length ) {
+						searchHits.text('No hits');
+					}
+				}).catch(()=> searchHits.text('Search failed'));
+		};
+		searchBtn.click(runSearch);
+		searchInput.keyup((e)=>{ if( e.which === 13 ) { runSearch(); } });
+
 		controls.append( $("<div class='lqs_controls_subtitle'>Starters</div>"));
 		var starterRow = $('<div class="lqs_controls_tools"></div>');
 		controls.append(starterRow);

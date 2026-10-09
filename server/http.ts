@@ -7,6 +7,7 @@ import { handleWikipediaGraph } from './graph/wikipedia.js';
 import { inspectUrl } from './inspector/proxy.js';
 import { SessionStore, type SessionEvent } from './session/index.js';
 import { layoutToMarkdown } from './session/exportMarkdown.js';
+import { searchLayout } from './session/search.js';
 import { listStarters, STARTERS } from './session/starters.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -135,6 +136,17 @@ app.get('/api/sessions/:id/export.md', async (req, res, next) => {
     const session = await store.get(req.params.id);
     const markdown = layoutToMarkdown(session.layout, session.id);
     res.type('text/markdown').send(markdown);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Search nodes in a session. */
+app.get('/api/sessions/:id/search', async (req, res, next) => {
+  try {
+    const q = String(req.query.q ?? '');
+    const session = await store.get(req.params.id);
+    res.json({ q, hits: searchLayout(session.layout, q) });
   } catch (err) {
     next(err);
   }
