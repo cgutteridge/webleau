@@ -754,6 +754,8 @@ class LQS {
 			}
 			target[lastpath] = event.data;	
 			this.nodes[event.node].updatePosition();
+			// pos/size changes must redraw incident edges (drag path already does this).
+			this.nodes[event.node].updateLinksPosition();
 			this.logEvent( event );
 			return { ok: true };
 		} 
