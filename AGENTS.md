@@ -44,6 +44,7 @@ Env: `PORT` (default `8787`), `WEBLEAU_SESSION` (default `default`), `WEBLEAU_UR
 - `POST /api/sessions/:id/events` — apply a `change`-shaped event
 - `GET /api/sessions/:id/events?since=N`
 - `WS /ws?session=&clientId=` — `{ type: 'event' | 'layout' | 'hello', ... }`
+- `GET /api/graph/wikipedia` — local Wikipedia LGA (ident / nodes / follow); MediaWiki-backed
 
 ### MCP tools
 
@@ -96,7 +97,7 @@ Server is TypeScript (`tsx`). Browser canvas stays plain JS for now.
 | `text` / `html` / `embed` / `cited` / `error` | `node-*.js` | Core cards |
 | `graph-connection` / `graph-node` / … | `node-graph.js` | External LGA endpoints |
 
-Graph demo seeds on `chris.totl.net`. Wikipedia remote node fetch is currently empty server-side — replace with an in-repo proxy later.
+Blog/Webscience graph seeds still use `chris.totl.net`. Wikipedia uses `/api/graph/wikipedia`.
 
 ## Working agreements
 

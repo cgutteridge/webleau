@@ -411,7 +411,7 @@ class LQS {
 
 		var graphSeedWikipedia = this.renderSeed("Wikipedia");
 		controls.append( graphSeedWikipedia );
-		this.attachSeed( graphSeedWikipedia, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://chris.totl.net/wiki-graph-demo/' }));
+		this.attachSeed( graphSeedWikipedia, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: '/api/graph/wikipedia' }));
 
 
 	}	/* end controls */

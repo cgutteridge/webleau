@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer, type WebSocket } from 'ws';
+import { handleWikipediaGraph } from './graph/wikipedia.js';
 import { SessionStore, type SessionEvent } from './session/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -84,6 +85,19 @@ app.get('/api/sessions/:id/events', async (req, res, next) => {
     const since = Number(req.query.since ?? 0);
     const events = await store.eventsSince(req.params.id, Number.isFinite(since) ? since : 0);
     res.json({ events });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Wikipedia Liquid Graph API (local MediaWiki proxy).
+ * Same query shape the canvas graph-connection nodes already use.
+ */
+app.get('/api/graph/wikipedia', async (req, res, next) => {
+  try {
+    const payload = await handleWikipediaGraph(req.query as Record<string, unknown>);
+    res.json(payload);
   } catch (err) {
     next(err);
   }

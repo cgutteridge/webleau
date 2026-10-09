@@ -1,6 +1,6 @@
 # Working notes
 
-Last updated: 2026-10-09 (baseline landed)
+Last updated: 2026-10-09 (wikipedia proxy landed)
 
 ## Done
 
@@ -9,15 +9,16 @@ Last updated: 2026-10-09 (baseline landed)
 - MCP adapter over HTTP (`.cursor/mcp.json`, `npm run mcp`)
 - `index.html` + `session-sync.js` so the canvas persists and receives remote events
 - Graph/inspector URLs pointed at `chris.totl.net`; empty wiki responses no longer crash the client
+- **Local Wikipedia LGA** at `GET /api/graph/wikipedia` (MediaWiki); control-panel seed uses it
 
 ## In progress / next
 
-1. **In-repo Wikipedia LGA proxy** — replace broken remote `wiki-graph-demo` with MediaWiki-backed `/api/graph/wikipedia`
-2. Point control-panel Wikipedia seed at the local proxy
-3. Unit tests for `applyEvent` (Vitest)
-4. Starter session layouts (demo trails)
-5. Local inspector proxy (optional; still using chris.totl.net)
-6. Harden session-sync (reconnect, offline queue, focus events)
+1. Unit tests for `applyEvent` (Vitest)
+2. MCP `wikipedia_open` helper tool
+3. Starter session layouts (demo trails)
+4. Local inspector proxy (optional; still using chris.totl.net)
+5. Harden session-sync (reconnect, offline queue, focus events)
+6. Rate-limit / cache MediaWiki responses
 
 ## Decisions
 

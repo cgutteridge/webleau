@@ -47,6 +47,20 @@ a {
 /* end general */
 
 
+/* wikipedia proxy content */
+.lqs_wiki_sections {
+	margin-top: 0.75em;
+	padding-top: 0.5em;
+	border-top: 1px dashed #888;
+}
+.lqs_wiki_section {
+	display: inline-block;
+}
+.lqs_graph_content img {
+	max-width: 100%;
+	height: auto;
+}
+
 /* seeds */
 .lqs_seed {
 	margin: 2px 5px 0px 5px;
