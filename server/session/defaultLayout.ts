@@ -10,15 +10,15 @@ export const DEFAULT_LAYOUT: Layout = {
       size: { width: 200, height: 200 },
       title: '',
       type: 'text',
-      text: 'Try pasting URLs from media sites. Try double clicking on the background. Use the spanner to save state (to a text string for now). Drag nodes to touch to make a link.',
+      text: 'Paste a URL onto the background. Double-click empty space for a note. Drag cards until they touch to link. Session state is saved by the local server.',
     },
     {
       id: 'welcome',
       pos: { x: 0, y: 0 },
-      size: { width: 200, height: 200 },
+      size: { width: 240, height: 220 },
       title: 'Welcome',
       type: 'html',
-      html: '<p>Welcome to Liquid Space.</p><p>To get started, for now all we have is an <a href="https://jrnl.global/2018/10/30/webleau-progress/">Introduction blog post</a></p>',
+      html: '<p>Welcome to <strong>Liquid Space</strong>.</p><p>Open the spanner: try <em>Memex trail</em>, drag <em>Wikipedia</em>, or <em>Export Markdown</em>.</p><p><a href="https://jrnl.global/2018/10/30/webleau-progress/">Original blog post</a></p>',
     },
   ],
   links: [
