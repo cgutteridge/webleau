@@ -725,6 +725,29 @@ class LQS {
 			if( !this.nodes[ event.node ] ) {
 				return { ok: false, error: 'unknown node' };
 			}
+			// View switches need enter/leave + rerender (same as LQS_Node.setView).
+			if( event.field && event.field.length === 1 && event.field[0] === 'view' ) {
+				var viewNode = this.nodes[event.node];
+				var nextView = event.data;
+				if( viewNode.data.view === nextView ) {
+					this.logEvent( event );
+					return { ok: true };
+				}
+				var doLeave = event.doLeave !== false;
+				if( doLeave && viewNode.data.view ) {
+					viewNode.viewSpec().leave(viewNode);
+				}
+				this.deregisterCardSeeds( viewNode.data.id );
+				viewNode.data.view = nextView;
+				var nextSpec = viewNode.viewSpec();
+				nextSpec.enter(viewNode);
+				viewNode.rerender();
+				nextSpec.update(viewNode);
+				viewNode.updatePosition();
+				viewNode.updateLinksPosition();
+				this.logEvent( event );
+				return { ok: true };
+			}
 			var lastpath = event.field[ event.field.length-1 ];
 			var target = this.nodes[event.node].data;
 			for(let i=0;i<event.field.length-1;++i ) {

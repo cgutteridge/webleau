@@ -582,24 +582,19 @@ class LQS_Node {
 		return this.views[viewID];
 	}
 
+	/**
+	 * Switch card presentation. Persists via the session change bus so MCP/remote clients stay in sync.
+	 * @param {string} view - View id (main, icon, squish, …)
+	 * @param {boolean} [doLeave=true] - Whether to leave the current view first
+	 */
 	setView( view, doLeave = true ) {
-		
-		if( doLeave ) {
-			this.viewSpec().leave(this);
-		}
-		this.lqs.deregisterCardSeeds( this.data.id );
-
-		this.set('view',view);
-
-		var viewSpec = this.viewSpec();
-		viewSpec.enter(this);
-
-		this.rerender();
-
-		viewSpec.update(this); // run an async commands
-
-		this.updatePosition();
-		this.updateLinksPosition();
+		this.lqs.change({
+			action: 'node-alter',
+			node: this.data.id,
+			field: ['view'],
+			data: view,
+			doLeave: doLeave
+		});
 	}
 
 	rerender() {
