@@ -27,6 +27,7 @@ Last updated: 2026-10-09 (search + README)
 ## Agent pitfalls
 
 - **Wikipedia expand:** never add collapsed (`view: icon`) graph-nodes from scratch — browser skips content fetch. Open as main (like `wikipedia_open`), then collapse. Use MCP `wikipedia_expand` or see `.cursor/skills/webleau-mcp/SKILL.md`.
+- **Large wikilink sets:** `wikipedia_expand` refuses >30 links unless `limit` is explicit (hard max 120). Agents must ask the user; do not silently open a fraction.
 
 ## Decisions
 

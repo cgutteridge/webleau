@@ -26,16 +26,26 @@ Use tool **`wikipedia_expand`** with the parent page title already on the canvas
 
 Correct sequence (what the tool does):
 
-1. `GET /api/graph/wikipedia?action=nodes&ids=Page&follow=*`
-2. For each outbound link: **`node-add`** a full `graph-node` (same shape as `wikipedia_open`) at a ring position — **without** `view: icon`
-3. **`link-add`** parent → child (`links to`)
-4. **Then** optional **`node-alter`** `field: ["view"]` → `squish` or `icon` to collapse
+1. Count outbound links (`follow=*` with a high `followLimit`)
+2. **If more than 30 links and no explicit `limit`:** refuse with `too_many_links` — **ask the user** how many to open (hard max 120). Do not silently take a fraction.
+3. For each chosen link: **`node-add`** a full `graph-node` (same shape as `wikipedia_open`) at a ring position — **without** `view: icon`
+4. **`link-add`** parent → child (`links to`)
+5. **Then** optional **`node-alter`** `field: ["view"]` → `squish` or `icon` to collapse
+
+### Push back on large pages
+
+City/topic articles often have hundreds of wikilinks. Agents must:
+
+- Report `totalAvailable` to the user
+- Ask for an explicit count / `limit`
+- Never pretend a 40-link ring is “all” the links
 
 ### Wrong (failed once — do not repeat)
 
 - Creating satellites already in `view: "icon"` so `update()` never runs → no wiki HTML (`graph.node.data` missing)
 - Title-only or inventing node payloads that are not `type: "graph-node"` with endpoint + ident
 - Expecting follow JSON alone to paint cards without `node-add` through the session API
+- Silently capping at 24/40 without telling the user the real link count
 
 ### Collapse after open
 

@@ -121,7 +121,11 @@ async function nodes(query: Record<string, unknown>): Promise<WikiNodesResponse>
       }
 
       if (follow) {
-        const linked = await fetchOutgoingLinks(title, 40);
+        const followLimit = Math.min(
+          500,
+          Math.max(1, Number(query.followLimit ?? query.pllimit ?? 500) || 500),
+        );
+        const linked = await fetchOutgoingLinks(title, followLimit);
         for (const target of linked) {
           const objectId = encodeNodeId(target);
           linksOut.push({ subject: id, object: objectId, type: 'links to' });
@@ -281,26 +285,50 @@ async function fetchTitleMeta(title: string): Promise<{ title: string }> {
 }
 
 /**
+ * Fetch outbound article links, paging through MediaWiki continue tokens.
+ *
  * @param title - Page title
- * @param limit - Max links
+ * @param limit - Max links to return (capped at 500)
  */
 async function fetchOutgoingLinks(title: string, limit: number): Promise<string[]> {
-  const data = await mwJson<{
-    query?: { pages?: Record<string, { links?: Array<{ title: string }> }> };
-  }>({
-    action: 'query',
-    titles: title,
-    prop: 'links',
-    plnamespace: '0',
-    pllimit: String(limit),
-    redirects: '1',
-  });
-  const pages = data.query?.pages;
-  if (!pages) {
-    return [];
+  const cap = Math.min(500, Math.max(1, limit));
+  const titles: string[] = [];
+  let cont: Record<string, string> = {};
+  while (titles.length < cap) {
+    const batch = Math.min(500, cap - titles.length);
+    const data = await mwJson<{
+      continue?: Record<string, string>;
+      query?: { pages?: Record<string, { links?: Array<{ title: string }> }> };
+    }>({
+      action: 'query',
+      titles: title,
+      prop: 'links',
+      plnamespace: '0',
+      pllimit: String(batch),
+      redirects: '1',
+      ...cont,
+    });
+    const pages = data.query?.pages;
+    if (pages) {
+      const page = Object.values(pages)[0];
+      for (const link of page?.links ?? []) {
+        if (link.title) {
+          titles.push(link.title);
+          if (titles.length >= cap) {
+            break;
+          }
+        }
+      }
+    }
+    if (!data.continue) {
+      break;
+    }
+    cont = {};
+    for (const [key, value] of Object.entries(data.continue)) {
+      cont[key] = String(value);
+    }
   }
-  const page = Object.values(pages)[0];
-  return (page?.links ?? []).map((l) => l.title).filter(Boolean);
+  return titles;
 }
 
 /**

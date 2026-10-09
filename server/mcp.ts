@@ -408,18 +408,28 @@ server.registerTool(
   },
 );
 
+/** Soft cap: refuse expand unless the caller passes an explicit limit. */
+const WIKI_EXPAND_ASK_ABOVE = 30;
+/** Hard cap even when limit is explicit. */
+const WIKI_EXPAND_HARD_MAX = 120;
+
 server.registerTool(
   'wikipedia_expand',
   {
     title: 'Expand Wikipedia links radially',
     description:
-      'Open outbound Wikipedia links from a page as real graph-nodes (content-loading), optionally arranged in a ring and then collapsed. Never create title-only stubs; always node-add graph-node like wikipedia_open, then collapse with a separate view alter.',
+      'Open outbound Wikipedia links from a page as real graph-nodes (content-loading), in a ring, then optionally collapse. Counts links first: if there are more than 30, refuses unless you pass an explicit limit (and never opens more than 120). Never create title-only stubs; main-first then collapse.',
     inputSchema: {
       session: z.string().optional(),
       page: z
         .string()
         .describe('Parent Wikipedia page title already on the canvas (e.g. Southampton)'),
-      limit: z.number().optional().describe('Max links to open (default 24)'),
+      limit: z
+        .number()
+        .optional()
+        .describe(
+          `Required when the page has more than ${WIKI_EXPAND_ASK_ABOVE} outbound links. Max ${WIKI_EXPAND_HARD_MAX}.`,
+        ),
       radius: z.number().optional().describe('Ring radius in layout units (default 620)'),
       collapse: z
         .enum(['icon', 'squish', 'main'])
@@ -431,9 +441,9 @@ server.registerTool(
     const id = session ?? sessionId;
     const parentPage = page.trim().replace(/ /g, '_');
     const parentNodeId = `graph|${WIKI_ENDPOINT}|node|${parentPage}`;
-    const max = limit ?? 24;
     const ring = radius ?? 620;
     const collapseTo = collapse ?? 'squish';
+    const limitExplicit = limit !== undefined && limit !== null;
 
     const sessionDoc = await api<{
       layout: { nodes: Array<{ id: string; pos?: { x: number; y: number } }> };
@@ -448,14 +458,15 @@ server.registerTool(
     const cy = parent.pos?.y ?? 0;
 
     const ident = await api<Record<string, unknown>>(WIKI_ENDPOINT);
+    // Pull a large follow set so we know the real size (proxy pages MediaWiki).
     const follow = await api<{
       links?: Array<{ subject: string; object: string; type?: string }>;
       nodes?: Record<string, { title?: string }>;
     }>(
-      `${WIKI_ENDPOINT}?action=nodes&ids=${encodeURIComponent(parentPage)}&follow=*`,
+      `${WIKI_ENDPOINT}?action=nodes&ids=${encodeURIComponent(parentPage)}&follow=*&followLimit=500`,
     );
 
-    const targets: string[] = [];
+    const allTargets: string[] = [];
     const seen = new Set<string>();
     for (const link of follow.links ?? []) {
       if (link.subject !== parentPage) {
@@ -465,11 +476,44 @@ server.registerTool(
         continue;
       }
       seen.add(link.object);
-      targets.push(link.object);
-      if (targets.length >= max) {
-        break;
-      }
+      allTargets.push(link.object);
     }
+    const totalAvailable = allTargets.length;
+
+    if (!limitExplicit && totalAvailable > WIKI_EXPAND_ASK_ABOVE) {
+      return textResult({
+        ok: false,
+        error: 'too_many_links',
+        parent: parentPage,
+        totalAvailable,
+        askAbove: WIKI_EXPAND_ASK_ABOVE,
+        hardMax: WIKI_EXPAND_HARD_MAX,
+        sample: allTargets.slice(0, 12).map((t) => t.replace(/_/g, ' ')),
+        message:
+          `“${parentPage.replace(/_/g, ' ')}” has ${totalAvailable} outbound Wikipedia links. ` +
+          `That is too many to dump on the canvas without asking. ` +
+          `Tell the user the count and ask how many to open (max ${WIKI_EXPAND_HARD_MAX}), ` +
+          `then call wikipedia_expand again with an explicit limit.`,
+      });
+    }
+
+    const requested = limitExplicit ? Number(limit) : Math.min(24, totalAvailable);
+    if (!Number.isFinite(requested) || requested < 1) {
+      throw new Error('limit must be a positive number');
+    }
+    if (requested > WIKI_EXPAND_HARD_MAX) {
+      return textResult({
+        ok: false,
+        error: 'limit_too_high',
+        parent: parentPage,
+        totalAvailable,
+        hardMax: WIKI_EXPAND_HARD_MAX,
+        message: `Refusing limit=${requested}. Hard max is ${WIKI_EXPAND_HARD_MAX} cards per expand.`,
+      });
+    }
+
+    const max = Math.min(requested, totalAvailable, WIKI_EXPAND_HARD_MAX);
+    const targets = allTargets.slice(0, max);
 
     const opened: string[] = [];
     const skipped: string[] = [];
@@ -541,10 +585,13 @@ server.registerTool(
     return textResult({
       ok: true,
       parent: parentPage,
+      totalAvailable,
       opened: opened.length,
+      truncated: totalAvailable > opened.length,
+      remaining: Math.max(0, totalAvailable - opened.length),
       skipped,
       collapse: collapseTo,
-      note: 'Cards are real graph-nodes; browser loads wiki HTML on main enter before collapse.',
+      note: 'Real graph-nodes (main first, then collapse). Ask before opening huge link sets.',
     });
   },
 );
