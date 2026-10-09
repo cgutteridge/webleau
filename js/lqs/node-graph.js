@@ -198,7 +198,20 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 			data: { action: 'nodes', ids:this.data.graph.nodeID, data:1 },
 			url: node.data.graph.endpoint
 		}).done(function(ajaxData){
-			this.set('graph.node', ajaxData.nodes[this.data.graph.nodeID] );
+			var remote = ajaxData && ajaxData.nodes
+				? ajaxData.nodes[this.data.graph.nodeID]
+				: undefined;
+			if( !remote ) {
+				this.dom.content.find('.lqs_graph_content').empty().append(
+					$('<div></div>').text(
+						'No data for node "' + this.data.graph.nodeID + '" from this endpoint.'
+					)
+				);
+				this.dom.content.find('.lqs_graph_links').removeClass('lqs_graph_fold');
+				this.fitSize();
+				return;
+			}
+			this.set('graph.node', remote );
 			this.dom.content.find(".lqs_graph_content").empty().append( this.renderGraphNodeContent() );
 			this.fitSize();
 			this.viewSpec().setTitle(node, this.data.graph.node.title );
@@ -270,6 +283,11 @@ LQS_NodeTypes['graph-node'] = class LQS_Node_Graph_Node extends LQS_Node {
 			url: node.data.graph.endpoint
 		}).done(function(ajaxData){
 			this.dom.content.find(".lqs_graph_links").empty();
+			if( !ajaxData || !Array.isArray(ajaxData.links) ) {
+				this.dom.content.find(".lqs_graph_links").text( "No links returned." );
+				this.fitSize();
+				return;
+			}
 			//this.dom.links.append( LQS.dataToHTML( ajaxData ));
 			for( var i=0;i<ajaxData.links.length; ++i ) {
 				var apiLink = ajaxData.links[i];
