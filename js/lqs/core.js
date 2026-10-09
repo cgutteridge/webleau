@@ -17,7 +17,7 @@ class LQS {
 		this.offset = new LQS_Point(50000,50000);
 		this.curDown = false;
 		this.layoutScaleSlider = null;
-		this.defaultInspectorProxy = 'https://www.southampton.ac.uk/~totl/lqs-inspector-v1/';
+		this.defaultInspectorProxy = 'https://chris.totl.net/lqs-inspector-v1/';
 		this.mouse = new LQS_Point( this.offset.x, this.offset.y );
 		this.mouseOverBackground = true;
 		this.seedsBySource = {};
@@ -399,21 +399,19 @@ class LQS {
 
 		controls.append( $("<p>Drag these onto the page to connect to a graph.</p>"));
 
+		// Direct chris.totl.net URLs — the old soton.ac.uk paths 301/302 through
+		// southampton.ac.uk and browsers reject those CORS redirect chains.
 		var graphSeedLex = this.renderSeed("Webscience Lexicon");
 		controls.append( graphSeedLex );
-		this.attachSeed( graphSeedLex, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://www.soton.ac.uk/~totl/webscience-graph/' }));
+		this.attachSeed( graphSeedLex, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://chris.totl.net/webscience-graph/' }));
 
 		var graphSeedWPDemo = this.renderSeed("Blog Demo");
 		controls.append( graphSeedWPDemo );
-		this.attachSeed( graphSeedWPDemo, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://www.soton.ac.uk/~totl/wordpress-graph-demo/' }));
-
-		var graphSeedWPDemo = this.renderSeed("JRNL Blog");
-		controls.append( graphSeedWPDemo );
-		this.attachSeed( graphSeedWPDemo, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://jrnl.global/wp-json/graph-api/v1/query' }));
+		this.attachSeed( graphSeedWPDemo, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://chris.totl.net/wordpress-graph-demo/' }));
 
 		var graphSeedWikipedia = this.renderSeed("Wikipedia");
 		controls.append( graphSeedWikipedia );
-		this.attachSeed( graphSeedWikipedia, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://www.soton.ac.uk/~totl/wiki-graph-demo/' }));
+		this.attachSeed( graphSeedWikipedia, LQS_NodeTypes['graph-connection'].makeSeed({sourceCard:{data:{id:'//control-panel'}}, endpoint: 'https://chris.totl.net/wiki-graph-demo/' }));
 
 
 	}	/* end controls */
