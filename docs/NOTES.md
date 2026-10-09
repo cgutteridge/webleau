@@ -10,7 +10,7 @@ Last updated: 2026-10-09 (search + README)
 - `index.html` + `session-sync.js` so the canvas persists and receives remote events
 - **Local Wikipedia LGA** at `GET /api/graph/wikipedia` (MediaWiki)
 - Vitest for `applyEvent`, wiki rewrite, markdown export, search (`npm test`)
-- Starters + MCP tools including `wikipedia_open`, `starter_load`, `session_export_markdown`, `session_search`
+- Starters + MCP tools including `graph_api` / `graph_open` / `graph_follow`, `starter_load`, `session_export_markdown`, `session_search`
 - **Local inspector** at `GET /api/inspector?url=` (oEmbed + Open Graph)
 - Markdown export + control-panel **Export Markdown**
 - Session search API + control-panel Find + MCP `session_search`
@@ -26,8 +26,9 @@ Last updated: 2026-10-09 (search + README)
 
 ## Agent pitfalls
 
-- **Wikipedia expand:** never add collapsed (`view: icon`) graph-nodes from scratch — browser skips content fetch. Open as main (like `wikipedia_open`), then collapse. Use MCP `wikipedia_expand` or see `.cursor/skills/webleau-mcp/SKILL.md`.
-- **Large wikilink sets:** `wikipedia_expand` refuses >30 links unless `limit` is explicit (hard max 120). Agents must ask the user; do not silently open a fraction.
+- **Graph follow:** never add collapsed (`view: icon`) graph-nodes from scratch — browser skips content fetch. Open as main (`graph_open` / `graph_follow`), then collapse. See `.cursor/skills/webleau-mcp/SKILL.md`.
+- **Large follow sets:** `graph_follow` refuses >30 links unless `limit` is explicit (hard max 120). Agents must ask the user; do not silently open a fraction.
+- **MCP is endpoint-generic:** Wikipedia is `/api/graph/wikipedia`; no wikipedia_* tools.
 
 ## Decisions
 

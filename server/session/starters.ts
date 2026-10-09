@@ -20,7 +20,7 @@ export const STARTERS: Record<string, { title: string; description: string; layo
           id: 'note-trail',
           type: 'text',
           title: 'His trails do not fade',
-          text: 'Drag the Wikipedia seed from the control panel, or ask MCP wikipedia_open for Memex / Vannevar_Bush / Douglas_Engelbart.',
+          text: 'Drag the Wikipedia seed from the control panel, or ask MCP graph_open with endpoint /api/graph/wikipedia and id Memex / Vannevar_Bush / Douglas_Engelbart.',
           pos: { x: -280, y: -40 },
           size: { width: 260, height: 180 },
         },

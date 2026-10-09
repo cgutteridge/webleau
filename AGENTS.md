@@ -53,9 +53,9 @@ Env: `PORT` (default `8787`), `WEBLEAU_SESSION` (default `default`), `WEBLEAU_UR
 
 ### MCP tools
 
-`session_get`, `session_list`, `node_add`, `node_update`, `node_remove`, `link_add`, `link_remove`, `node_focus`, `purge`, `starter_load`, `wikipedia_open`, `wikipedia_expand`, `session_export_markdown`, `session_search`. Resource: `webleau://session/{id}`.
+`session_get`, `session_list`, `node_get`, `node_add`, `node_update`, `node_remove`, `link_add`, `link_remove`, `node_focus`, `purge`, `starter_load`, `graph_api`, `graph_open`, `graph_follow`, `session_export_markdown`, `session_search`. Resource: `webleau://session/{id}`.
 
-Wikipedia: see `.cursor/skills/webleau-mcp/SKILL.md` — open real `graph-node`s (main first), collapse only after add.
+Graph cards are LGA API objects: see `.cursor/skills/webleau-mcp/SKILL.md` — `graph_api` / `graph_open` / `graph_follow` (main first, collapse after add; push back on huge follow sets).
 
 ### Tests
 

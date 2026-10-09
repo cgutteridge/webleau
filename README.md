@@ -18,7 +18,7 @@ Open [http://127.0.0.1:8787](http://127.0.0.1:8787).
 
 ## MCP
 
-With `npm start` running, Cursor can use `.cursor/mcp.json` (`npm run mcp`). Tools include `node_add`, `wikipedia_open`, `starter_load`, `session_export_markdown`, etc.
+With `npm start` running, Cursor can use `.cursor/mcp.json` (`npm run mcp`). Tools include `node_add`, `graph_api` / `graph_open` / `graph_follow`, `starter_load`, `session_export_markdown`, etc.
 
 ## Scripts
 
