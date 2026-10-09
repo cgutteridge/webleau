@@ -345,12 +345,42 @@ server.registerTool(
   },
 );
 
+const WIKI_ENDPOINT = '/api/graph/wikipedia';
+
+/**
+ * Build a graph-node payload the browser can load like a grown wiki seed.
+ * Do not set view:icon here — the card must enter main first so update() fetches HTML.
+ *
+ * @param page - Wikipedia title (spaces or underscores)
+ * @param pos - Canvas position
+ * @param ident - LGA ident document
+ */
+function wikipediaGraphNode(
+  page: string,
+  pos: { x: number; y: number },
+  ident: Record<string, unknown>,
+) {
+  const nodeID = page.trim().replace(/ /g, '_');
+  return {
+    id: `graph|${WIKI_ENDPOINT}|node|${nodeID}`,
+    type: 'graph-node' as const,
+    title: page.trim().replace(/_/g, ' '),
+    pos,
+    size: { width: 280, height: 320 },
+    graph: {
+      nodeID,
+      endpoint: WIKI_ENDPOINT,
+      ident,
+    },
+  };
+}
+
 server.registerTool(
   'wikipedia_open',
   {
     title: 'Open Wikipedia page',
     description:
-      'Add a Wikipedia graph-node card for a page title (uses local /api/graph/wikipedia)',
+      'Open a real Wikipedia graph-node (same as growing a wiki seed). Uses /api/graph/wikipedia. Do not invent stub cards.',
     inputSchema: {
       session: z.string().optional(),
       page: z.string().describe('Wikipedia page title, e.g. Douglas Engelbart or Memex'),
@@ -360,29 +390,162 @@ server.registerTool(
   },
   async ({ session, page, x, y }) => {
     const id = session ?? sessionId;
-    const nodeID = page.trim().replace(/ /g, '_');
-    const endpoint = '/api/graph/wikipedia';
-    const ident = await api<Record<string, unknown>>(
-      `/api/graph/wikipedia`,
-    );
-    const node = {
-      id: `graph|${endpoint}|node|${nodeID}`,
-      type: 'graph-node',
-      title: page,
-      pos: { x: x ?? Math.round(Math.random() * 400 - 200), y: y ?? Math.round(Math.random() * 400 - 200) },
-      size: { width: 280, height: 320 },
-      graph: {
-        nodeID,
-        endpoint,
-        ident,
+    const ident = await api<Record<string, unknown>>(WIKI_ENDPOINT);
+    const node = wikipediaGraphNode(
+      page,
+      {
+        x: x ?? Math.round(Math.random() * 400 - 200),
+        y: y ?? Math.round(Math.random() * 400 - 200),
       },
-    };
+      ident,
+    );
     return textResult(
       await api(`/api/sessions/${encodeURIComponent(id)}/events`, {
         method: 'POST',
         body: JSON.stringify({ action: 'node-add', node, clientId: 'mcp' }),
       }),
     );
+  },
+);
+
+server.registerTool(
+  'wikipedia_expand',
+  {
+    title: 'Expand Wikipedia links radially',
+    description:
+      'Open outbound Wikipedia links from a page as real graph-nodes (content-loading), optionally arranged in a ring and then collapsed. Never create title-only stubs; always node-add graph-node like wikipedia_open, then collapse with a separate view alter.',
+    inputSchema: {
+      session: z.string().optional(),
+      page: z
+        .string()
+        .describe('Parent Wikipedia page title already on the canvas (e.g. Southampton)'),
+      limit: z.number().optional().describe('Max links to open (default 24)'),
+      radius: z.number().optional().describe('Ring radius in layout units (default 620)'),
+      collapse: z
+        .enum(['icon', 'squish', 'main'])
+        .optional()
+        .describe('After opening, set view on satellites (default squish). Use main to leave expanded.'),
+    },
+  },
+  async ({ session, page, limit, radius, collapse }) => {
+    const id = session ?? sessionId;
+    const parentPage = page.trim().replace(/ /g, '_');
+    const parentNodeId = `graph|${WIKI_ENDPOINT}|node|${parentPage}`;
+    const max = limit ?? 24;
+    const ring = radius ?? 620;
+    const collapseTo = collapse ?? 'squish';
+
+    const sessionDoc = await api<{
+      layout: { nodes: Array<{ id: string; pos?: { x: number; y: number } }> };
+    }>(`/api/sessions/${encodeURIComponent(id)}`);
+    const parent = sessionDoc.layout.nodes.find((n) => n.id === parentNodeId);
+    if (!parent) {
+      throw new Error(
+        `Parent page node not on canvas: ${parentNodeId}. Call wikipedia_open first.`,
+      );
+    }
+    const cx = parent.pos?.x ?? 0;
+    const cy = parent.pos?.y ?? 0;
+
+    const ident = await api<Record<string, unknown>>(WIKI_ENDPOINT);
+    const follow = await api<{
+      links?: Array<{ subject: string; object: string; type?: string }>;
+      nodes?: Record<string, { title?: string }>;
+    }>(
+      `${WIKI_ENDPOINT}?action=nodes&ids=${encodeURIComponent(parentPage)}&follow=*`,
+    );
+
+    const targets: string[] = [];
+    const seen = new Set<string>();
+    for (const link of follow.links ?? []) {
+      if (link.subject !== parentPage) {
+        continue;
+      }
+      if (seen.has(link.object)) {
+        continue;
+      }
+      seen.add(link.object);
+      targets.push(link.object);
+      if (targets.length >= max) {
+        break;
+      }
+    }
+
+    const opened: string[] = [];
+    const skipped: string[] = [];
+    for (let i = 0; i < targets.length; i++) {
+      const objectId = targets[i];
+      const angle = -Math.PI / 2 + (2 * Math.PI * i) / Math.max(targets.length, 1);
+      const pos = {
+        x: Math.round(cx + ring * Math.cos(angle)),
+        y: Math.round(cy + ring * Math.sin(angle)),
+      };
+      const title = follow.nodes?.[objectId]?.title ?? objectId.replace(/_/g, ' ');
+      const node = wikipediaGraphNode(title, pos, ident);
+      // Force nodeID to API id (titles can differ from ids)
+      node.graph.nodeID = objectId;
+      node.id = `graph|${WIKI_ENDPOINT}|node|${objectId}`;
+      node.title = title;
+
+      const addResult = await api<{ ok: boolean; error?: string }>(
+        `/api/sessions/${encodeURIComponent(id)}/events`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ action: 'node-add', node, clientId: 'mcp' }),
+        },
+      );
+      if (!addResult.ok) {
+        skipped.push(`${objectId}: ${addResult.error ?? 'add failed'}`);
+        await api(`/api/sessions/${encodeURIComponent(id)}/events`, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'node-alter',
+            node: node.id,
+            field: ['pos'],
+            data: pos,
+            clientId: 'mcp',
+          }),
+        });
+      } else {
+        opened.push(objectId);
+      }
+
+      await api(`/api/sessions/${encodeURIComponent(id)}/events`, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'link-add',
+          link: {
+            id: `graph|link|${parentNodeId}|${node.id}`,
+            label: 'links to',
+            subject: { node: parentNodeId },
+            object: { node: node.id },
+          },
+          clientId: 'mcp',
+        }),
+      });
+
+      if (collapseTo !== 'main') {
+        await api(`/api/sessions/${encodeURIComponent(id)}/events`, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'node-alter',
+            node: node.id,
+            field: ['view'],
+            data: collapseTo,
+            clientId: 'mcp',
+          }),
+        });
+      }
+    }
+
+    return textResult({
+      ok: true,
+      parent: parentPage,
+      opened: opened.length,
+      skipped,
+      collapse: collapseTo,
+      note: 'Cards are real graph-nodes; browser loads wiki HTML on main enter before collapse.',
+    });
   },
 );
 

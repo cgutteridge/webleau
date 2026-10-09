@@ -24,6 +24,10 @@ Last updated: 2026-10-09 (search + README)
 4. Sources panel / better embed cards
 5. Multiplayer presence (later)
 
+## Agent pitfalls
+
+- **Wikipedia expand:** never add collapsed (`view: icon`) graph-nodes from scratch — browser skips content fetch. Open as main (like `wikipedia_open`), then collapse. Use MCP `wikipedia_expand` or see `.cursor/skills/webleau-mcp/SKILL.md`.
+
 ## Decisions
 
 - All Node; server TypeScript; browser canvas stays plain JS for now
