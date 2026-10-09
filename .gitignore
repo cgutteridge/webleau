@@ -1,1 +1,6 @@
 providers.json
+node_modules/
+sessions/*.json
+!sessions/.gitkeep
+.DS_Store
+*.log

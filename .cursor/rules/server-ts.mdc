@@ -1,0 +1,13 @@
+---
+description: Conventions for the Node/TypeScript session server and MCP adapter
+globs: server/**/*.ts
+alwaysApply: false
+---
+
+# Server TypeScript
+
+- Session mutations go through `SessionStore.apply` / `applyEvent` — do not fork write logic in HTTP vs MCP.
+- MCP (`server/mcp.ts`) should keep calling the HTTP API so WebSocket clients stay in sync.
+- Persist under `sessions/`; do not commit session JSON.
+- Public functions: JSDoc. Prefer explicit types from `server/session/types.ts`.
+- After protocol changes, update `AGENTS.md` and MCP tool descriptions together.

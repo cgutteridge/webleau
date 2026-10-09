@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "webleau": {
+      "command": "npx",
+      "args": ["tsx", "server/mcp.ts"],
+      "env": {
+        "WEBLEAU_URL": "http://127.0.0.1:8787",
+        "WEBLEAU_SESSION": "default"
+      }
+    }
+  }
+}

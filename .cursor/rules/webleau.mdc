@@ -5,23 +5,22 @@ alwaysApply: true
 
 # Webleau
 
-Spatial node/link canvas (Liquid Space / `LQS`). Start with `AGENTS.md` for architecture.
+Spatial node/link canvas (Liquid Space / `LQS`). Read `AGENTS.md` for architecture.
 
 ## Change policy
 
-- Nothing is sacred: refactor, remove, rearchitect freely.
-- No backwards compatibility for layouts, events, quines, or APIs unless the human asks.
-- Prefer deleting old paths over compatibility shims.
-- Ask when the intended end state is ambiguous; otherwise implement fully.
+- Nothing is sacred: refactor freely; no BC unless asked.
+- Prefer deleting old paths over shims.
+- Ask when the end state is ambiguous; otherwise implement fully.
 
-## Orientation
+## Baseline
 
-- App code: `js/lqs/` — `core.js` (controller), `node.js` (cards), `node-*.js` (types).
-- Boot: `index.php` lists script/style order; `?debug=1` loads files separately.
-- Mutations: prefer `lqs.change(event)` over ad-hoc DOM/state edits.
-- Vendor under `js/` and `css/jquery-ui.css`: replace, do not hand-edit minified blobs.
-- No package manager/tests yet; introducing a real toolchain is welcome when the task justifies it.
+- Session core: `server/session/` (layout + events + `sessions/*.json`).
+- Web adapter: `server/http.ts` (static + REST + WS) — live authority.
+- MCP adapter: `server/mcp.ts` (stdio → HTTP API). Requires `npm start`.
+- Browser: `index.html` + `js/lqs/`; sync via `session-sync.js`.
+- Run: `npm start` → http://127.0.0.1:8787
 
 ## When architecture changes
 
-Update `AGENTS.md` and these rules so the next session stays accurate.
+Update `AGENTS.md` and these rules.

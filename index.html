@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" name="viewport">
+    <title>Webleau / Liquid Space</title>
+    <link rel="stylesheet" href="/css/jquery-ui.css" />
+    <link rel="stylesheet" href="/css/liquid-space.css" />
+    <script src="/js/jquery-1.12.4.min.js"></script>
+    <script src="/js/jquery-ui.js"></script>
+    <script src="/js/jquery.ui.touch-punch.min.js"></script>
+    <script src="/js/hammer.min.js"></script>
+    <script src="/js/lqs/core.js"></script>
+    <script src="/js/lqs/point.js"></script>
+    <script src="/js/lqs/line.js"></script>
+    <script src="/js/lqs/node.js"></script>
+    <script src="/js/lqs/link.js"></script>
+    <script src="/js/lqs/viewspec.js"></script>
+    <script src="/js/lqs/node-text.js"></script>
+    <script src="/js/lqs/node-html.js"></script>
+    <script src="/js/lqs/node-error.js"></script>
+    <script src="/js/lqs/node-graph.js"></script>
+    <script src="/js/lqs/node-embed.js"></script>
+    <script src="/js/lqs/node-cited.js"></script>
+    <script src="/js/lqs/session-sync.js"></script>
+  </head>
+  <body></body>
+  <script>
+$(document).ready(function(){
+	var lqs = new LQS();
+	var sync = new LQS_SessionSync(lqs);
+	sync.start().catch(function(err) {
+		console.error('session sync failed; falling back to embedded layout', err);
+		lqs.setLayout({
+			inspectorProxy: 'https://chris.totl.net/lqs-inspector-v1/',
+			nodes: [
+				{
+					id: 'a',
+					pos: { x: 400, y: 100 },
+					size: { width: 200, height: 200 },
+					title: '',
+					type: 'text',
+					text: 'Try pasting URLs from media sites. Try double clicking on the background. Use the spanner to save state (to a text string for now). Drag nodes to touch to make a link.',
+				},
+				{
+					id: 'welcome',
+					pos: { x: 0, y: 0 },
+					size: { width: 200, height: 200 },
+					title: 'Welcome',
+					type: 'html',
+					html: '<p>Welcome to Liquid Space.</p><p>To get started, for now all we have is an <a href="https://jrnl.global/2018/10/30/webleau-progress/">Introduction blog post</a></p>',
+				}
+			],
+			links: [
+				{
+					label: '',
+					id: 'welcomelink',
+					subject: { node: 'a' },
+					object: { node: 'welcome' }
+				}
+			]
+		});
+	});
+});
+  </script>
+</html>

@@ -7,10 +7,11 @@ alwaysApply: false
 # LQS application JS
 
 - Extend cards via `LQS_NodeTypes['type']` subclasses of `LQS_Node`, not one-off DOM in the shell.
-- Register new types in the `index.php` script list (order matters until modules exist).
-- Layout I/O shapes live in node `.data`; round-trip through `getLayout` / `setLayout`.
+- Register new types in `index.html` (and legacy `index.php` if still used); order matters until modules exist.
+- Layout I/O shapes live in node `.data`; round-trip through `getLayout` / `setLayout` and the session API.
+- Local mutations go through `lqs.change` so `session-sync.js` can persist/broadcast them.
 - Geometry: virtual coords + `toReal` / `toVirtual`; reuse `LQS_Point` / `LQS_Line`.
 - Seeds: `makeSeed` / `growSeed` / `attachSeed` — do not invent a second provisional-node system.
 - Inputs that need normal clipboard behaviour need class `normal-paste`.
-- On substantial rewrites, JSDoc public methods; prefer modules/types if introducing a build step.
+- On substantial rewrites, JSDoc public methods.
 - After structural changes, update `AGENTS.md`.
