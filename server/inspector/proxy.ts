@@ -7,7 +7,8 @@ export interface InspectorResult {
   url: string;
   title?: string;
   description?: string;
-  html?: string;
+  /** Provider-supplied player markup (oEmbed only); rendered verbatim by embed cards. */
+  embed?: string;
   type?: string;
   provider_name?: string;
   image?: { url?: string };
@@ -15,6 +16,10 @@ export interface InspectorResult {
   error?: string;
   note?: string;
 }
+
+/** Requested oEmbed player box; providers may return smaller. */
+const PLAYER_WIDTH = 480;
+const PLAYER_HEIGHT = 270;
 
 const USER_AGENT =
   process.env.WEBLEAU_INSPECTOR_UA ??
@@ -61,13 +66,13 @@ async function tryOEmbed(url: URL): Promise<InspectorResult | null> {
     return {
       url: url.href,
       title: str(record.title),
-      html: str(record.html),
+      embed: str(record.html),
       type: str(record.type) ?? 'rich',
       provider_name: str(record.provider_name),
       image: str(record.thumbnail_url) ? { url: str(record.thumbnail_url) } : undefined,
       size: {
-        width: num(record.width) ?? 480,
-        height: num(record.height) ?? 270,
+        width: num(record.width) ?? PLAYER_WIDTH,
+        height: num(record.height) ?? PLAYER_HEIGHT,
       },
       note: 'oEmbed',
     };
@@ -77,16 +82,20 @@ async function tryOEmbed(url: URL): Promise<InspectorResult | null> {
 }
 
 /**
+ * Map a page URL to its provider's oEmbed endpoint, requesting a
+ * PLAYER_WIDTH × PLAYER_HEIGHT player where the provider supports it.
+ *
  * @param url - Page URL
  * @returns oEmbed endpoint or null when unsupported
  */
-function oembedEndpointFor(url: URL): string | null {
+export function oembedEndpointFor(url: URL): string | null {
   const href = encodeURIComponent(url.href);
+  const box = `maxwidth=${PLAYER_WIDTH}&maxheight=${PLAYER_HEIGHT}`;
   if (/(^|\.)youtube\.com$/i.test(url.host) || /(^|\.)youtu\.be$/i.test(url.host)) {
-    return `https://www.youtube.com/oembed?format=json&url=${href}`;
+    return `https://www.youtube.com/oembed?format=json&${box}&url=${href}`;
   }
   if (/(^|\.)vimeo\.com$/i.test(url.host)) {
-    return `https://vimeo.com/api/oembed.json?url=${href}`;
+    return `https://vimeo.com/api/oembed.json?${box}&url=${href}`;
   }
   if (/(^|\.)twitter\.com$/i.test(url.host) || /(^|\.)x\.com$/i.test(url.host)) {
     return `https://publish.twitter.com/oembed?url=${href}`;
@@ -132,9 +141,6 @@ async function scrapeOpenGraph(url: URL): Promise<InspectorResult> {
       description: description || undefined,
       type: 'link',
       image: image ? { url: absolutize(url, image) } : undefined,
-      html: description
-        ? `<p>${escapeHtml(description)}</p><p><a href="${escapeHtml(url.href)}">${escapeHtml(url.href)}</a></p>`
-        : `<p><a href="${escapeHtml(url.href)}">${escapeHtml(url.href)}</a></p>`,
       note: 'opengraph',
     };
   } catch (err) {
@@ -216,17 +222,6 @@ function str(value: unknown): string | undefined {
  */
 function num(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-}
-
-/**
- * @param text - Raw text
- */
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 /**

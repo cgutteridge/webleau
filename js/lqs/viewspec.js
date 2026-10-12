@@ -54,7 +54,7 @@ class LQS_ViewSpec {
 		node.dom.outer.css('height',realSize.height );
 		var titleHeight = (18*node.lqs.layoutScale);
 		var fontHeight  = (16*node.lqs.layoutScale);
-		node.dom.content.css('height',node.data.height*node.lqs.layoutScale-titleHeight ); // height of box minus borders and title
+		node.dom.content.css('height',realSize.height-titleHeight ); // height of box minus borders and title
 		node.dom.title.css('font-size',fontHeight+"px");
 		node.dom.title.css('height',   titleHeight+"px" );
 	}

@@ -2,6 +2,11 @@
 
 LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 
+	/** Card border allowance around a player, in virtual px. */
+	static FRAME = 4;
+	/** Must match the title bar height in LQS_ViewSpec.updatePosition. */
+	static TITLE_HEIGHT = 18;
+
 	constructor( nodeData, lqs ) {
 		super(nodeData,lqs);
 
@@ -49,8 +54,10 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 			content.text( "ERROR: "+this.data.source.error );
 			empty = false;
 		} else if ( this.data.source.embed ) {
-			content.html( this.data.source.embed );
-			empty = false;
+			content.html( this.data.source.embed ).addClass( 'lqs_embed_player' );
+			content.find( 'iframe, video' ).removeAttr( 'width' ).removeAttr( 'height' );
+			// player fills the card; "VISIT SOURCE" in the card menu replaces the footer link
+			return content;
 		} else if ( this.data.source.loaded ) {
 			let img = null;
 			if( this.data.source.image && this.data.source.image.url ) {
@@ -101,6 +108,22 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 		this.refreshFromSource();
 	}
 
+	/**
+	 * Virtual card size that frames the provider's player exactly
+	 * (player box plus the title bar), independent of the current zoom.
+	 *
+	 * @returns {{width:number,height:number}|null} null when the source has no sized player
+	 */
+	playerSize() {
+		var source = this.data.source;
+		if( !source.embed || !source.size || !source.size.width || !source.size.height ) {
+			return null;
+		}
+		return {
+			width: source.size.width + LQS_Node_Embed.FRAME,
+			height: source.size.height + LQS_Node_Embed.TITLE_HEIGHT + LQS_Node_Embed.FRAME };
+	}
+
 	refreshFromSource() {
 		$.ajax({
 			method: "GET",
@@ -112,8 +135,9 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 			this.set( 'source.url', url );
 			this.set( 'source.loaded',  true);
 
-			if( this.data.source.size && this.data.source.size.width && this.data.source.size.height) {
-				this.set( 'size', { width: this.data.source.size.width+4, height: this.data.source.size.height+4 } );
+			let playerSize = this.playerSize();
+			if( playerSize ) {
+				this.set( 'size', playerSize );
 			}
 			if( this.data.source.image && this.data.source.image.url) {
 				this.set( 'icon.url', this.data.source.image.url );
@@ -128,8 +152,12 @@ LQS_NodeTypes['embed'] = class LQS_Node_Embed extends LQS_Node {
 			}
 		
 			this.rerender();
-			this.updatePosition();
-			this.fitSize();
+			if( playerSize ) {
+				this.updatePosition();
+				this.updateLinksPosition();
+			} else {
+				this.fitSize();
+			}
 			//this.setView('icon');
 		}).fail(()=>{
 			this.data.source.error = "Metadata query failed";
